@@ -109,7 +109,7 @@ class I3DDataset(Dataset):
         return X, Y
 
 
-def load_data(data_cfg: dict, set_names: list) -> list[Dataset]:
+def load_data(data_cfg: dict, set_names: list) -> list:
     '''
 
     Args:
