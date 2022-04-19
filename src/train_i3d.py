@@ -7,6 +7,7 @@ from torch import optim
 from torch.autograd import Variable
 import torch.nn.functional as F
 import numpy as np
+import argparse
 
 from src.utils.my_collate import my_collate
 from src.utils.helpers import load_config, set_seed
@@ -14,8 +15,9 @@ from src.utils.pretrain_data import load_data, get_class_encodings
 from src.utils.i3dpt import I3D
 
 
-def train(cfg_file: str) -> None:
-    cfg = load_config(cfg_file)
+def train(cfg_path: str) -> None:
+    assert os.path.isfile(cfg_path), f"{cfg_path} is not a config file"
+    cfg = load_config(cfg_path)
     training_cfg = cfg["training"]
     set_seed(seed=training_cfg.get("random_seed", 42))
 
@@ -100,7 +102,18 @@ def train(cfg_file: str) -> None:
     shutil.rmtree(cfg.get("data").get("cngt_clips_path")[:-4])
     shutil.rmtree(cfg.get("data").get("signbank_path")[:-4])
 
+def main(params):
+
+    config_path = params.config_path
+    train(config_path)
+
 
 if __name__ == '__main__':
-    # need to add argparse
-    train(cfg_file="C:/Users/Javi/PycharmProjects/pythonProject/config.yaml")
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--config_path",
+        type=str,
+    )
+    params, _ = parser.parse_known_args()
+    train(params)
