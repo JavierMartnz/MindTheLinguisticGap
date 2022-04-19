@@ -1,6 +1,7 @@
 import os
 import shutil
-
+import sys
+sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 import torch
 from torch.utils.data import DataLoader
 from torch import optim
