@@ -89,12 +89,14 @@ class I3DDataset(Dataset):
         last_window_frame = start_frame + self.window_size
 
         if last_window_frame > num_frames:
-            # we pad with copies of last frame
             X_raw, _, _ = read_video(filename=sample["video_path"])  # returns Tensor[T, H, W, C]
             X = torch.empty([self.window_size, X_raw.size(1), X_raw.size(2), X_raw.size(3)])
-            X[:(num_frames - start_frame), :, :, :] = X_raw[start_frame:, :, :, :]
-            for i in range((num_frames - start_frame), self.window_size):
-                X[i, :, :, :] = X[i - 1, :, :, :]
+            # fill with the remaining of the video
+            for i in range(num_frames - start_frame):
+                X[i, :, :, :] = X_raw[start_frame + i, :, :, :]
+            # pad the rest with copies of the last frame
+            for j in range((num_frames - start_frame), self.window_size):
+                X[j, :, :, :] = X[j - 1, :, :, :]
 
         else:
             X_raw, _, _ = read_video(filename=sample["video_path"])  # returns Tensor[T, H, W, C]
