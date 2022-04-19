@@ -9,10 +9,10 @@ import torch.nn.functional as F
 import numpy as np
 import argparse
 
-from utils.my_collate import my_collate
-from utils.helpers import load_config, set_seed
-from utils.pretrain_data import load_data, get_class_encodings
-from utils.i3dpt import I3D
+from src.utils.my_collate import my_collate
+from src.utils.helpers import load_config, set_seed
+from src.utils.pretrain_data import load_data, get_class_encodings
+from src.utils.i3dpt import I3D
 
 
 def train(cfg_path: str) -> None:
