@@ -26,10 +26,10 @@ def train(cfg_path: str) -> None:
 
     print("Creating training Dataloader...")
     train_dataloader = DataLoader(train_dataset, batch_size=training_cfg.get("batch_size"), shuffle=True, num_workers=0,
-                                  pin_memory=True, collate_fn=my_collate)
+                                  pin_memory=True)
     print("Creating validation Dataloader...")
     val_dataloader = DataLoader(val_dataset, batch_size=training_cfg.get("batch_size"), shuffle=True, num_workers=0,
-                                pin_memory=True, collate_fn=my_collate)
+                                pin_memory=True)
 
     num_classes = len(get_class_encodings(cfg.get("data").get("cngt_clips_path"), cfg.get("data").get("signbank_path")))
 
