@@ -84,23 +84,23 @@ class I3DDataset(Dataset):
         Generate one sample of the dataset
         """
         sample = self.samples[index]
-        num_frames = int(sample.get("num_frames"))
+        # num_frames = int(sample.get("num_frames"))
         start_frame = int(sample.get("start_frame"))
         last_window_frame = start_frame + self.window_size
 
+        X_raw, _, _ = read_video(filename=sample["video_path"])  # returns Tensor[T, H, W, C]
+        num_frames = X_raw.size(0)
+
         if last_window_frame > num_frames:
-            X_raw, _, _ = read_video(filename=sample["video_path"])  # returns Tensor[T, H, W, C]
             X = torch.empty([self.window_size, X_raw.size(1), X_raw.size(2), X_raw.size(3)])
             # fill with the remaining of the video
-            transformed_start_frame = X_raw.size(0) - start_frame
+            transformed_start_frame = num_frames - start_frame
             for i in range(transformed_start_frame):
                 X[i, :, :, :] = X_raw[start_frame + i, :, :, :]
             # pad the rest with copies of the last frame
             for j in range(self.window_size - transformed_start_frame):
                 X[j, :, :, :] = X[j - 1, :, :, :]
-
         else:
-            X_raw, _, _ = read_video(filename=sample["video_path"])  # returns Tensor[T, H, W, C]
             X = X_raw[start_frame:last_window_frame, :, :, :]
 
         X = X.permute(3, 0, 1, 2)  # Tensor[C, T, H, W] as needed by i3d
