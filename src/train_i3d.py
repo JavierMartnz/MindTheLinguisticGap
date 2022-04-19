@@ -116,4 +116,4 @@ if __name__ == '__main__':
         type=str,
     )
     params, _ = parser.parse_known_args()
-    train(params)
+    main(params)
