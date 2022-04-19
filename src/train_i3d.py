@@ -1,7 +1,6 @@
 import os
 import shutil
 import sys
-
 sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 import torch
 from torch.utils.data import DataLoader
@@ -17,7 +16,7 @@ from src.utils.pretrain_data import load_data, get_class_encodings
 from src.utils.i3dpt import I3D
 
 
-def train(cfg_path: str):
+def train(cfg_path: str) -> None:
     assert os.path.isfile(cfg_path), f"{cfg_path} is not a config file"
     cfg = load_config(cfg_path)
     training_cfg = cfg["training"]
@@ -104,8 +103,8 @@ def train(cfg_path: str):
     shutil.rmtree(cfg.get("data").get("cngt_clips_path")[:-4])
     shutil.rmtree(cfg.get("data").get("signbank_path")[:-4])
 
-
 def main(params):
+
     config_path = params.config_path
     train(config_path)
 
