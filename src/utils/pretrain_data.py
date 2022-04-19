@@ -7,9 +7,7 @@ from zipfile import ZipFile
 from torchvision.io import read_video
 from tqdm import tqdm
 
-from src.utils.transforms import im_color_jitter, color_normalize
-from src.utils.my_collate import my_collate
-from src.utils.util import load_gzip
+from util import load_gzip
 
 
 def count_video_frames(video_path):
