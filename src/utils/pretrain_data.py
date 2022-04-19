@@ -106,7 +106,7 @@ class I3DDataset(Dataset):
         X = X.permute(3, 0, 1, 2)  # Tensor[C, T, H, W] as needed by i3d
         Y = torch.zeros(len(self.class_encoding))
         Y[self.class_encoding[int(sample.get("gloss_id"))]] = 1
-        print(Y)
+        print(self.class_encoding[int(sample.get("gloss_id"))], end=' ')
         # Y = torch.zeros(len(self.class_encoding), self.window_size)
         # Y[self.class_encoding[int(sample.get("gloss_id"))], :] = int(sample.get("gloss_id"))
 
