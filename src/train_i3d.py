@@ -73,9 +73,8 @@ def train(cfg_path: str) -> None:
             inputs, labels = data
             inputs, labels = inputs.cuda(), labels.cuda()  # put data in GPU
             output = model(inputs.float())
-            torch.set_printoptions(threshold=10_000)
-            print(output)
-            print(labels)
+            print((output == torch.max(output)).nonzero(as_tuple=False))
+            print((labels == 1).nonzero(as_tuple=False))
             loss = F.binary_cross_entropy(output, labels)
             loss.backward()
             optimizer.step()
