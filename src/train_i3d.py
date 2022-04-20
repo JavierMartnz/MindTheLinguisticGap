@@ -47,9 +47,9 @@ def train(cfg_path: str) -> None:
                 dropout_prob=0.5,
                 name='i3d')
 
-    summary(model, (3, 64, 256, 256))
-
     model = torch.nn.DataParallel(model).cuda()
+
+    summary(model, (3, 64, 256, 256))
 
     lr = training_cfg.get("init_lr")
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
