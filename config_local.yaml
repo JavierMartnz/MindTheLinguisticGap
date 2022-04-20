@@ -1,0 +1,13 @@
+data:
+
+  cngt_clips_path: "D:/Thesis/datasets/cngt_train_clips.zip"
+  signbank_path: "D:/Thesis/datasets/NGT_Signbank_resized.zip"
+  window_size: 64
+
+training:
+
+  epochs: 5
+  random_seed: 42
+  batch_size: 1
+  init_lr: 0.1
+  save_model: "D:/Thesis/models/i3d"
