@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch import optim
 from torch.autograd import Variable
+from torchsummary import summary
 import torch.nn.functional as F
 import numpy as np
 import argparse
@@ -46,6 +47,8 @@ def train(cfg_path: str) -> None:
                 dropout_prob=0.5,
                 name='i3d')
 
+    summary(model)
+
     model = torch.nn.DataParallel(model).cuda()
 
     lr = training_cfg.get("init_lr")
@@ -71,6 +74,8 @@ def train(cfg_path: str) -> None:
             if torch.cuda.is_available():
                 inputs, labels = inputs.cuda(), labels.cuda()
             output = model(inputs.float())
+            print(output.size(), output.type())
+            print(labels.size(), labels.type())
             loss = F.binary_cross_entropy(output, labels)
             loss.backward()
             optimizer.step()
