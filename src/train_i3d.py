@@ -62,6 +62,8 @@ def train(cfg_path: str) -> None:
     print(
         f"Training parameters summary:\n\t-batch size={training_cfg.get('batch_size')}\n\t-initial learning rate={lr}")
 
+    criterion = torch.nn.BCELoss()
+
     for epoch in range(epochs):
 
         model.train()
@@ -73,9 +75,7 @@ def train(cfg_path: str) -> None:
             inputs, labels = data
             inputs, labels = inputs.cuda(), labels.cuda()  # put data in GPU
             output = model(inputs.float())
-            print((output == torch.max(output)).nonzero(as_tuple=False))
-            print((labels == 1).nonzero(as_tuple=False))
-            loss = F.binary_cross_entropy(output, labels)
+            loss = criterion(output, labels)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
@@ -87,7 +87,7 @@ def train(cfg_path: str) -> None:
                 inputs, labels = data
                 inputs, labels = inputs.cuda(), labels.cuda() # put data in GPU
                 pred = model(inputs.float())
-                loss = F.binary_cross_entropy(pred, labels)
+                loss = criterion(pred, labels)
                 val_loss += loss.item()
 
         lr_sched.step(val_loss)  # this always after the optimizer step
