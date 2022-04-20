@@ -8,6 +8,6 @@ training:
 
   epochs: 50
   random_seed: 42
-  batch_size: 4
+  batch_size: 2
   init_lr: 0.1
   save_model: "/vol/tensusers5/jmartinez/models/i3d"
