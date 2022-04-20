@@ -98,7 +98,7 @@ class I3DDataset(Dataset):
             for i in range(transformed_start_frame):
                 X[i, :, :, :] = X_raw[start_frame + i, :, :, :]
             # pad the rest with copies of the last frame
-            for j in range(self.window_size - transformed_start_frame):
+            for j in range(self.window_size - transformed_start_frame - 1):
                 X[j, :, :, :] = X[j - 1, :, :, :]
         else:
             X = X_raw[start_frame:last_window_frame, :, :, :]
