@@ -16,6 +16,15 @@ from src.utils.helpers import load_config, set_seed
 from src.utils.pretrain_data import load_data, get_class_encodings
 from src.utils.i3dpt import I3D
 
+# class TrainManager:
+#     def __init__(self, model: torch.nn.Module, config: dict) -> None:
+#         train_config = config.get("training")
+#         data_config = config.get("data")
+#
+#         self.train_config = train_config
+#         self.data_config = data_config
+#         self.window_size = data_config.get("window_size")
+#         self.criterion =
 
 def train(cfg_path: str) -> None:
     assert os.path.isfile(cfg_path), f"{cfg_path} is not a config file"
@@ -62,7 +71,7 @@ def train(cfg_path: str) -> None:
     print(
         f"Training parameters summary:\n\t-batch size={training_cfg.get('batch_size')}\n\t-initial learning rate={lr}")
 
-    criterion = torch.nn.BCELoss()
+    criterion = torch.nn.BCEWithLogitsLoss()
 
     for epoch in range(epochs):
 
