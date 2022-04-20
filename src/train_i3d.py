@@ -47,7 +47,7 @@ def train(cfg_path: str) -> None:
                 dropout_prob=0.5,
                 name='i3d')
 
-    summary(model)
+    summary(model, (3, 64, 256, 256))
 
     model = torch.nn.DataParallel(model).cuda()
 
