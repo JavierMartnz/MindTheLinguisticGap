@@ -74,7 +74,7 @@ def train(cfg_path: str) -> None:
     criterion = torch.nn.BCEWithLogitsLoss()
 
     for epoch in range(epochs):
-
+        print(f"Epoch {str(epoch + 1).zfill(len(str(epochs)))}/{epochs} --", end=" ")
         model.train()
         train_loss = 0.0
         cnt = 0
@@ -104,7 +104,7 @@ def train(cfg_path: str) -> None:
         train_loss /= len(train_dataloader)
         val_loss /= len(val_dataloader)
 
-        print(f"Epoch {str(epoch + 1).zfill(len(str(epochs)))}/{epochs} -- Training loss: {train_loss:.4f} \t\t "
+        print(f"Training loss: {train_loss:.4f} \t\t "
               f"Validation loss: {val_loss:.4f}")
         if val_loss < min_val_loss:
             print(f"\tValidation loss improved from {min_val_loss:.4f} to {val_loss:.4f}... Saving model")
