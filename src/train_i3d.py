@@ -71,8 +71,7 @@ def train(cfg_path: str) -> None:
             cnt += 1
             optimizer.zero_grad()
             inputs, labels = data
-            if torch.cuda.is_available():
-                inputs, labels = inputs.cuda(), labels.cuda()
+            inputs, labels = inputs.cuda(), labels.cuda()  # put data in GPU
             output = model(inputs.float())
             print(output.size(), output.type())
             print(labels.size(), labels.type())
@@ -86,8 +85,7 @@ def train(cfg_path: str) -> None:
         with torch.no_grad():
             for data in val_dataloader:
                 inputs, labels = data
-                if torch.cuda.is_available():
-                    inputs, labels = inputs.cuda(), labels.cuda()
+                inputs, labels = inputs.cuda(), labels.cuda() # put data in GPU
                 pred = model(inputs.float())
                 loss = F.binary_cross_entropy(pred, labels)
                 val_loss += loss.item()
