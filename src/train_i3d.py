@@ -49,7 +49,7 @@ def train(cfg_path: str) -> None:
 
     model = torch.nn.DataParallel(model).cuda()
 
-    summary(model, (3, 64, 256, 256))
+    # summary(model, (3, 64, 256, 256))
 
     lr = training_cfg.get("init_lr")
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
@@ -73,8 +73,9 @@ def train(cfg_path: str) -> None:
             inputs, labels = data
             inputs, labels = inputs.cuda(), labels.cuda()  # put data in GPU
             output = model(inputs.float())
-            print(output.size(), output.type())
-            print(labels.size(), labels.type())
+            torch.set_printoptions(threshold=10_000)
+            print(output)
+            print(labels)
             loss = F.binary_cross_entropy(output, labels)
             loss.backward()
             optimizer.step()
