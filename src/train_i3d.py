@@ -158,18 +158,27 @@ def train(cfg_path: str) -> None:
                 dropout_prob=0.5,
                 name='i3d')
 
-    with torch.cuda.device(training_cfg.get("device")):
+    model = torch.nn.DataParallel(model).cuda()
+    # summary(model, (3, 64, 256, 256))
 
-        model = torch.nn.DataParallel(model).cuda()
-        # summary(model, (3, 64, 256, 256))
-
-        trainer = TrainManager(model=model, config=cfg)
-        trainer.train_and_validate(train_dataset, val_dataset)
+    trainer = TrainManager(model=model, config=cfg)
+    trainer.train_and_validate(train_dataset, val_dataset)
 
 
 def main(params):
-    config_path = params.config_path
-    train(config_path)
+
+    max_mem = 0
+    best_gpu_idx = None
+    for d in range(torch.cuda.device_count()):
+        mem = torch.cuda.get_device_properties(d).total_memory
+        if mem > max_mem:
+            max_mem = mem
+            best_gpu_idx = d
+
+    print(f"Running code in {torch.cuda.get_device_name(d)}")
+    with torch.cuda.device(best_gpu_idx):
+        config_path = params.config_path
+        train(config_path)
 
 
 if __name__ == '__main__':
