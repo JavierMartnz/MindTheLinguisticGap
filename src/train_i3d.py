@@ -57,6 +57,19 @@ def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> to
     # f1.requires_grad = is_training
     return f1.item()
 
+def get_best_gpu() -> int:
+    max_free_mem = 0
+    best_gpu_tot_mem = 0
+    best_gpu_idx = None
+    for d in range(torch.cuda.device_count()):
+        free_mem, tot_mem = torch.cuda.mem_get_info(d)
+        if free_mem > max_free_mem:
+            max_free_mem = free_mem
+            best_gpu_tot_mem = tot_mem
+            best_gpu_idx = d
+
+    return best_gpu_idx, max_free_mem, best_gpu_tot_mem
+
 
 class TrainManager:
     def __init__(self, model: torch.nn.Module, config: dict) -> None:
@@ -167,15 +180,9 @@ def train(cfg_path: str) -> None:
 
 def main(params):
 
-    max_mem = 0
-    best_gpu_idx = None
-    for d in range(torch.cuda.device_count()):
-        mem = torch.cuda.get_device_properties(d).total_memory
-        if mem > max_mem:
-            max_mem = mem
-            best_gpu_idx = d
+    best_gpu_idx, best_gpu_free, best_gpu_tot = get_best_gpu()
 
-    print(f"Running code in {torch.cuda.get_device_name(d)}")
+    print(f"Running code in {torch.cuda.get_device_name(best_gpu_idx)}, with {best_gpu_free/(1024**3):.2f}/{best_gpu_tot/(1024**3):.2f} GB free")
     with torch.cuda.device(best_gpu_idx):
         config_path = params.config_path
         train(config_path)
