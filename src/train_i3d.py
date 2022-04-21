@@ -12,7 +12,6 @@ import torch.nn.functional as F
 import numpy as np
 import argparse
 from tqdm import tqdm
-from sklearn.metrics import f1_score
 from time import sleep
 
 from src.utils.my_collate import my_collate
