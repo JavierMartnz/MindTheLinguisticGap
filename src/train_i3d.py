@@ -83,7 +83,7 @@ class TrainManager:
         self.gpu = gpu
         self.window_size = data_config.get("window_size")
         self.criterion = torch.nn.BCEWithLogitsLoss()
-        self.model = model.cuda() if self.use_cuda else model
+        self.model = model.cuda(self.gpu) if self.use_cuda else model
         self.optimizer = optim.SGD(model.parameters(), lr=train_config.get("init_lr"),
                                    momentum=train_config.get("momentum"), weight_decay=train_config.get("weight_decay"))
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
@@ -113,7 +113,7 @@ class TrainManager:
                     tloader.set_description(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))}/{self.epochs}")
                     inputs, labels = batch
                     if self.use_cuda:
-                        inputs, labels = inputs.cuda(), labels.cuda()
+                        inputs, labels = inputs.cuda(self.gpu), labels.cuda(self.gpu)
                     outputs = self.model(inputs.float())
                     loss = self.criterion(outputs, labels)
                     acc_loss += loss.item()
