@@ -37,8 +37,8 @@ def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> to
     - https://discuss.pytorch.org/t/calculating-precision-recall-and-f1-score-in-case-of-multi-label-classification/28265/6
 
     '''
-    # assert y_true.ndim == 1
-    # assert y_pred.ndim == 1 or y_pred.ndim == 2
+    assert y_true.ndim == 1
+    assert y_pred.ndim == 1 or y_pred.ndim == 2
 
     if y_pred.ndim == 2:
         y_pred = y_pred.argmax(dim=1)
@@ -56,6 +56,7 @@ def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> to
     f1 = 2 * (precision * recall) / (precision + recall + epsilon)
     # f1.requires_grad = is_training
     return f1.item()
+
 
 class TrainManager:
     def __init__(self, model: torch.nn.Module, config: dict) -> None:
@@ -80,6 +81,8 @@ class TrainManager:
         self.steps = 0
         self.epoch = 0
         self.best_loss = np.inf
+        self.train_loader = None
+        self.val_loader = None
 
     def do_epoch(self, set_name):
         assert set_name in {'train', 'val'}
@@ -106,8 +109,9 @@ class TrainManager:
                     loss.backward()
                     self.optimizer.step()
                     self.steps += 1
-
-                tloader.set_postfix(loss=loss.item(), f1=f1_loss(y_true=labels, y_pred=outputs))
+                
+                avg_f1 = np.mean([f1_loss(y_true=labels[b], y_pred=outputs[b]) for b in range(labels.size(0))])
+                tloader.set_postfix(loss=loss.item(), f1=avg_f1)
                 sleep(0.1)
 
         return acc_loss
