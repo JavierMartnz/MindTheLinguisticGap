@@ -109,7 +109,7 @@ class TrainManager:
                     loss.backward()
                     self.optimizer.step()
                     self.steps += 1
-                
+
                 avg_f1 = np.mean([f1_loss(y_true=labels[b], y_pred=outputs[b]) for b in range(labels.size(0))])
                 tloader.set_postfix(loss=loss.item(), f1=avg_f1)
                 sleep(0.1)
@@ -158,11 +158,13 @@ def train(cfg_path: str) -> None:
                 dropout_prob=0.5,
                 name='i3d')
 
-    model = torch.nn.DataParallel(model).cuda()
-    # summary(model, (3, 64, 256, 256))
+    with torch.cuda.device(training_cfg.get("device")):
 
-    trainer = TrainManager(model=model, config=cfg)
-    trainer.train_and_validate(train_dataset, val_dataset)
+        model = torch.nn.DataParallel(model).cuda()
+        # summary(model, (3, 64, 256, 256))
+
+        trainer = TrainManager(model=model, config=cfg)
+        trainer.train_and_validate(train_dataset, val_dataset)
 
 
 def main(params):
