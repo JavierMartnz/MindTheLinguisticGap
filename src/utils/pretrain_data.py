@@ -1,4 +1,3 @@
-import math
 import cv2
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -84,11 +83,10 @@ class I3DDataset(Dataset):
         Generate one sample of the dataset
         """
         sample = self.samples[index]
-        # num_frames = int(sample.get("num_frames"))
         start_frame = int(sample.get("start_frame"))
         last_window_frame = start_frame + self.window_size
 
-        X_raw, _, _ = read_video(filename=sample["video_path"])  # returns Tensor[T, H, W, C]
+        X_raw, _, _ = read_video(filename=sample.get("video_path"))  # returns Tensor[T, H, W, C]
         num_frames = X_raw.size(0)
 
         if last_window_frame > num_frames:
@@ -106,22 +104,18 @@ class I3DDataset(Dataset):
         X = X.permute(3, 0, 1, 2)  # Tensor[C, T, H, W] as needed by i3d
         Y = torch.zeros(len(self.class_encoding))
         Y[self.class_encoding[int(sample.get("gloss_id"))]] = 1
-        # Y = torch.zeros(len(self.class_encoding), self.window_size)
-        # Y[self.class_encoding[int(sample.get("gloss_id"))], :] = int(sample.get("gloss_id"))
 
         return X, Y
 
 
 def load_data(data_cfg: dict, set_names: list) -> list:
-    '''
-
+    """
     Args:
         data_cfg:
         set_names:
 
     Returns:
-
-    '''
+    """
     allowed_sets = {'train', 'val', 'test'}
 
     cgnt_path = data_cfg.get('cngt_clips_path')

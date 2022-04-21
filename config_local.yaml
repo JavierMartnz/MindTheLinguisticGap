@@ -5,9 +5,11 @@ data:
   window_size: 64
 
 training:
-
+  use_cuda: True
   epochs: 5
   random_seed: 42
   batch_size: 1
   init_lr: 0.1
-  save_model: "D:/Thesis/models/i3d"
+  momentum: 0.9
+  weight_decay: 0.0000001
+  model_dir: "D:/Thesis/models/i3d"
