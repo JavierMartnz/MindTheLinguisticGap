@@ -6,7 +6,6 @@ data:
 
 training:
   use_cuda: True
-  device: 0
   epochs: 5
   random_seed: 42
   batch_size: 4

@@ -57,7 +57,8 @@ def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> to
     # f1.requires_grad = is_training
     return f1.item()
 
-def get_best_gpu() -> int:
+
+def get_best_gpu():
     max_free_mem = 0
     best_gpu_tot_mem = 0
     best_gpu_idx = None
@@ -72,18 +73,19 @@ def get_best_gpu() -> int:
 
 
 class TrainManager:
-    def __init__(self, model: torch.nn.Module, config: dict) -> None:
+    def __init__(self, model: torch.nn.Module, config: dict, gpu: int) -> None:
         train_config = config.get("training")
         data_config = config.get("data")
         self.train_config = train_config
         self.data_config = data_config
         # set parameters from config files
         self.use_cuda = train_config.get("use_cuda")  # this before building optimizer
+        self.gpu = gpu
         self.window_size = data_config.get("window_size")
         self.criterion = torch.nn.BCEWithLogitsLoss()
         self.model = model
         if self.use_cuda:
-            self.model.cuda()
+            self.model.cuda(self.gpu)
         self.optimizer = optim.SGD(model.parameters(), lr=train_config.get("init_lr"),
                                    momentum=train_config.get("momentum"), weight_decay=train_config.get("weight_decay"))
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
@@ -107,25 +109,25 @@ class TrainManager:
         else:
             self.model.eval()
             loader = self.val_loader
+        if loader is not None:
+            with tqdm(loader, unit="batch") as tloader:
+                for batch in tloader:
+                    tloader.set_description(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))}/{self.epochs}")
+                    inputs, labels = batch
+                    if self.use_cuda:
+                        inputs, labels = inputs.cuda(self.gpu), labels.cuda(self.gpu)
+                    outputs = self.model(inputs.float())
+                    loss = self.criterion(outputs, labels)
+                    acc_loss += loss.item()
+                    if set_name == 'train':
+                        self.optimizer.zero_grad()
+                        loss.backward()
+                        self.optimizer.step()
+                        self.steps += 1
 
-        with tqdm(loader, unit="batch") as tloader:
-            for batch in tloader:
-                tloader.set_description(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))}/{self.epochs}")
-                inputs, labels = batch
-                if self.use_cuda:
-                    inputs, labels = inputs.cuda(), labels.cuda()
-                outputs = self.model(inputs.float())
-                loss = self.criterion(outputs, labels)
-                acc_loss += loss.item()
-                if set_name == 'train':
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
-                    self.steps += 1
-
-                avg_f1 = np.mean([f1_loss(y_true=labels[b], y_pred=outputs[b]) for b in range(labels.size(0))])
-                tloader.set_postfix(loss=loss.item(), f1=avg_f1)
-                sleep(0.1)
+                    avg_f1 = np.mean([f1_loss(y_true=labels[b], y_pred=outputs[b]) for b in range(labels.size(0))])
+                    tloader.set_postfix(loss=loss.item(), f1=avg_f1)
+                    sleep(0.1)
 
         return acc_loss
 
@@ -157,7 +159,7 @@ class TrainManager:
         # shutil.rmtree(self.data_config.get("signbank_path")[:-4])
 
 
-def train(cfg_path: str) -> None:
+def train(cfg_path: str, best_gpu_idx: int) -> None:
     assert os.path.isfile(cfg_path), f"{cfg_path} is not a config file"
     cfg = load_config(cfg_path)
     training_cfg = cfg.get("training")
@@ -171,21 +173,20 @@ def train(cfg_path: str) -> None:
                 dropout_prob=0.5,
                 name='i3d')
 
-    model = torch.nn.DataParallel(model).cuda()
+    model = torch.nn.DataParallel(model).cuda(best_gpu_idx)
     # summary(model, (3, 64, 256, 256))
 
-    trainer = TrainManager(model=model, config=cfg)
+    trainer = TrainManager(model=model, config=cfg, gpu=best_gpu_idx)
     trainer.train_and_validate(train_dataset, val_dataset)
 
 
 def main(params):
-
     best_gpu_idx, best_gpu_free, best_gpu_tot = get_best_gpu()
 
-    print(f"Running code in {torch.cuda.get_device_name(best_gpu_idx)}, with {best_gpu_free/(1024**3):.2f}/{best_gpu_tot/(1024**3):.2f} GB free")
-    with torch.cuda.device(best_gpu_idx):
-        config_path = params.config_path
-        train(config_path)
+    print(f"Running code in {torch.cuda.get_device_name(best_gpu_idx)}, with {best_gpu_free / (1024 ** 3):.2f}/"
+          f"{best_gpu_tot / (1024 ** 3):.2f} GB free")
+    config_path = params.config_path
+    train(config_path, best_gpu_idx)
 
 
 if __name__ == '__main__':
