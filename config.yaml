@@ -9,7 +9,7 @@ training:
   device: 0
   epochs: 5
   random_seed: 42
-  batch_size: 32
+  batch_size: 4
   init_lr: 0.1
   momentum: 0.9
   weight_decay: 0.0000001
