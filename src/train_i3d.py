@@ -171,7 +171,7 @@ def train(cfg_path: str, best_gpu_idx: int) -> None:
                 dropout_prob=0.5,
                 name='i3d')
 
-    model = torch.nn.DataParallel(model)
+    # model = torch.nn.DataParallel(model)
     # summary(model, (3, 64, 256, 256))
 
     trainer = TrainManager(model=model, config=cfg, gpu=best_gpu_idx)
