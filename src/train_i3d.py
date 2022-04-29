@@ -13,13 +13,9 @@ import numpy as np
 import argparse
 from tqdm import tqdm
 from time import sleep
-from torchvision import transforms
-from torchvideotransforms import video_transforms
 
-from src.utils.my_collate import my_collate
 from src.utils.helpers import load_config, set_seed
 from src.utils.pretrain_data import load_data, get_class_encodings
-# from src.utils.pytorch_i3d_logits import InceptionI3d
 from src.utils.i3dpt import I3D
 
 def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> torch.Tensor:
