@@ -90,7 +90,7 @@ class I3DDataset(Dataset):
             num_frames += 1
             success, bgr = vcap.read()
 
-        x = np.empty([self.window_size, 256, 256, 3], dtype=np.float)
+        x = np.empty([self.window_size, 256, 256, 3], dtype=np.float32)
 
         for i in range(self.window_size):
             if start_frame + i < num_frames:
