@@ -261,6 +261,17 @@ class I3D(torch.nn.Module):
             use_bn=False)
         self.softmax = torch.nn.Softmax(1)
 
+    def replace_logits(self, num_classes):
+        self.num_classes = num_classes
+        self.conv3d_0c_1x1 = Unit3Dpy(
+            in_channels=1024,
+            out_channels=self.num_classes,
+            kernel_size=(1, 1, 1),
+            activation=None,
+            use_bias=True,
+            use_bn=False
+        )
+
     def forward(self, inp):
         # Preprocessing
         out = self.conv3d_1a_7x7(inp)

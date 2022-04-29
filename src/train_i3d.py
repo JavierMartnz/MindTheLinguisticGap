@@ -13,12 +13,14 @@ import numpy as np
 import argparse
 from tqdm import tqdm
 from time import sleep
+from torchvision import transforms
+from torchvideotransforms import video_transforms
 
 from src.utils.my_collate import my_collate
 from src.utils.helpers import load_config, set_seed
 from src.utils.pretrain_data import load_data, get_class_encodings
+# from src.utils.pytorch_i3d_logits import InceptionI3d
 from src.utils.i3dpt import I3D
-
 
 def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> torch.Tensor:
     '''Calculate F1 score. Can work with gpu tensors
@@ -73,17 +75,16 @@ def get_best_gpu():
 
 
 class TrainManager:
-    def __init__(self, model: torch.nn.Module, config: dict, gpu: int) -> None:
+    def __init__(self, model: torch.nn.Module, config: dict) -> None:
         train_config = config.get("training")
         data_config = config.get("data")
         self.train_config = train_config
         self.data_config = data_config
         # set parameters from config files
         self.use_cuda = train_config.get("use_cuda")  # this before building optimizer
-        self.gpu = gpu
         self.window_size = data_config.get("window_size")
         self.criterion = torch.nn.BCEWithLogitsLoss()
-        self.model = model.cuda(self.gpu) if self.use_cuda else model
+        self.model = model.cuda() if self.use_cuda else model
         self.optimizer = optim.SGD(model.parameters(), lr=train_config.get("init_lr"),
                                    momentum=train_config.get("momentum"), weight_decay=train_config.get("weight_decay"))
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
@@ -107,16 +108,19 @@ class TrainManager:
         else:
             self.model.eval()
             loader = self.val_loader
+
         if loader is not None:
             with tqdm(loader, unit="batch") as tloader:
                 for batch in tloader:
                     tloader.set_description(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))}/{self.epochs}")
                     inputs, labels = batch
+
                     if self.use_cuda:
-                        inputs, labels = inputs.cuda(self.gpu), labels.cuda(self.gpu)
-                    outputs = self.model(inputs.float())
+                        inputs, labels = inputs.cuda(), labels.cuda()
+                    outputs = self.model(inputs)
                     loss = self.criterion(outputs, labels)
                     acc_loss += loss.item()
+
                     if set_name == 'train':
                         self.optimizer.zero_grad()
                         loss.backward()
@@ -147,7 +151,7 @@ class TrainManager:
                 print(f"\tValidation loss improved from {self.best_loss:.4f} to {val_loss:.4f}")
                 self.best_loss = val_loss
                 print("Saving checkpoint")
-                torch.save(self.model.module.state_dict(), self.model_dir + str(self.epoch).zfill(6) + '.pt')
+                torch.save(self.model.module.state_dict(), self.model_dir + "i3d" + str(self.epoch).zfill(6) + '.pt')
 
             if self.scheduler is not None:
                 self.scheduler.step(val_loss)  # after optimizer step when using ReduceLROnPlateau
@@ -157,34 +161,42 @@ class TrainManager:
         # shutil.rmtree(self.data_config.get("signbank_path")[:-4])
 
 
-def train(cfg_path: str, best_gpu_idx: int) -> None:
+def train(cfg_path: str) -> None:
     assert os.path.isfile(cfg_path), f"{cfg_path} is not a config file"
     cfg = load_config(cfg_path)
     training_cfg = cfg.get("training")
     set_seed(seed=training_cfg.get("random_seed", 42))
 
-    train_dataset, val_dataset = load_data(cfg.get("data"), ['train', 'val'])
+    train_dataset, val_dataset = load_data(cfg.get("data"), ['train', 'val'], [None, None])
     num_classes = len(get_class_encodings(cfg.get("data").get("cngt_clips_path"), cfg.get("data").get("signbank_path")))
 
-    model = I3D(num_classes=num_classes,
-                modality='rgb',
-                dropout_prob=0.5,
-                name='i3d')
+    model = I3D(num_classes=157,
+                dropout_prob=0.5)  # set num_classes to allow the loading of weights
+
+    # load pre-trained weights
+    ckpt_path = os.path.join(training_cfg.get("model_dir"), "rgb_charades.pt")
+    model.load_state_dict(torch.load(ckpt_path), strict=False)
+
+    model.replace_logits(num_classes)  # change the number of classes to our actual number of classes
+
+    # freeze all layers for fine-tuning
+    for param in model.parameters():
+        param.requires_grad = False
+
+    # unfreeze the ones we want
+    model.softmax.requires_grad_(True)
+    model.conv3d_0c_1x1.requires_grad_(True)
 
     # model = torch.nn.DataParallel(model)
     # summary(model, (3, 64, 256, 256))
 
-    trainer = TrainManager(model=model, config=cfg, gpu=best_gpu_idx)
+    trainer = TrainManager(model=model, config=cfg)
     trainer.train_and_validate(train_dataset, val_dataset)
 
 
 def main(params):
-    best_gpu_idx, best_gpu_free, best_gpu_tot = get_best_gpu()
-
-    print(f"Running code in {torch.cuda.get_device_name(best_gpu_idx)}, with {best_gpu_free / (1024 ** 3):.2f}/"
-          f"{best_gpu_tot / (1024 ** 3):.2f} GB free")
     config_path = params.config_path
-    train(config_path, best_gpu_idx)
+    train(config_path)
 
 
 if __name__ == '__main__':

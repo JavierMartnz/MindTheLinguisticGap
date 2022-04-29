@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 import os
@@ -59,12 +58,19 @@ def extract_zip(zip_path):
     return extracted_root
 
 
+# def make_data_loader(dataset: Dataset, batch_size: int,  shuffle: bool = False) -> DataLoader:
+#     params = {
+#         'batch_size': batch_size,
+#         'shuffle': shuffle,
+#         'num_workers': 4,
+#         'collate_fn': my_collate}
+#     return DataLoader(dataset, **params)
+
 class I3DDataset(Dataset):
-    def __init__(self, window_size, transforms=None):
+    def __init__(self, window_size):
         self.samples = []
         self.window_size = window_size
         self.class_encoding = {}
-        self.transforms = transforms
 
     def __len__(self):
         """
@@ -80,52 +86,46 @@ class I3DDataset(Dataset):
         start_frame = int(sample.get("start_frame"))
         last_window_frame = start_frame + self.window_size
 
-        vcap = cv2.VideoCapture(sample.get("video_path"))
-        video = []
-        num_frames = 0
-        success, bgr = vcap.read()
-        while success:
-            rgb = bgr[:, :, [2, 1, 0]]
-            video.append(rgb)  # [T, H, W, C]
-            num_frames += 1
-            success, bgr = vcap.read()
+        X_raw, _, _ = read_video(filename=sample.get("video_path"))  # returns Tensor[T, H, W, C]
+        num_frames = X_raw.size(0)
 
-        x = np.empty([self.window_size, 256, 256, 3], dtype=np.float)
+        if last_window_frame > num_frames:
+            X = torch.empty([self.window_size, X_raw.size(1), X_raw.size(2), X_raw.size(3)])
+            # fill with the remaining of the video
+            transformed_start_frame = num_frames - start_frame
+            for i in range(transformed_start_frame):
+                X[i, :, :, :] = X_raw[start_frame + i, :, :, :]
+            # pad the rest with copies of the last frame
+            for j in range(transformed_start_frame, self.window_size):
+                X[j, :, :, :] = X[j - 1, :, :, :]
+        else:
+            X = X_raw[start_frame:last_window_frame, :, :, :]
 
-        for i in range(self.window_size):
-            if start_frame + i < num_frames:
-                x[i, :, :, :] = video[start_frame + i]
-            else:  # this means we need to fill the window
-                x[i, :, :, :] = x[i - 1, :, :, :]
+        X = X.permute(3, 0, 1, 2)  # Tensor[C, T, H, W] as needed by i3d
+        Y = torch.zeros(len(self.class_encoding))
+        Y[self.class_encoding[int(sample.get("gloss_id"))]] = 1
 
-        # x = (x / 255).astype(np.float32)  # normalize pixels to value in [0,1]
-
-        num_classes = len(self.class_encoding)
-        label = np.zeros(num_classes, dtype=np.float32)
-        label[self.class_encoding[int(sample.get("gloss_id"))]] = 1
-
-        if self.transforms:
-            x = self.transforms(x)
-
-        x = np.transpose(x, (3, 0, 1, 2))  # [C, T, H, W] for i3d
-
-        return torch.from_numpy(x), torch.from_numpy(label)
+        return X, Y
 
 
-def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
+def load_data(data_cfg: dict, set_names: list) -> list:
+    """
+    Args:
+        data_cfg:
+        set_names:
+
+    Returns:
+    """
     allowed_sets = {'train', 'val', 'test'}
 
     cgnt_path = data_cfg.get('cngt_clips_path')
     signbank_path = data_cfg.get('signbank_path')
     window_size = data_cfg.get("window_size")
 
-    assert len(transforms) == len(set_names), "You must give a list of transforms with the same length as the folds" \
-                                              "required. If you want no transforms, pass [None, ...] as argument"
-
     datasets = {}
-    for i, set_name in enumerate(set_names):
+    for set_name in set_names:
         assert set_name in allowed_sets, f"The set names must be in {allowed_sets}"
-        datasets[set_name] = I3DDataset(window_size, transforms[i])
+        datasets[set_name] = I3DDataset(window_size)
 
     if not os.path.isdir(cgnt_path[:-4]):
         extracted_videos_root = extract_zip(cgnt_path)
