@@ -147,7 +147,7 @@ class TrainManager:
                 print(f"\tValidation loss improved from {self.best_loss:.4f} to {val_loss:.4f}")
                 self.best_loss = val_loss
                 print("Saving checkpoint")
-                torch.save(self.model.module.state_dict(), self.model_dir + "i3d" + str(self.epoch).zfill(6) + '.pt')
+                torch.save(self.model.state_dict(), self.model_dir + "i3d" + str(self.epoch).zfill(6) + '.pt')
 
             if self.scheduler is not None:
                 self.scheduler.step(val_loss)  # after optimizer step when using ReduceLROnPlateau
