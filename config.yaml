@@ -13,3 +13,4 @@ training:
   momentum: 0.9
   weight_decay: 0.0000001
   model_dir: "/vol/tensusers5/jmartinez/models/i3d"
+  weights_dir: "/vol/tensusers5/jmartinez/models"

@@ -170,7 +170,7 @@ def train(cfg_path: str) -> None:
                 dropout_prob=0.5)  # set num_classes to allow the loading of weights
 
     # load pre-trained weights
-    ckpt_path = os.path.join(training_cfg.get("model_dir"), "rgb_charades.pt")
+    ckpt_path = os.path.join(training_cfg.get("weights_dir"), "rgb_charades.pt")
     model.load_state_dict(torch.load(ckpt_path), strict=False)
 
     model.replace_logits(num_classes)  # change the number of classes to our actual number of classes
