@@ -191,7 +191,7 @@ def train(cfg_path: str) -> None:
     model.softmax.requires_grad_(True)
     model.conv3d_0c_1x1.requires_grad_(True)
 
-    # model = torch.nn.DataParallel(model)
+    model = torch.nn.DataParallel(model)
     # summary(model, (3, 64, 256, 256))
 
     trainer = TrainManager(model=model, config=cfg)
