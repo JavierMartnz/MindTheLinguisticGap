@@ -130,10 +130,8 @@ class TrainManager:
                         self.steps += 1
 
                     avg_f1 = np.mean([f1_loss(y_true=labels[b], y_pred=outputs[b]) for b in range(labels.size(0))])
-                    tloader.set_postfix(loss=loss.item(), f1=avg_f1)
+                    # tloader.set_postfix(loss=loss.item(), f1=avg_f1)
                     sleep(0.1)
-
-        self.epoch += 1
 
         return acc_loss
 
@@ -159,6 +157,10 @@ class TrainManager:
 
             if self.scheduler is not None:
                 self.scheduler.step(val_loss)  # after getting validtion loss when using ReduceLROnPlateau
+
+            print(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))} finished. Train loss: {train_loss}, "
+                  f"Val loss: {val_loss}")
+            self.epoch += 1
 
         # once the training is done, remove unzipped folders
         # shutil.rmtree(self.data_config.get("cngt_clips_path")[:-4])
