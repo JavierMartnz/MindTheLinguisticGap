@@ -104,7 +104,7 @@ def get_gloss_occurrences(glosses_righth, glosses_lefth, signbank_vocab, num_vid
 def main():
 
     # cngt_root = "D:/Thesis/datasets/CNGT"
-    cngt_root = "D:/Thesis/datasets/CNGT_split"
+    cngt_root = "D:/Thesis/datasets/CNGT_final/train"
     signbank_vocab_path = "D:/Thesis/datasets/signbank_vocab.gzip"
     original_ann_files = [file for file in os.listdir(cngt_root) if file.endswith(".mpg")]
 

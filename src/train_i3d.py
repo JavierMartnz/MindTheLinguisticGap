@@ -83,7 +83,12 @@ class TrainManager:
         self.model = model.cuda() if self.use_cuda else model
         self.optimizer = optim.SGD(model.parameters(), lr=train_config.get("init_lr"),
                                    momentum=train_config.get("momentum"), weight_decay=train_config.get("weight_decay"))
-        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
+
+        #self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, [300, 1000], gamma=0.1)
+        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
+                                                              mode='min',
+                                                              factor=0.1,
+                                                              patience=10)
         self.batch_size = train_config.get("batch_size")
         self.epochs = train_config.get("epochs")
         self.model_dir = train_config.get("model_dir")
@@ -118,14 +123,17 @@ class TrainManager:
                     acc_loss += loss.item()
 
                     if set_name == 'train':
-                        self.optimizer.zero_grad()
                         loss.backward()
                         self.optimizer.step()
+                        self.optimizer.zero_grad()
+                        # self.scheduler.step()  # step here when not using ReduceLROnPlateau
                         self.steps += 1
 
                     avg_f1 = np.mean([f1_loss(y_true=labels[b], y_pred=outputs[b]) for b in range(labels.size(0))])
                     tloader.set_postfix(loss=loss.item(), f1=avg_f1)
                     sleep(0.1)
+
+        self.epoch += 1
 
         return acc_loss
 
@@ -150,7 +158,7 @@ class TrainManager:
                 torch.save(self.model.state_dict(), self.model_dir + "i3d" + str(self.epoch).zfill(6) + '.pt')
 
             if self.scheduler is not None:
-                self.scheduler.step(val_loss)  # after optimizer step when using ReduceLROnPlateau
+                self.scheduler.step(val_loss)  # after getting validtion loss when using ReduceLROnPlateau
 
         # once the training is done, remove unzipped folders
         # shutil.rmtree(self.data_config.get("cngt_clips_path")[:-4])

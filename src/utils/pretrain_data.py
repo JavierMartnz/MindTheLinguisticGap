@@ -27,7 +27,8 @@ def get_class_encodings(cngt_clips_path, signbank_path):
     cngt_clips_path = cngt_clips_path[:cngt_clips_path.rfind(".zip")]
     signbank_path = signbank_path[:signbank_path.rfind(".zip")]
 
-    cngt_gloss_ids = [int(file.split("_")[-1][:-4]) for file in os.listdir(cngt_clips_path) if file.endswith('.mpg')]
+    # cngt_gloss_ids = [int(file.split("_")[-1][:-4]) for file in os.listdir(cngt_clips_path) if file.endswith('.mpg')]
+    cngt_gloss_ids = {}
     signbank_gloss_ids = [int(file.split("-")[-1][:-4]) for file in os.listdir(signbank_path) if file.endswith('.mp4')]
 
     classes = list(set(cngt_gloss_ids).union(set(signbank_gloss_ids)))
@@ -132,42 +133,43 @@ def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
     else:
         extracted_videos_root = cgnt_path[:-4]
         print(f"{extracted_videos_root} already exists, no need to extract")
-    cngt_videos = [file for file in os.listdir(extracted_videos_root) if file.endswith('.mpg')]
-    cngt_metadata = [file for file in os.listdir(extracted_videos_root) if file.endswith('.gzip')]
 
-    assert len(cngt_videos) == len(cngt_metadata), "CNGT videos and metadata are unmatched. Please check again that" \
-                                                   "every video has an associated .gzip file"
+    # cngt_videos = [file for file in os.listdir(extracted_videos_root) if file.endswith('.mpg')]
+    # cngt_metadata = [file for file in os.listdir(extracted_videos_root) if file.endswith('.gzip')]
+    #
+    # assert len(cngt_videos) == len(cngt_metadata), "CNGT videos and metadata are unmatched. Please check again that" \
+    #                                                "every video has an associated .gzip file"
 
-    print(f"Loading videos from CNGT clips")
-    if cngt_videos:
-        video_paths = [os.path.join(extracted_videos_root, video) for video in cngt_videos]
-        gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]  # save the id of the gloss
-
-        split_idx_train_val = int(len(video_paths) * (4 / 6))
-        split_idx_val_test = int(len(video_paths) * (5 / 6))
-
-        fold_idxs = range(len(video_paths))
-        folds = {'train': fold_idxs[:split_idx_train_val],
-                 'val': fold_idxs[split_idx_train_val:split_idx_val_test],
-                 'test': fold_idxs[split_idx_val_test:]}
-
-        # make sure we only iterate over the wanted idxs
-        wanted_idxs = []
-        for set_name in set_names:
-            wanted_idxs.extend(folds[set_name])
-
-        for i in tqdm(range(len(wanted_idxs))):
-
-            metadata = load_gzip(os.path.join(extracted_videos_root, cngt_metadata[i]))
-            n_frames = metadata.get("num_frames")
-
-            # this will work even for videos that are smaller than the window size
-            for set_name in set_names:
-                if i in folds[set_name]:
-                    for start_frame in metadata.get("start_frames"):
-                        datasets[set_name].samples.append({"video_path": video_paths[i], "gloss_id": gloss_ids[i],
-                                                           "start_frame": start_frame, "num_frames": n_frames})
-                    break
+    # print(f"Loading videos from CNGT clips")
+    # if cngt_videos:
+    #     video_paths = [os.path.join(extracted_videos_root, video) for video in cngt_videos]
+    #     gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]  # save the id of the gloss
+    #
+    #     split_idx_train_val = int(len(video_paths) * (4 / 6))
+    #     split_idx_val_test = int(len(video_paths) * (5 / 6))
+    #
+    #     fold_idxs = range(len(video_paths))
+    #     folds = {'train': fold_idxs[:split_idx_train_val],
+    #              'val': fold_idxs[split_idx_train_val:split_idx_val_test],
+    #              'test': fold_idxs[split_idx_val_test:]}
+    #
+    #     # make sure we only iterate over the wanted idxs
+    #     wanted_idxs = []
+    #     for set_name in set_names:
+    #         wanted_idxs.extend(folds[set_name])
+    #
+    #     for i in tqdm(range(len(wanted_idxs))):
+    #
+    #         metadata = load_gzip(os.path.join(extracted_videos_root, cngt_metadata[i]))
+    #         n_frames = metadata.get("num_frames")
+    #
+    #         # this will work even for videos that are smaller than the window size
+    #         for set_name in set_names:
+    #             if i in folds[set_name]:
+    #                 for start_frame in metadata.get("start_frames"):
+    #                     datasets[set_name].samples.append({"video_path": video_paths[i], "gloss_id": gloss_ids[i],
+    #                                                        "start_frame": start_frame, "num_frames": n_frames})
+    #                 break
 
     if not os.path.isdir(signbank_path[:-4]):
         extracted_signbank_root = extract_zip(signbank_path)
