@@ -13,3 +13,4 @@ training:
   momentum: 0.9
   weight_decay: 0.0000001
   model_dir: "D:/Thesis/models"
+  weights_dir: "D:/Thesis/models"

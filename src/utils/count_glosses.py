@@ -138,29 +138,29 @@ def main():
 
             ann_file = pympi.Elan.Eaf(ann_path)
 
-            # glosses_lefth1 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[0])
-            # glosses_lefth2 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[1])
-            # glosses_righth1 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[2])
-            # glosses_righth2 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[3])
-
             glosses_lefth1 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[0])
-            glosses_righth1 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[1])
+            glosses_lefth2 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[1])
+            glosses_righth1 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[2])
+            glosses_righth2 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[3])
 
-            occ1 = get_gloss_occurrences(glosses_lefth1, glosses_righth1, signbank_vocab, num_video_frames, cngt=False)
-            # occ2 = get_gloss_occurrences(glosses_lefth2, glosses_righth2, signbank_vocab, num_video_frames, cngt=False)
+            # glosses_lefth1 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[0])
+            # glosses_righth1 = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[1])
 
-            # if occ1 is None and occ2 is None:
-            #     no_gloss_videos += 1
+            occ1 = get_gloss_occurrences(glosses_lefth1, glosses_righth1, signbank_vocab, num_video_frames, cngt=True)
+            occ2 = get_gloss_occurrences(glosses_lefth2, glosses_righth2, signbank_vocab, num_video_frames, cngt=True)
+
+            if occ1 is None and occ2 is None:
+                no_gloss_videos += 1
 
             if occ1 is not None:
                 all_gloss_occurrences.extend(occ1)
             else:
                 s1_empty += 1
 
-            # if occ2 is not None:
-            #     all_gloss_occurrences.extend(occ2)
-            # else:
-            #     s2_empty += 1
+            if occ2 is not None:
+                all_gloss_occurrences.extend(occ2)
+            else:
+                s2_empty += 1
 
     print(
         f"The Corpus NGT contains {len(all_gloss_occurrences)} glosses, from which {len(set(all_gloss_occurrences))} are unique instances.")

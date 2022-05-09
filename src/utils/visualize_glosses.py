@@ -21,6 +21,15 @@ def main():
 
     gloss_count = count_occurrences(gloss_occurrences)
 
+    filtered_gloss_count = {}
+    for key in gloss_count.keys():
+        if gloss_count[key] >= 3:
+            filtered_gloss_count[key] = gloss_count[key]
+
+    print(len(filtered_gloss_count))
+
+    return
+
     sorted_gloss_count = dict(sorted(gloss_count.items(), key=lambda item: item[1], reverse=True))
 
     n_top = 10
