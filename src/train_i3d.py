@@ -176,11 +176,11 @@ def train(cfg_path: str) -> None:
     train_dataset, val_dataset = load_data(cfg.get("data"), ['train', 'val'], [None, None])
     num_classes = len(get_class_encodings(cfg.get("data").get("cngt_clips_path"), cfg.get("data").get("signbank_path")))
 
-    model = I3D(num_classes=157,
+    model = I3D(num_classes=400,
                 dropout_prob=0.5)  # set num_classes to allow the loading of weights
 
     # load pre-trained weights
-    ckpt_path = os.path.join(training_cfg.get("weights_dir"), "rgb_charades.pt")
+    ckpt_path = os.path.join(training_cfg.get("weights_dir"), "rgb_imagenet.pt")
     model.load_state_dict(torch.load(ckpt_path), strict=False)
 
     model.replace_logits(num_classes)  # change the number of classes to our actual number of classes
@@ -193,7 +193,7 @@ def train(cfg_path: str) -> None:
     model.softmax.requires_grad_(True)
     model.conv3d_0c_1x1.requires_grad_(True)
 
-    model = torch.nn.DataParallel(model)
+    # model = torch.nn.DataParallel(model)
     # summary(model, (3, 64, 256, 256))
 
     trainer = TrainManager(model=model, config=cfg)
