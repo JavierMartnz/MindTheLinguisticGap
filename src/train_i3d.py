@@ -102,7 +102,6 @@ class TrainManager:
     def do_epoch(self, set_name):
         assert set_name in {'train', 'val'}
         acc_loss = 0
-        loader = None
         if set_name == 'train':
             self.model.train()
             loader = self.train_loader
@@ -116,6 +115,8 @@ class TrainManager:
                     tloader.set_description(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))}/{self.epochs}")
                     inputs, labels = batch
 
+                    self.optimizer.zero_grad()  # clear gradients
+
                     if self.use_cuda:
                         inputs, labels = inputs.cuda(), labels.cuda()
                     outputs = self.model(inputs)
@@ -124,8 +125,7 @@ class TrainManager:
 
                     if set_name == 'train':
                         loss.backward()
-                        self.optimizer.step()
-                        self.optimizer.zero_grad()
+                        self.optimizer.step()  # performs the parameter update
                         # self.scheduler.step()  # step here when not using ReduceLROnPlateau
                         self.steps += 1
 
@@ -158,8 +158,9 @@ class TrainManager:
             if self.scheduler is not None:
                 self.scheduler.step(val_loss)  # after getting validtion loss when using ReduceLROnPlateau
 
-            print(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))} finished. Train loss: {train_loss}, "
-                  f"Val loss: {val_loss}")
+            print(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))} finished. "
+                  f"Train loss: {train_loss / len(self.train_loader)}, "
+                  f"Val loss: {val_loss / len(self.val_loader)}")
             self.epoch += 1
 
         # once the training is done, remove unzipped folders
@@ -185,13 +186,13 @@ def train(cfg_path: str) -> None:
 
     model.replace_logits(num_classes)  # change the number of classes to our actual number of classes
 
-    # # freeze all layers for fine-tuning
-    # for param in model.parameters():
-    #     param.requires_grad = False
-    #
-    # # unfreeze the ones we want
-    # model.softmax.requires_grad_(True)
-    # model.conv3d_0c_1x1.requires_grad_(True)
+    # freeze all layers for fine-tuning
+    for param in model.parameters():
+        param.requires_grad = False
+
+    # unfreeze the ones we want
+    model.softmax.requires_grad_(True)
+    model.conv3d_0c_1x1.requires_grad_(True)
 
     # model = torch.nn.DataParallel(model)
     # summary(model, (3, 64, 256, 256))
