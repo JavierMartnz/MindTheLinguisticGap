@@ -150,7 +150,7 @@ def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
     if cngt_videos:
         video_paths = [os.path.join(extracted_videos_root, video) for video in cngt_videos]
         gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]  # save the id of the gloss
-        
+
         # # This piece of code gets only the clips for a gloss that appears at least 3 times in the CNGT
         # glosses = [video.split("_")[-2] for video in cngt_videos]
         # gloss_occ = count_occurrences(glosses)

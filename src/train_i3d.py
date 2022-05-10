@@ -185,13 +185,13 @@ def train(cfg_path: str) -> None:
 
     model.replace_logits(num_classes)  # change the number of classes to our actual number of classes
 
-    # freeze all layers for fine-tuning
-    for param in model.parameters():
-        param.requires_grad = False
-
-    # unfreeze the ones we want
-    model.softmax.requires_grad_(True)
-    model.conv3d_0c_1x1.requires_grad_(True)
+    # # freeze all layers for fine-tuning
+    # for param in model.parameters():
+    #     param.requires_grad = False
+    #
+    # # unfreeze the ones we want
+    # model.softmax.requires_grad_(True)
+    # model.conv3d_0c_1x1.requires_grad_(True)
 
     # model = torch.nn.DataParallel(model)
     # summary(model, (3, 64, 256, 256))
