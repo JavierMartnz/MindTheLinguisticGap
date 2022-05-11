@@ -130,7 +130,7 @@ class TrainManager:
                         self.steps += 1
 
                     avg_f1 = np.mean([f1_loss(y_true=labels[b], y_pred=outputs[b]) for b in range(labels.size(0))])
-                    # tloader.set_postfix(loss=loss.item(), f1=avg_f1)
+                    tloader.set_postfix(loss=loss.item(), f1=avg_f1)
                     sleep(0.1)
 
         return acc_loss
@@ -158,7 +158,7 @@ class TrainManager:
             if self.scheduler is not None:
                 self.scheduler.step(val_loss)  # after getting validtion loss when using ReduceLROnPlateau
 
-            print(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))} finished. "
+            print(f"Epoch {str(self.epoch + 1).zfill(len(str(self.epochs)))} finished -- "
                   f"Train loss: {train_loss / len(self.train_loader)}, "
                   f"Val loss: {val_loss / len(self.val_loader)}")
             self.epoch += 1
@@ -175,7 +175,9 @@ def train(cfg_path: str) -> None:
     set_seed(seed=training_cfg.get("random_seed", 42))
 
     train_dataset, val_dataset = load_data(cfg.get("data"), ['train', 'val'], [None, None])
-    num_classes = len(get_class_encodings(cfg.get("data").get("cngt_clips_path"), cfg.get("data").get("signbank_path")))
+    # num_classes = len(get_class_encodings(cfg.get("data").get("cngt_clips_path"), cfg.get("data").get("signbank_path")))
+
+    num_classes = 400  # THIS IS HARDCODED FOR TESTING
 
     model = I3D(num_classes=400,
                 dropout_prob=0.5)  # set num_classes to allow the loading of weights
@@ -184,7 +186,7 @@ def train(cfg_path: str) -> None:
     ckpt_path = os.path.join(training_cfg.get("weights_dir"), "rgb_imagenet.pt")
     model.load_state_dict(torch.load(ckpt_path), strict=False)
 
-    model.replace_logits(num_classes)  # change the number of classes to our actual number of classes
+    # model.replace_logits(num_classes)  # change the number of classes to our actual number of classes
 
     # freeze all layers for fine-tuning
     for param in model.parameters():

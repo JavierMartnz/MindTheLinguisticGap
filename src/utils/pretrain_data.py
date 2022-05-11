@@ -11,16 +11,21 @@ from src.utils.transforms import im_color_jitter, color_normalize
 from src.utils.my_collate import my_collate
 from src.utils.util import load_gzip
 
-def filter_top_glosses(glosses: list, n_kept: int) -> list:
-    gloss_occ = count_occurrences(glosses)
-    sorted_gloss_occ = dict(sorted(gloss_occ.items(), key=lambda item: item[1], reverse=True))
-    top_glosses = list(sorted_gloss_occ.keys())[:400]
-    video_flags = [0] * len(glosses)
-    for i, gloss in enumerate(glosses):
-        if gloss in top_glosses:
+def filter_top_glosses(gloss_ids: list, n_kept: int, top_gloss_ids=None) -> list:
+    if top_gloss_ids:
+        assert len(top_gloss_ids) == n_kept, "The shape of top_glosses does not match n_kept"
+    # if the top glosses are not given, then calculate them based on the content of glosses
+    else:
+        id_occ = count_occurrences(gloss_ids)
+        sorted_id_occ = dict(sorted(id_occ.items(), key=lambda item: item[1], reverse=True))
+        top_gloss_ids = list(sorted_id_occ.keys())[:400]
+
+    video_flags = [0] * len(gloss_ids)
+    for i, gloss in enumerate(gloss_ids):
+        if gloss in top_gloss_ids:
             video_flags[i] = 1
 
-    return video_flags
+    return video_flags, top_gloss_ids
 
 def filter_by_occurrence(glosses: list, min_occ: int) -> list:
     gloss_occ = count_occurrences(glosses)
@@ -50,15 +55,9 @@ def count_video_frames(video_path):
     return n_frames
 
 
-def get_class_encodings(cngt_clips_path, signbank_path):
-    cngt_clips_path = cngt_clips_path[:cngt_clips_path.rfind(".zip")]
-    signbank_path = signbank_path[:signbank_path.rfind(".zip")]
+def get_class_encodings(cngt_gloss_ids, sb_gloss_ids):
 
-    # cngt_gloss_ids = [int(file.split("_")[-1][:-4]) for file in os.listdir(cngt_clips_path) if file.endswith('.mpg')]
-    cngt_gloss_ids = {}
-    signbank_gloss_ids = [int(file.split("-")[-1][:-4]) for file in os.listdir(signbank_path) if file.endswith('.mp4')]
-
-    classes = list(set(cngt_gloss_ids).union(set(signbank_gloss_ids)))
+    classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
 
     class_to_idx = {}
     for i in range(len(classes)):
@@ -170,21 +169,21 @@ def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
     print(f"Loading videos from CNGT clips")
     if cngt_videos:
         video_paths = [os.path.join(extracted_videos_root, video) for video in cngt_videos]
-        gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]  # save the id of the gloss
-        glosses = [video.split("_")[-2] for video in cngt_videos]
 
         # This line of code gets only the clips for a gloss that appears at least 3 times in the CNGT
         # video_flags = filter_by_occurrence(glosses, 3)
 
         # This line of code gets only the 400 classes with more occurences, to test the learning of the network
-        video_flags = filter_top_glosses(glosses, 400)
+        cngt_gloss_ids = [int(cngt_videos[i].split("_")[-1][:-4]) for i in range(len(cngt_videos))]
+        video_flags, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, 400)
 
-        video_paths = [video_paths[i] for i in range(len(video_paths)) if video_flags[i] == 1]
+        cngt_video_paths = [video_paths[i] for i in range(len(video_paths)) if video_flags[i] == 1]
+        cngt_gloss_ids = [cngt_gloss_ids[i] for i in range(len(cngt_gloss_ids)) if video_flags[i] == 1]  # save the id of the gloss
 
-        split_idx_train_val = int(len(video_paths) * (4 / 6))
-        split_idx_val_test = int(len(video_paths) * (5 / 6))
+        split_idx_train_val = int(len(cngt_video_paths) * (4 / 6))
+        split_idx_val_test = int(len(cngt_video_paths) * (5 / 6))
 
-        fold_idxs = range(len(video_paths))
+        fold_idxs = range(len(cngt_video_paths))
         folds = {'train': fold_idxs[:split_idx_train_val],
                  'val': fold_idxs[split_idx_train_val:split_idx_val_test],
                  'test': fold_idxs[split_idx_val_test:]}
@@ -203,7 +202,7 @@ def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
             for set_name in set_names:
                 if i in folds[set_name]:
                     for start_frame in metadata.get("start_frames"):
-                        datasets[set_name].samples.append({"video_path": video_paths[i], "gloss_id": gloss_ids[i],
+                        datasets[set_name].samples.append({"video_path": cngt_video_paths[i], "gloss_id": cngt_gloss_ids[i],
                                                            "start_frame": start_frame, "num_frames": n_frames})
                     break
 
@@ -222,12 +221,17 @@ def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
     print(f"Loading videos from Signbank")
     if signbank_videos:
         video_paths = [os.path.join(extracted_signbank_root, video) for video in signbank_videos]
-        gloss_ids = [int(video.split("-")[-1][:-4]) for video in signbank_videos]
+        sb_gloss_ids = [int(signbank_videos[i].split("-")[-1][:-4]) for i in range(len(signbank_videos))]
 
-        split_idx_train_val = int(len(video_paths) * (4 / 6))
-        split_idx_val_test = int(len(video_paths) * (5 / 6))
+        # be sure to keep the same top 400 as for the CNGT glosses
+        video_flags, _ = filter_top_glosses(sb_gloss_ids, 400, top_gloss_ids=top_cngt_ids)
+        sb_video_paths = [video_paths[i] for i in range(len(video_paths)) if video_flags[i] == 1]
+        sb_gloss_ids = [sb_gloss_ids[i] for i in range(len(sb_gloss_ids)) if video_flags[i] == 1]
 
-        fold_idxs = range(len(video_paths))
+        split_idx_train_val = int(len(sb_video_paths) * (4 / 6))
+        split_idx_val_test = int(len(sb_video_paths) * (5 / 6))
+
+        fold_idxs = range(len(sb_video_paths))
         folds = {'train': fold_idxs[:split_idx_train_val],
                  'val': fold_idxs[split_idx_train_val:split_idx_val_test],
                  'test': fold_idxs[split_idx_val_test:]}
@@ -245,11 +249,11 @@ def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
             for set_name in set_names:
                 if i in folds[set_name]:
                     for start_frame in metadata.get("start_frames"):
-                        datasets[set_name].samples.append({"video_path": video_paths[i], "gloss_id": gloss_ids[i],
+                        datasets[set_name].samples.append({"video_path": sb_video_paths[i], "gloss_id": sb_gloss_ids[i],
                                                            "start_frame": start_frame, "num_frames": n_frames})
                     break
 
     for k in datasets.keys():
-        datasets[k].class_encoding = get_class_encodings(cgnt_path, signbank_path)
+        datasets[k].class_encoding = get_class_encodings(cngt_gloss_ids, sb_gloss_ids)
 
     return list(datasets.values())
