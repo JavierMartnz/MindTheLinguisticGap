@@ -151,7 +151,9 @@ def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
         video_paths = [os.path.join(extracted_videos_root, video) for video in cngt_videos]
         gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]  # save the id of the gloss
 
-        # # This piece of code gets only the clips for a gloss that appears at least 3 times in the CNGT
+        print(len(video_paths))
+
+        # This piece of code gets only the clips for a gloss that appears at least 3 times in the CNGT
         # glosses = [video.split("_")[-2] for video in cngt_videos]
         # gloss_occ = count_occurrences(glosses)
         # video_flags = [0] * len(glosses)
@@ -161,6 +163,21 @@ def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
         #         video_flags[i] = 1
         #
         # video_paths = [video_paths[i] for i in range(len(video_paths)) if video_flags[i] == 1]
+
+        # This piece of code gets only the 400 classes with more occurences, to test the learning of the network
+        glosses = [video.split("_")[-2] for video in cngt_videos]
+        gloss_occ = count_occurrences(glosses)
+        sorted_gloss_occ = dict(sorted(gloss_occ.items(), key=lambda item: item[1], reverse=True))
+        top_glosses = list(sorted_gloss_occ.keys())[:400]
+        video_flags = [0] * len(glosses)
+        for i, gloss in enumerate(glosses):
+            if gloss in top_glosses:
+                video_flags[i] = 1
+
+        video_paths = [video_paths[i] for i in range(len(video_paths)) if video_flags[i] == 1]
+
+        print(len(top_glosses))
+        print(len(video_paths))
 
         split_idx_train_val = int(len(video_paths) * (4 / 6))
         split_idx_val_test = int(len(video_paths) * (5 / 6))
