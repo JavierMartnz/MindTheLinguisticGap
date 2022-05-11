@@ -11,6 +11,27 @@ from src.utils.transforms import im_color_jitter, color_normalize
 from src.utils.my_collate import my_collate
 from src.utils.util import load_gzip
 
+def filter_top_glosses(glosses: list, n_kept: int) -> list:
+    gloss_occ = count_occurrences(glosses)
+    sorted_gloss_occ = dict(sorted(gloss_occ.items(), key=lambda item: item[1], reverse=True))
+    top_glosses = list(sorted_gloss_occ.keys())[:400]
+    video_flags = [0] * len(glosses)
+    for i, gloss in enumerate(glosses):
+        if gloss in top_glosses:
+            video_flags[i] = 1
+
+    return video_flags
+
+def filter_by_occurrence(glosses: list, min_occ: int) -> list:
+    gloss_occ = count_occurrences(glosses)
+    video_flags = [0] * len(glosses)
+    # flag where the video needs to be used, based on the number of occurences of a gloss
+    for i, gloss in enumerate(glosses):
+        if gloss_occ[gloss] >= 3:
+            video_flags[i] = 1
+
+    return video_flags
+
 def count_occurrences(my_list):
     # Creating an empty dictionary
     count = {}
@@ -150,34 +171,15 @@ def load_data(data_cfg: dict, set_names: list, transforms: list) -> list:
     if cngt_videos:
         video_paths = [os.path.join(extracted_videos_root, video) for video in cngt_videos]
         gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]  # save the id of the gloss
-
-        print(len(video_paths))
-
-        # This piece of code gets only the clips for a gloss that appears at least 3 times in the CNGT
-        # glosses = [video.split("_")[-2] for video in cngt_videos]
-        # gloss_occ = count_occurrences(glosses)
-        # video_flags = [0] * len(glosses)
-        # # flag where the video needs to be used, based on the number of occurences of a gloss
-        # for i, gloss in enumerate(glosses):
-        #     if gloss_occ[gloss] >= 3:
-        #         video_flags[i] = 1
-        #
-        # video_paths = [video_paths[i] for i in range(len(video_paths)) if video_flags[i] == 1]
-
-        # This piece of code gets only the 400 classes with more occurences, to test the learning of the network
         glosses = [video.split("_")[-2] for video in cngt_videos]
-        gloss_occ = count_occurrences(glosses)
-        sorted_gloss_occ = dict(sorted(gloss_occ.items(), key=lambda item: item[1], reverse=True))
-        top_glosses = list(sorted_gloss_occ.keys())[:400]
-        video_flags = [0] * len(glosses)
-        for i, gloss in enumerate(glosses):
-            if gloss in top_glosses:
-                video_flags[i] = 1
+
+        # This line of code gets only the clips for a gloss that appears at least 3 times in the CNGT
+        # video_flags = filter_by_occurrence(glosses, 3)
+
+        # This line of code gets only the 400 classes with more occurences, to test the learning of the network
+        video_flags = filter_top_glosses(glosses, 400)
 
         video_paths = [video_paths[i] for i in range(len(video_paths)) if video_flags[i] == 1]
-
-        print(len(top_glosses))
-        print(len(video_paths))
 
         split_idx_train_val = int(len(video_paths) * (4 / 6))
         split_idx_val_test = int(len(video_paths) * (5 / 6))
