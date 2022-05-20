@@ -1,11 +1,12 @@
 import os
+import sys
+sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 from src.utils import videotransforms
 from src.utils.helpers import load_config
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"]='0,1,2,3'
-import sys
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -162,7 +163,16 @@ def run(cfg_path, mode='rgb'):
                                                                                                  tot_loss * num_steps_per_update) / num_iter))
 
 
+def main(params):
+    config_path = params.config_path
+    run(params)
+
 if __name__ == '__main__':
-    # need to add argparse
-    cfg_path = "/vol/tensusers5/jmartinez/MindTheLinguisticGap/config.yaml"
-    run(cfg_path=cfg_path)
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--config_path",
+        type=str,
+    )
+    params, _ = parser.parse_known_args()
+    main(params)
