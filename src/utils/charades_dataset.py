@@ -43,16 +43,16 @@ def load_rgb_frames(root, vid, start):
         if not success:
             break
         w, h, c = img.shape
-        if w < 226 or h < 226:
-            d = 226. - min(w, h)
+        if w < 256 or h < 256:
+            d = 256. - min(w, h)
             sc = 1 + d / min(w, h)
             img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
         img = (img / 255.) * 2 - 1
         frames.append(img)
 
     last_frame = len(frames)
-    if last_frame < 64:
-        for i in range(64 - last_frame):
+    if last_frame < start + 64:
+        for _ in range(start + 64 - last_frame):
             frames.append(frames[-1])
 
     frames = frames[start:start + 64]
