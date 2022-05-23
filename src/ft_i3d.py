@@ -8,13 +8,13 @@ from src.utils.helpers import load_config
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]= '1'
 import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument('-mode', type=str, help='rgb or flow')
-parser.add_argument('-save_model', type=str)
-parser.add_argument('-root', type=str)
-
-args = parser.parse_args()
+#
+# parser = argparse.ArgumentParser()
+# parser.add_argument('-mode', type=str, help='rgb or flow')
+# parser.add_argument('-save_model', type=str)
+# parser.add_argument('-root', type=str)
+#
+# args = parser.parse_args()
 
 import torch
 import torch.nn as nn
