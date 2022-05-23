@@ -166,7 +166,7 @@ def run(cfg_path, mode='rgb'):
 
 def main(params):
     config_path = params.config_path
-    run(params)
+    run(config_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
