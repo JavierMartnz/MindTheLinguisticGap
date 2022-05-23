@@ -29,6 +29,9 @@ import src.utils.videotransforms
 
 import numpy as np
 
+from time import sleep
+from tqdm import tqdm
+
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.charades_dataset import Charades as Dataset
 
@@ -101,8 +104,8 @@ def run(cfg_path, mode='rgb'):
     steps = 0
     # train it
     while steps < max_steps:  # for epoch in range(num_epochs):
-        print('Epoch {}/{}'.format(steps, max_steps))
-        print('-' * 10)
+        # print('Epoch {}/{}'.format(steps, max_steps))
+        # print('-' * 10)
 
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
@@ -117,51 +120,56 @@ def run(cfg_path, mode='rgb'):
             num_iter = 0
             optimizer.zero_grad()
 
-            # Iterate over data.
-            for data in dataloaders[phase]:
-                num_iter += 1
-                # get the inputs
-                inputs, labels = data
+            with tqdm(dataloaders[phase], unit="batch") as tepoch:
+                for data in tepoch:
+                    tepoch.set_description(f"Epoch {str(steps).zfill(len(str(max_steps)))}/{max_steps} -- ")
+                    num_iter += 1
+                    # get the inputs
+                    inputs, labels = data
 
-                # wrap them in Variable
-                inputs = Variable(inputs.cuda())
-                t = inputs.size(2)
-                labels = Variable(labels.cuda())
+                    # wrap them in Variable
+                    inputs = Variable(inputs.cuda())
+                    t = inputs.size(2)
+                    labels = Variable(labels.cuda())
 
-                per_frame_logits = i3d(inputs)
-                # upsample to input size
-                per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
+                    per_frame_logits = i3d(inputs)
+                    # upsample to input size
+                    per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
 
-                # compute localization loss
-                loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
-                tot_loc_loss += loc_loss.item()
+                    # compute localization loss
+                    loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
+                    tot_loc_loss += loc_loss.item()
 
-                # compute classification loss (with max-pooling along time B x C x T)
-                cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0],
-                                                              torch.max(labels, dim=2)[0])
-                tot_cls_loss += cls_loss.item()
+                    # compute classification loss (with max-pooling along time B x C x T)
+                    cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0],
+                                                                  torch.max(labels, dim=2)[0])
+                    tot_cls_loss += cls_loss.item()
 
-                loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
-                tot_loss += loss.item()
-                loss.backward()
+                    loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
+                    tot_loss += loss.item()
+                    loss.backward()
 
-                if num_iter == num_steps_per_update and phase == 'train':
-                    steps += 1
-                    num_iter = 0
-                    optimizer.step()
-                    optimizer.zero_grad()
-                    lr_sched.step()
-                    if steps % 10 == 0:
-                        print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
-                                    10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
-                                                                                              tot_loss / 10))
-                        # save model
-                        torch.save(i3d.module.state_dict(), save_model + '/' + 'i3d_' + str(steps).zfill(6) + '.pt')
-                        tot_loss = tot_loc_loss = tot_cls_loss = 0.
-            if phase == 'val':
-                print('{} Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(phase, tot_loc_loss / num_iter,
-                                                                                     tot_cls_loss / num_iter, (
-                                                                                                 tot_loss * num_steps_per_update) / num_iter))
+                    if num_iter == num_steps_per_update and phase == 'train':
+                        steps += 1
+                        num_iter = 0
+                        optimizer.step()
+                        optimizer.zero_grad()
+                        lr_sched.step()
+                        if steps % 10 == 0:
+                            tepoch.set_postfix(loc_loss=tot_loc_loss / (10 * num_steps_per_update),
+                                               cls_loss=tot_cls_loss / (10 * num_steps_per_update),
+                                               loss=tot_loss / 10)
+                            # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
+                            #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
+                            #                                                                       tot_loss / 10))
+
+                            # save model
+                            torch.save(i3d.module.state_dict(), save_model + '/' + 'i3d_' + str(steps).zfill(6) + '.pt')
+                            tot_loss = tot_loc_loss = tot_cls_loss = 0.
+                if phase == 'val':
+                    print('{} Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(phase, tot_loc_loss / num_iter,
+                                                                                         tot_cls_loss / num_iter, (
+                                                                                                     tot_loss * num_steps_per_update) / num_iter))
 
 
 def main(params):
