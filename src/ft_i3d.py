@@ -6,7 +6,7 @@ from src.utils import videotransforms
 from src.utils.helpers import load_config
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"]='0,1,2,3'
+os.environ["CUDA_VISIBLE_DEVICES"]= '1'
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -66,12 +66,12 @@ def run(cfg_path, mode='rgb'):
 
     class_encodings = get_class_encodings(cngt_gloss_ids, {})
 
-    print("Loading training split")
+    print("Loading training split...")
     dataset = Dataset(root, mode, class_encodings, train_transforms)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                              pin_memory=True)
 
-    print("Loading val split")
+    print("Loading val split...")
     val_dataset = dataset
     val_dataloader = dataloader
     # val_dataset = Dataset(root, mode, class_encodings, test_transforms)
@@ -80,6 +80,7 @@ def run(cfg_path, mode='rgb'):
     dataloaders = {'train': dataloader, 'val': val_dataloader}
     datasets = {'train': dataset, 'val': val_dataset}
 
+    print("Setting up the model...")
     # setup the model
     if mode == 'flow':
         i3d = InceptionI3d(400, in_channels=2)
