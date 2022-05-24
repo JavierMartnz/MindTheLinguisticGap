@@ -65,10 +65,10 @@ def run(cfg_path, mode='rgb'):
     window_size = cfg.get("data").get("window_size")
 
     # setup dataset
-    train_transforms = transforms.Compose([videotransforms.RandomCrop(256),
+    train_transforms = transforms.Compose([videotransforms.RandomCrop(224),
                                            videotransforms.RandomHorizontalFlip(),
                                            ])
-    val_transforms = transforms.Compose([videotransforms.CenterCrop(256)])
+    val_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
     print("Loading training split...")
     train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, train_transforms)
