@@ -1,12 +1,13 @@
 import os
 import sys
+
 sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 from src.utils import videotransforms
 from src.utils.helpers import load_config
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]= '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 import argparse
 #
 # parser = argparse.ArgumentParser()
@@ -33,7 +34,8 @@ from time import sleep
 from tqdm import tqdm
 
 from src.utils.pytorch_i3d import InceptionI3d
-from src.utils.charades_dataset import Charades as Dataset
+from src.utils.i3d_data import I3Dataset
+from src.utils.util import extract_zip
 
 
 def get_class_encodings(cngt_gloss_ids, sb_gloss_ids):
@@ -48,51 +50,48 @@ def get_class_encodings(cngt_gloss_ids, sb_gloss_ids):
 
 def run(cfg_path, mode='rgb'):
     cfg = load_config(cfg_path)
-
     training_cfg = cfg.get("training")
-    max_steps = training_cfg.get("epochs")
+
+    # training configs
+    epochs = training_cfg.get("epochs")
     init_lr = training_cfg.get("init_lr")
     batch_size = training_cfg.get("batch_size")
     save_model = training_cfg.get("model_dir")
     weights_dir = training_cfg.get("weights_dir")
 
-    root = cfg.get("data").get("cngt_clips_path")[:-4]
+    # data configs
+    cngt_zip = cfg.get("data").get("cngt_clips_path")
+    sb_zip = cfg.get("data").get("signbank_path")
+    window_size = cfg.get("data").get("window_size")
 
     # setup dataset
-    train_transforms = transforms.Compose([videotransforms.RandomCrop(224),
+    train_transforms = transforms.Compose([videotransforms.RandomCrop(256),
                                            videotransforms.RandomHorizontalFlip(),
                                            ])
-    test_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
-
-    cngt_videos = [video for video in os.listdir(root) if video.endswith(".mpg")]
-    cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]
-
-    class_encodings = get_class_encodings(cngt_gloss_ids, {})
+    val_transforms = transforms.Compose([videotransforms.CenterCrop(256)])
 
     print("Loading training split...")
-    dataset = Dataset(root, mode, class_encodings, train_transforms)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0,
-                                             pin_memory=True)
+    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, train_transforms)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
+                                                   pin_memory=True)
 
     print("Loading val split...")
-    val_dataset = dataset
-    val_dataloader = dataloader
-    # val_dataset = Dataset(root, mode, class_encodings, test_transforms)
-    # val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, val_transforms)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
+                                                 pin_memory=True)
 
-    dataloaders = {'train': dataloader, 'val': val_dataloader}
-    datasets = {'train': dataset, 'val': val_dataset}
+    dataloaders = {'train': train_dataloader, 'val': val_dataloader}
+    datasets = {'train': train_dataset, 'val': val_dataset}
 
     print("Setting up the model...")
-    # setup the model
     if mode == 'flow':
         i3d = InceptionI3d(400, in_channels=2)
         i3d.load_state_dict(torch.load(weights_dir + '/flow_imagenet.pt'))
     else:
         i3d = InceptionI3d(400, in_channels=3)
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
-    i3d.replace_logits(len(class_encodings))
-    # i3d.load_state_dict(torch.load('/ssd/models/000920.pt'))
+
+    i3d.replace_logits(len(train_dataset.class_encodings))
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
 
@@ -100,10 +99,10 @@ def run(cfg_path, mode='rgb'):
     optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
     lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
 
-    num_steps_per_update = 4  # accum gradient
+    num_steps_per_update = 4  # accumulate gradient
     steps = 0
     # train it
-    while steps < max_steps:  # for epoch in range(num_epochs):
+    for epoch in range(epochs):
         # print('Epoch {}/{}'.format(steps, max_steps))
         # print('-' * 10)
 
@@ -122,7 +121,7 @@ def run(cfg_path, mode='rgb'):
 
             with tqdm(dataloaders[phase], unit="batch") as tepoch:
                 for data in tepoch:
-                    tepoch.set_description(f"Epoch {str(steps).zfill(len(str(max_steps)))}/{max_steps} -- ")
+                    tepoch.set_description(f"Epoch {str(epoch).zfill(len(str(epochs)))}/{epochs} -- ")
                     num_iter += 1
                     # get the inputs
                     inputs, labels = data
@@ -135,6 +134,8 @@ def run(cfg_path, mode='rgb'):
                     per_frame_logits = i3d(inputs)
                     # upsample to input size
                     per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
+
+                    print(labels.size(), per_frame_logits.size())
 
                     # compute localization loss
                     loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
@@ -164,17 +165,19 @@ def run(cfg_path, mode='rgb'):
                             #                                                                       tot_loss / 10))
 
                             # save model
-                            torch.save(i3d.module.state_dict(), save_model + '/' + 'i3d_' + str(steps).zfill(6) + '.pt')
+                            torch.save(i3d.module.state_dict(),
+                                       save_model + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(steps).zfill(6) + '.pt')
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.
                 if phase == 'val':
                     print('{} Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(phase, tot_loc_loss / num_iter,
                                                                                          tot_cls_loss / num_iter, (
-                                                                                                     tot_loss * num_steps_per_update) / num_iter))
+                                                                                                 tot_loss * num_steps_per_update) / num_iter))
 
 
 def main(params):
     config_path = params.config_path
     run(config_path)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -39,3 +39,22 @@ def count_video_frames(video_path):
             break
         n_frames += 1
     return n_frames
+
+def extract_zip(zip_path):
+    if not os.path.isfile(zip_path):
+        print(f"{zip_path} does not exist")
+        return
+    if not zip_path.endswith("zip"):
+        print(f"{zip_path} is not a zip file")
+        return
+
+    data_root = os.path.dirname(zip_path)
+    extracted_dir = os.path.basename(zip_path)[:-4]
+    extracted_root = os.path.join(data_root, extracted_dir)
+
+    print(f"Extracting zipfile from {zip_path} to {extracted_root}")
+    with ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extracted_root)
+    print("Extraction successful!")
+
+    return extracted_root
