@@ -149,7 +149,7 @@ def run(cfg_path, mode='rgb'):
                     tot_loss += loss.item()
                     loss.backward()
 
-                    print([(labels[:, :, frame], per_frame_logits[:, :, frame]) for frame in range(labels.size(2))])
+                    print([(labels[:, :, frame].size(), per_frame_logits[:, :, frame].size()) for frame in range(labels.size(2))])
 
                     avg_f1_window = np.mean([f1_loss(y_true=labels[:, :, frame],
                                                      y_pred=per_frame_logits[:, :, frame]) for frame in
