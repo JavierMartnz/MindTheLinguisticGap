@@ -158,10 +158,15 @@ def run(cfg_path, mode='rgb'):
                         optimizer.zero_grad()
                         lr_sched.step()
                         if steps % 10 == 0:
+                            batch_f1 = []
+                            for i in range(labels.size(0)):  # along batch
+                                avg_f1_window = np.mean([f1_loss(y_true=labels[:, :, frame],
+                                            y_pred=per_frame_logits[:, :, frame]) for frame in range(labels.size(2))])
+                                batch_f1.append(avg_f1_window)
                             tepoch.set_postfix(loc_loss=tot_loc_loss / (10 * num_steps_per_update),
                                                cls_loss=tot_cls_loss / (10 * num_steps_per_update),
                                                loss=tot_loss / 10,
-                                               f1=f1_loss(labels, per_frame_logits))
+                                               f1=np.mean(batch_f1))
                             # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
                             #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
                             #                                                                       tot_loss / 10))
