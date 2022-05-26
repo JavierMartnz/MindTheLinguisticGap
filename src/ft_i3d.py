@@ -149,13 +149,12 @@ def run(cfg_path, mode='rgb'):
                     tot_loss += loss.item()
                     loss.backward()
 
-                    print([(labels[:, :, frame].size(), per_frame_logits[:, :, frame].size()) for frame in range(labels.size(2))])
+                    batch_f1 = []
+                    for batch in range(labels.size(0)):  # batch
+                        window_f1 = np.mean([f1_loss(labels[batch, :, frame], per_frame_logits[batch, :, frame]) for frame in range(labels.size(2))])
+                        batch_f1.append(window_f1)
 
-                    avg_f1_window = np.mean([f1_loss(y_true=labels[:, :, frame],
-                                                     y_pred=per_frame_logits[:, :, frame]) for frame in
-                                             range(labels.size(2))])
-                    batch_f1.append(avg_f1_window)
-
+                    print(np.mean(batch_f1))
 
                     if num_iter == num_steps_per_update and phase == 'train':
                         steps += 1
