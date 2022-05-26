@@ -6,7 +6,6 @@ import numpy as np
 from torch.nn.modules.distance import PairwiseDistance
 from scipy import interpolate
 import math
-from draw import show_ROC
 
 def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> torch.Tensor:
     '''Calculate F1 score. Can work with gpu tensors
