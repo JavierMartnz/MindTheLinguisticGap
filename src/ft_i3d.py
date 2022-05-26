@@ -36,6 +36,7 @@ from tqdm import tqdm
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_data import I3Dataset
 from src.utils.util import extract_zip
+from src.utils.loss import f1_loss
 
 
 def get_class_encodings(cngt_gloss_ids, sb_gloss_ids):
@@ -157,7 +158,8 @@ def run(cfg_path, mode='rgb'):
                         if steps % 10 == 0:
                             tepoch.set_postfix(loc_loss=tot_loc_loss / (10 * num_steps_per_update),
                                                cls_loss=tot_cls_loss / (10 * num_steps_per_update),
-                                               loss=tot_loss / 10)
+                                               loss=tot_loss / 10,
+                                               f1=f1_loss(labels, per_frame_logits))
                             # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
                             #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
                             #                                                                       tot_loss / 10))
