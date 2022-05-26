@@ -24,7 +24,6 @@ def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> to
     - https://discuss.pytorch.org/t/calculating-precision-recall-and-f1-score-in-case-of-multi-label-classification/28265/6
 
     '''
-    assert y_true.ndim == 1
     assert y_pred.ndim == 1 or y_pred.ndim == 2
 
     if y_pred.ndim == 2:
