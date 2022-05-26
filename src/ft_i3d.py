@@ -149,13 +149,6 @@ def run(cfg_path, mode='rgb'):
                     tot_loss += loss.item()
                     loss.backward()
 
-                    batch_f1 = []
-                    for batch in range(labels.size(0)):  # batch
-                        window_f1 = np.mean([f1_loss(labels[batch, :, frame], per_frame_logits[batch, :, frame]) for frame in range(labels.size(2))])
-                        batch_f1.append(window_f1)
-
-                    print(np.mean(batch_f1))
-
                     if num_iter == num_steps_per_update and phase == 'train':
                         steps += 1
                         num_iter = 0
@@ -163,11 +156,14 @@ def run(cfg_path, mode='rgb'):
                         optimizer.zero_grad()
                         lr_sched.step()
                         if steps % 10 == 0:
+                            # calculate f1 of batch and window
                             batch_f1 = []
-                            for i in range(labels.size(0)):  # along batch
-                                avg_f1_window = np.mean([f1_loss(y_true=labels[:, :, frame],
-                                            y_pred=per_frame_logits[:, :, frame]) for frame in range(labels.size(2))])
-                                batch_f1.append(avg_f1_window)
+                            for batch in range(labels.size(0)):  # batch
+                                window_f1 = np.mean(
+                                    [f1_loss(labels[batch, :, frame], per_frame_logits[batch, :, frame]) for frame in
+                                     range(labels.size(2))])
+                                batch_f1.append(window_f1)
+
                             tepoch.set_postfix(loc_loss=tot_loc_loss / (10 * num_steps_per_update),
                                                cls_loss=tot_cls_loss / (10 * num_steps_per_update),
                                                loss=tot_loss / 10,
