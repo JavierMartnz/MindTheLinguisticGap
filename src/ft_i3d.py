@@ -149,6 +149,8 @@ def run(cfg_path, mode='rgb'):
                     tot_loss += loss.item()
                     loss.backward()
 
+                    print(labels.size(), per_frame_logits.size())
+
                     if num_iter == num_steps_per_update and phase == 'train':
                         steps += 1
                         num_iter = 0
