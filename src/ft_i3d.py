@@ -96,7 +96,7 @@ def run(cfg_path, mode='rgb'):
                                                  pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
-    datasets = {'train': train_dataset, 'val': val_dataset}
+    # datasets = {'train': train_dataset, 'val': val_dataset}
 
     print("Setting up the model...")
     if mode == 'flow':
@@ -105,8 +105,6 @@ def run(cfg_path, mode='rgb'):
     else:
         i3d = InceptionI3d(400, in_channels=3)
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
-
-    print(len(train_dataset.class_encodings))
 
     i3d.replace_logits(len(train_dataset.class_encodings))
     i3d.cuda()
@@ -181,7 +179,7 @@ def run(cfg_path, mode='rgb'):
                                                cls_loss=tot_cls_loss / (10 * num_steps_per_update),
                                                loss=tot_loss / 10,
                                                batch_f1=batch_f1,
-                                               total_f1=acc_f1 / num_iter)
+                                               total_f1=acc_f1 / (10 * num_steps_per_update))
                             # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
                             #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
                             #                                                                       tot_loss / 10))
