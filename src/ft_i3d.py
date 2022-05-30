@@ -71,13 +71,15 @@ def run(cfg_path, mode='rgb'):
                                            ])
     val_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
+    filter_top_glosses = 400
+
     print("Loading training split...")
-    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, train_transforms)
+    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, train_transforms, filter_top_glosses)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                                    pin_memory=True)
 
     print("Loading val split...")
-    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, val_transforms)
+    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, val_transforms, filter_top_glosses)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                                  pin_memory=True)
 

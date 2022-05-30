@@ -32,6 +32,7 @@ def filter_top_glosses(gloss_ids: list, n_kept: int, top_gloss_ids=None) -> list
 
     return video_flags, top_gloss_ids
 
+
 def video_to_tensor(pic):
     """Convert a ``numpy.ndarray`` to tensor.
     Converts a numpy.ndarray (T x H x W x C)
@@ -91,10 +92,11 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
 #     frames.append(img)
 #     return np.asarray(frames, dtype=np.float32)
 
-def make_dataset(cngt_zip, sb_zip, mode, class_encodings, split):
+def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, split: str) -> list:
     assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
 
     num_classes = len(class_encodings)
+    classes = list(class_encodings.keys())
     dataset = []
 
     # process zip files first
@@ -112,17 +114,17 @@ def make_dataset(cngt_zip, sb_zip, mode, class_encodings, split):
 
     # we filter the top 400 most occurrent glosses
     cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
-    cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]
-    cngt_video_flags, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, 400)
-
+    # cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]
+    # cngt_video_flags, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, 400)
+    #
     sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
-    sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in sb_videos]
-    sb_video_flags, _ = filter_top_glosses(sb_gloss_ids, 400, top_gloss_ids=top_cngt_ids)
+    # sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in sb_videos]
+    # sb_video_flags, _ = filter_top_glosses(sb_gloss_ids, 400, top_gloss_ids=top_cngt_ids)
 
     cngt_video_paths = [os.path.join(cngt_extracted_root, video) for i, video in enumerate(cngt_videos) if
-                        video.endswith(".mpg") and cngt_video_flags[i] == 1]
+                        int(video.split("_")[-1][:-4]) in classes]
     sb_video_paths = [os.path.join(sb_extracted_root, video) for i, video in enumerate(sb_videos) if
-                      video.endswith(".mp4") and sb_video_flags[i] == 1]
+                      int(video.split("-")[-1][:-4]) in classes]
 
     # data splitting
     cngt_idx_train_val = int(len(cngt_video_paths) * (4 / 6))
@@ -165,7 +167,7 @@ def make_dataset(cngt_zip, sb_zip, mode, class_encodings, split):
     return dataset
 
 
-def get_class_encodings_from_zip(cngt_zip, sb_zip):
+def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
     # process zip files first
     if not os.path.isdir(cngt_zip[:-4]):
         cngt_extracted_root = extract_zip(cngt_zip)
@@ -180,7 +182,13 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip):
         print(f"{sb_extracted_root} already exists, no need to extract")
 
     cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in os.listdir(cngt_extracted_root) if video.endswith('.mpg')]
-    sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
+    sb_gloss_ids = {}
+
+    if not filter_num:  # default case
+        sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
+    else:
+        assert type(filter_num) == int, "The variable 'filter_num' must be an integer"
+        _, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, filter_num)
 
     classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
 
@@ -193,9 +201,9 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip):
 
 class I3Dataset(data_utl.Dataset):
 
-    def __init__(self, cngt_zip, sb_zip, mode, split, window_size=64, transforms=None):
+    def __init__(self, cngt_zip, sb_zip, mode, split, window_size=64, transforms=None, filter_num=None):
         self.mode = mode
-        self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip)
+        self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num)
         self.window_size = window_size
         self.transforms = transforms
         self.data = make_dataset(cngt_zip, sb_zip, mode, self.class_encodings, split)
