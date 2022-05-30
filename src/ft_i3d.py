@@ -92,6 +92,8 @@ def run(cfg_path, mode='rgb'):
         i3d = InceptionI3d(400, in_channels=3)
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
 
+    print(len(train_dataset.class_encodings))
+
     i3d.replace_logits(len(train_dataset.class_encodings))
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
