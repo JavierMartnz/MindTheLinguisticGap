@@ -184,11 +184,12 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
     cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in os.listdir(cngt_extracted_root) if video.endswith('.mpg')]
     sb_gloss_ids = {}
 
-    if not filter_num:  # default case
+    if filter_num is None:  # default case
         sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
     else:
         assert type(filter_num) == int, "The variable 'filter_num' must be an integer"
         _, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, filter_num)
+        cngt_gloss_ids = top_cngt_ids
 
     classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
 
