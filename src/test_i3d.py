@@ -50,18 +50,7 @@ def test(cfg_path, checkpoint_filename, mode="rgb"):
 
         preds = i3d(inputs)
         preds = F.upsample(preds, inputs.size(2), mode='linear')
-        preds = torch.nn.Softmax(dim=1)(preds)
-
-        batch_f1 = []
-        window_f1 = []
-        for batch in range(labels.size(0)):  # batch
-            for frame in range(labels.size(2)):
-                one_hot = torch.zeros(labels[batch, :, frame].shape)
-                one_hot[torch.topk(preds[batch, :, frame], 1).indices] = 1
-                window_f1.append(f1_loss(labels[batch, :, frame], one_hot.cuda()))
-            batch_f1.append(window_f1)
-
-        print(np.mean(batch_f1))
+        preds = torch.nn.Softmax(dim=1)(preds
 
 
 def main(params):
