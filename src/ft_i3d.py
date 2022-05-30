@@ -175,11 +175,11 @@ def run(cfg_path, mode='rgb'):
                         lr_sched.step()
                         if steps % 10 == 0:
 
-                            tepoch.set_postfix(loc_loss=tot_loc_loss / (10 * num_steps_per_update),
-                                               cls_loss=tot_cls_loss / (10 * num_steps_per_update),
-                                               loss=tot_loss / 10,
-                                               batch_f1=batch_f1,
-                                               total_f1=acc_f1 / (10 * num_steps_per_update))
+                            tepoch.set_postfix(loc_loss=round(tot_loc_loss / (10 * num_steps_per_update), 4),
+                                               cls_loss=round(tot_cls_loss / (10 * num_steps_per_update), 4),
+                                               loss=round(tot_loss / 10, 4),
+                                               batch_f1=round(batch_f1, 4),
+                                               total_f1=round(acc_f1 / (10 * num_steps_per_update), 4))
                             # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
                             #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
                             #                                                                       tot_loss / 10))
@@ -193,7 +193,7 @@ def run(cfg_path, mode='rgb'):
                           f'Loc Loss: {tot_loc_loss / num_iter:.4f}\n'
                           f'Cls Loss: {tot_cls_loss / num_iter:.4f}\n'
                           f'Tot Loss: {(tot_loss * num_steps_per_update) / num_iter:.4f}\n'
-                          f'F1: {acc_f1 / num_iter}')
+                          f'F1: {acc_f1 / num_iter:.4f} ')
 
 
 def main(params):
