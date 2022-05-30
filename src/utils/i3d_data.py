@@ -8,6 +8,29 @@ from tqdm import tqdm
 
 from src.utils.util import load_gzip, extract_zip
 
+def count_occurrences(my_list):
+    # Creating an empty dictionary
+    count = {}
+    for i in my_list:
+        count[i] = count.get(i, 0) + 1
+    return count
+
+
+def filter_top_glosses(gloss_ids: list, n_kept: int, top_gloss_ids=None) -> list:
+    if top_gloss_ids:
+        assert len(top_gloss_ids) == n_kept, "The shape of top_glosses does not match n_kept"
+    # if the top glosses are not given, then calculate them based on the content of glosses
+    else:
+        id_occ = count_occurrences(gloss_ids)
+        sorted_id_occ = dict(sorted(id_occ.items(), key=lambda item: item[1], reverse=True))
+        top_gloss_ids = list(sorted_id_occ.keys())[:400]
+
+    video_flags = [0] * len(gloss_ids)
+    for i, gloss in enumerate(gloss_ids):
+        if gloss in top_gloss_ids:
+            video_flags[i] = 1
+
+    return video_flags, top_gloss_ids
 
 def video_to_tensor(pic):
     """Convert a ``numpy.ndarray`` to tensor.
@@ -87,10 +110,19 @@ def make_dataset(cngt_zip, sb_zip, mode, class_encodings, split):
         sb_extracted_root = sb_zip[:-4]
         print(f"{sb_extracted_root} already exists, no need to extract")
 
-    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in os.listdir(cngt_extracted_root) if
-                        video.endswith(".mpg")]
-    sb_video_paths = [os.path.join(sb_extracted_root, video) for video in os.listdir(sb_extracted_root) if
-                      video.endswith(".mp4")]
+    # we filter the top 400 most occurrent glosses
+    cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
+    cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]
+    cngt_video_flags, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, 400)
+
+    sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
+    sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in sb_videos]
+    sb_video_flags, _ = filter_top_glosses(sb_gloss_ids, 400, top_gloss_ids=top_cngt_ids)
+
+    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for i, video in enumerate(cngt_videos) if
+                        video.endswith(".mpg") and cngt_video_flags[i] == 1]
+    sb_video_paths = [os.path.join(sb_extracted_root, video) for i, video in enumerate(sb_videos) if
+                      video.endswith(".mp4") and sb_video_flags[i] == 1]
 
     # data splitting
     cngt_idx_train_val = int(len(cngt_video_paths) * (4 / 6))
