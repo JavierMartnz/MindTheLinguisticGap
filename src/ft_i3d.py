@@ -107,6 +107,14 @@ def run(cfg_path, mode='rgb'):
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
 
     i3d.replace_logits(len(train_dataset.class_encodings))
+
+    # freeze all layers for fine-tuning
+    for param in i3d.parameters():
+        param.requires_grad = False
+
+    # unfreeze the ones we want
+    i3d.logits.requires_grad_(True)
+
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
 
@@ -134,6 +142,7 @@ def run(cfg_path, mode='rgb'):
             num_iter = 0
             acc_f1 = 0
             optimizer.zero_grad()
+            min_loss = np.inf
 
             with tqdm(dataloaders[phase], unit="batch") as tepoch:
                 for data in tepoch:
@@ -184,10 +193,14 @@ def run(cfg_path, mode='rgb'):
                             #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
                             #                                                                       tot_loss / 10))
 
-                            # save model
-                            torch.save(i3d.module.state_dict(),
-                                       save_model + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(steps).zfill(6) + '.pt')
+                            # save the model only if the loss is better
+                            if tot_loss < min_loss:
+                                min_loss = tot_loss
+                                # save model
+                                torch.save(i3d.module.state_dict(),
+                                           save_model + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(steps).zfill(6) + '.pt')
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.
+
                 if phase == 'val':
                     print(f'Epoch {epoch+1} validation phase:\n'
                           f'Loc Loss: {tot_loc_loss / num_iter:.4f}\n'
