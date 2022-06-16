@@ -159,7 +159,10 @@ def run(cfg_path, mode='rgb'):
             num_iter = 0
             optimizer.zero_grad()
             min_loss = np.inf
-            TP, TN, FP, FN = 0
+            TP = 0
+            TN = 0
+            FP = 0
+            FN = 0
 
             with tqdm(dataloaders[phase], unit="batch") as tepoch:
                 for data in tepoch:
