@@ -125,7 +125,7 @@ def run(cfg_path, mode='rgb'):
 
     i3d.replace_logits(len(train_dataset.class_encodings))
 
-    print(sum(p.numel() for p in i3d.parameters() if p.requires_grad))
+    # print(sum(p.numel() for p in i3d.parameters() if p.requires_grad))
 
     # freeze all layers for fine-tuning
     for param in i3d.parameters():
