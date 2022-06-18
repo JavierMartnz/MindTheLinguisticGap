@@ -125,6 +125,8 @@ def run(cfg_path, mode='rgb'):
 
     i3d.replace_logits(len(train_dataset.class_encodings))
 
+    print(i3d.parameters())
+
     # freeze all layers for fine-tuning
     for param in i3d.parameters():
         param.requires_grad = False
