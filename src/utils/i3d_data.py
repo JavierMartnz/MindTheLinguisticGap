@@ -159,7 +159,7 @@ def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, s
         for frame in range(64):
             label[label_idx, frame] = 1
 
-        print(np.size(label))
+        print(np.shape(label))
 
         num_windows = math.ceil(num_frames / 64)
 
