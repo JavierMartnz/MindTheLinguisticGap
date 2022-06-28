@@ -49,7 +49,7 @@ def f1_score(TN, TP, FP, FN):
 
 def get_prediction_measures(labels, frame_logits):
     preds = np.argmax(frame_logits.detach().cpu().numpy(), axis=1) > 0
-    gts = labels.detach().cpu().numpy() > 0
+    gts = np.argmax(labels.detach().cpu().numpy(), axis=1) > 0
 
     TP = (preds & gts).sum()
     TN = ((~preds) & (~gts)).sum()
