@@ -182,8 +182,6 @@ def run(cfg_path, mode='rgb'):
                     # upsample to input size
                     per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
 
-                    print(per_frame_logits.size(), labels.size())
-
                     # compute localization loss
                     loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
                     tot_loc_loss += loc_loss.item()
