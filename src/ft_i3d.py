@@ -126,24 +126,24 @@ def run(cfg_path, mode='rgb'):
 
     i3d.replace_logits(len(train_dataset.class_encodings))
 
-    model = r2plus1d_18(pretrained=True, progress=True)
+    # model = r2plus1d_18(pretrained=True, progress=True)
 
     # prints number of parameters
     # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
-    for param in model.parameters():
+    for param in i3d.parameters():
         param.requires_grad = False
     # freeze all layers for fine-tuning
 
     # unfreeze the ones we want
-    model.logits.requires_grad_(True)
+    i3d.logits.requires_grad_(True)
 
-    model.cuda()
-    i3d = nn.DataParallel(model)
+    i3d.cuda()
+    i3d = nn.DataParallel(i3d)
 
     lr = init_lr
     optimizer = optim.Adam(i3d.parameters(), lr=lr)
-    # optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
+    optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
     lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
 
     num_steps_per_update = 4  # accumulate gradient
