@@ -179,9 +179,9 @@ def run(cfg_path, mode='rgb'):
                     inputs, labels = data
 
                     # wrap them in Variable
-                    inputs = Variable(inputs.cuda())
+                    inputs = inputs.cuda()
                     t = inputs.size(2)
-                    labels = Variable(labels.cuda())
+                    labels = labels.cuda()
 
                     per_frame_logits = i3d(inputs)
                     # upsample to input size
