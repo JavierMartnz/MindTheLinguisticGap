@@ -139,6 +139,7 @@ def run(cfg_path, mode='rgb'):
     i3d.logits.requires_grad_(True)
 
     i3d.cuda()
+    i3d = nn.DataParallel(i3d)
 
     lr = init_lr
     optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
@@ -178,9 +179,9 @@ def run(cfg_path, mode='rgb'):
                     inputs, labels = data
 
                     # wrap them in Variable
-                    inputs = inputs.cuda()
+                    inputs = Variable(inputs.cuda())
                     t = inputs.size(2)
-                    labels = labels.cuda()
+                    labels = Variable(labels.cuda())
 
                     per_frame_logits = i3d(inputs)
                     # upsample to input size
