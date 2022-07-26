@@ -183,7 +183,7 @@ def run(cfg_path, mode='rgb'):
                     t = inputs.size(2)
                     labels = Variable(labels.cuda())
 
-                    per_frame_logits = model(inputs)
+                    per_frame_logits = i3d(inputs)
                     # upsample to input size
                     per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
 
