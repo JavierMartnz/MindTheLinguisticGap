@@ -139,7 +139,6 @@ def run(cfg_path, mode='rgb'):
     i3d.logits.requires_grad_(True)
 
     i3d.cuda()
-    i3d = nn.DataParallel(i3d)
 
     lr = init_lr
     optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
