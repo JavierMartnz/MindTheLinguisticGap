@@ -41,7 +41,7 @@ from src.utils.loss import f1_loss
 
 
 def f1_score(TN, TP, FP, FN):
-    acc = (TP) / (TN + TP + FN + FP)
+    acc = (TP + TN) / (TN + TP + FN + FP)
     precision = TP / (TP + FP + 1e-6)
     recall = TP / (TP + FN + 1e-6)
     F1 = 2 * precision * recall / (precision + recall + 1e-6)
@@ -201,6 +201,7 @@ def run(cfg_path, mode='rgb'):
                     loss.backward()
 
                     b_TP, b_TN, b_FP, b_TN = get_prediction_measures(labels, per_frame_logits)
+                    print(b_TP+b_TN+b_FP+b_TN)
                     batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_TN)
                     TP += b_TP
                     TN += b_TN
