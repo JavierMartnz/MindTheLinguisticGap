@@ -146,7 +146,7 @@ def run(cfg_path, mode='rgb'):
     optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
     lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
 
-    num_steps_per_update = 4  # accumulate gradient
+    num_steps_per_update = 1  # accumulate gradient
     steps = 0
     # train it
     for epoch in range(epochs):
