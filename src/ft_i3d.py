@@ -201,7 +201,6 @@ def run(cfg_path, mode='rgb'):
                     loss.backward()
 
                     b_TP, b_TN, b_FP, b_TN = get_prediction_measures(labels, per_frame_logits)
-                    print(b_TP+b_TN+b_FP+b_TN)
                     batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_TN)
                     TP += b_TP
                     TN += b_TN
