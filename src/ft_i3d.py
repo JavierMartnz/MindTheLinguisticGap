@@ -237,8 +237,8 @@ def run(cfg_path, mode='rgb'):
                     y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
                     y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
-                    batch_acc = [accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])]
-                    batch_f1 = [f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])]
+                    batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
+                    batch_f1 = np.mean([f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
 
                     # b_TP, b_TN, b_FP, b_FN = get_prediction_measures(labels, per_frame_logits)
                     # batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_FN)
