@@ -56,12 +56,12 @@ def get_prediction_measures(labels, frame_logits):
     frame_logits = frame_logits.detach().cpu().numpy()
 
 
-    for batch in range(labels.size(0)):
+    for batch in range(np.shape(labels)[0]):
         FP = 0
         FN = 0
         TP = 0
         TN = 0
-        for frame in range(labels.size(2)):
+        for frame in range(np.shape(labels)[2]):
             confusion_matrix(labels[batch, :, frame], frame_logits[batch, :, frame])
             f_FP = confusion_matrix.sum(axis=0) - np.diag(confusion_matrix)
             f_FN = confusion_matrix.sum(axis=1) - np.diag(confusion_matrix)
