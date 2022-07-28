@@ -62,8 +62,9 @@ def get_prediction_measures(labels, frame_logits):
     for batch in range(np.shape(labels)[0]):
 
         y_pred = np.argmax(frame_logits[batch], axis=0)
-
-        print(y_pred, labels[batch])
+        y_true = np.argmax(labels[batch], axis=0)
+        
+        print(y_pred, y_true)
 
 
 
