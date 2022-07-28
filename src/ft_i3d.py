@@ -204,6 +204,8 @@ def run(cfg_path, mode='rgb'):
             TN = 0
             FP = 0
             FN = 0
+            acc_list = []
+            f1_list = []
 
             with tqdm(dataloaders[phase], unit="batch") as tepoch:
                 for data in tepoch:
@@ -240,6 +242,9 @@ def run(cfg_path, mode='rgb'):
                     batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
                     batch_f1 = np.mean([f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
 
+                    acc_list.append(batch_acc)
+                    f1_list.append(batch_f1)
+
                     # b_TP, b_TN, b_FP, b_FN = get_prediction_measures(labels, per_frame_logits)
                     # batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_FN)
                     # TP += b_TP
@@ -261,9 +266,9 @@ def run(cfg_path, mode='rgb'):
                                                cls_loss=round(tot_cls_loss / (10 * num_steps_per_update), 4),
                                                loss=round(tot_loss / 10, 4),
                                                batch_acc=round(batch_acc, 4),
-                                               batch_f1=round(batch_f1, 4))
-                                               # total_acc=round(total_acc, 4),
-                                               # total_f1=round(total_f1, 4))
+                                               batch_f1=round(batch_f1, 4),
+                                               total_acc=round(np.mean(acc_list)/len(acc_list), 4),
+                                               total_f1=round(np.mean(f1_list)/len(f1_list), 4))
                             # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
                             #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
                             #                                                                       tot_loss / 10))
@@ -278,13 +283,13 @@ def run(cfg_path, mode='rgb'):
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.
 
                 if phase == 'val':
-                    val_acc, val_f1, _, _ = f1_score(TP, TN, FP, TN)
+
                     print(f'Epoch {epoch + 1} validation phase:\n'
                           f'Loc Loss: {tot_loc_loss / num_iter:.4f}\n'
                           f'Cls Loss: {tot_cls_loss / num_iter:.4f}\n'
                           f'Tot Loss: {(tot_loss * num_steps_per_update) / num_iter:.4f}\n'
-                          f'Acc: {val_acc:.4f}\n'
-                          f'F1: {val_f1:.4f} ')
+                          f'Acc: {np.mean(acc_list)/len(acc_list):.4f}\n'
+                          f'F1: {np.mean(f1_list)/len(f1_list):.4f} ')
 
 
 def main(params):
