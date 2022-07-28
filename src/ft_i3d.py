@@ -272,12 +272,13 @@ def run(cfg_path, mode='rgb'):
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.
 
                 if phase == 'val':
+                    val_acc, val_f1, _, _ = f1_score(TP, TN, FP, TN)
                     print(f'Epoch {epoch + 1} validation phase:\n'
                           f'Loc Loss: {tot_loc_loss / num_iter:.4f}\n'
                           f'Cls Loss: {tot_cls_loss / num_iter:.4f}\n'
                           f'Tot Loss: {(tot_loss * num_steps_per_update) / num_iter:.4f}\n'
-                          f'Acc: {batch_acc / num_iter:.4f}\n'
-                          f'F1: {batch_f1 / num_iter:.4f} ')
+                          f'Acc: {val_acc:.4f}\n'
+                          f'F1: {val_f1:.4f} ')
 
 
 def main(params):
