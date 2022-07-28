@@ -42,12 +42,12 @@ from src.utils.util import extract_zip
 from src.utils.loss import f1_loss
 
 
-def f1_score(TN, TP, FP, FN):
-    acc = (TP + TN) / (TN + TP + FN + FP)
-    precision = TP / (TP + FP + 1e-6)
-    recall = TP / (TP + FN + 1e-6)
-    F1 = 2 * precision * recall / (precision + recall + 1e-6)
-    return acc, F1, precision, recall
+# def f1_score(TN, TP, FP, FN):
+#     acc = (TP + TN) / (TN + TP + FN + FP)
+#     precision = TP / (TP + FP + 1e-6)
+#     recall = TP / (TP + FN + 1e-6)
+#     F1 = 2 * precision * recall / (precision + recall + 1e-6)
+#     return acc, F1, precision, recall
 
 
 def get_prediction_measures(labels, frame_logits):
@@ -234,12 +234,18 @@ def run(cfg_path, mode='rgb'):
                     tot_loss += loss.item()
                     loss.backward()
 
-                    b_TP, b_TN, b_FP, b_FN = get_prediction_measures(labels, per_frame_logits)
-                    batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_FN)
-                    TP += b_TP
-                    TN += b_TN
-                    FP += b_FP
-                    FN += b_FN
+                    y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
+                    y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
+
+                    batch_acc = [accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])]
+                    batch_f1 = [f1_loss(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])]
+
+                    # b_TP, b_TN, b_FP, b_FN = get_prediction_measures(labels, per_frame_logits)
+                    # batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_FN)
+                    # TP += b_TP
+                    # TN += b_TN
+                    # FP += b_FP
+                    # FN += b_FN
 
                     if num_iter == num_steps_per_update and phase == 'train':
                         steps += 1
@@ -249,15 +255,15 @@ def run(cfg_path, mode='rgb'):
                         lr_sched.step()
                         if steps % 10 == 0:
 
-                            total_acc, total_f1, _, _ = f1_score(TP, TN, FP, FN)
+                            # total_acc, total_f1, _, _ = f1_score(TP, TN, FP, FN)
 
                             tepoch.set_postfix(loc_loss=round(tot_loc_loss / (10 * num_steps_per_update), 4),
                                                cls_loss=round(tot_cls_loss / (10 * num_steps_per_update), 4),
                                                loss=round(tot_loss / 10, 4),
                                                batch_acc=round(batch_acc, 4),
-                                               batch_f1=round(batch_f1, 4),
-                                               total_acc=round(total_acc, 4),
-                                               total_f1=round(total_f1, 4))
+                                               batch_f1=round(batch_f1, 4))
+                                               # total_acc=round(total_acc, 4),
+                                               # total_f1=round(total_f1, 4))
                             # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
                             #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
                             #                                                                       tot_loss / 10))
