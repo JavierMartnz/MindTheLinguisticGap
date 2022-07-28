@@ -184,6 +184,8 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
         print(f"{sb_extracted_root} already exists, no need to extract")
 
     cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in os.listdir(cngt_extracted_root) if video.endswith('.mpg')]
+    # THIS NEXT LINE IS ONLY FOR TESTING, SHOULD BE REMOVED
+    cngt_gloss_ids = {}
     sb_gloss_ids = {}
 
     if filter_num is None:  # default case
