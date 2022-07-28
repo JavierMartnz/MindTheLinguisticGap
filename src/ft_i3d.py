@@ -101,7 +101,7 @@ def run(cfg_path, mode='rgb'):
                                            ])
     val_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
-    filter_top_glosses = None  # should be None if no filtering wanted
+    filter_top_glosses = 400  # should be None if no filtering wanted
 
     print("Loading training split...")
     train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, train_transforms, filter_top_glosses)
@@ -125,8 +125,6 @@ def run(cfg_path, mode='rgb'):
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
 
     i3d.replace_logits(len(train_dataset.class_encodings))
-
-    print(len(train_dataset.class_encodings))
 
     # model = r2plus1d_18(pretrained=True, progress=True)
 
