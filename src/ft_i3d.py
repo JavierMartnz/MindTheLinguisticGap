@@ -49,6 +49,9 @@ def f1_score(TN, TP, FP, FN):
 
 
 def get_prediction_measures(labels, frame_logits):
+
+    print(labels.size, frame_logits.size)
+
     preds = np.argmax(frame_logits.detach().cpu().numpy(), axis=1) > 0
     gts = np.argmax(labels.detach().cpu().numpy(), axis=1) > 0
 
