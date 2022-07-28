@@ -54,26 +54,31 @@ def get_prediction_measures(labels, frame_logits):
 
     labels = labels.detach().cpu().numpy()
     frame_logits = frame_logits.detach().cpu().numpy()
-
-    print(labels, frame_logits)
-
+    FP = 0
+    FN = 0
+    TP = 0
+    TN = 0
 
     for batch in range(np.shape(labels)[0]):
-        FP = 0
-        FN = 0
-        TP = 0
-        TN = 0
-        for frame in range(np.shape(labels)[2]):
-            confusion_matrix(labels[batch, :, frame], frame_logits[batch, :, frame])
-            f_FP = confusion_matrix.sum(axis=0) - np.diag(confusion_matrix)
-            f_FN = confusion_matrix.sum(axis=1) - np.diag(confusion_matrix)
-            f_TP = np.diag(confusion_matrix)
-            f_TN = confusion_matrix.sum() - (f_FP + f_FN + f_TP)
 
-            FP += f_FP
-            FN += f_FN
-            TP += f_TP
-            TN += f_TN
+        window_labels = np.argmax(labels[batch], axis=0)
+
+        print(window_labels, frame_logits[batch])
+
+
+
+
+        # for frame in range(np.shape(labels)[2]):
+        #     confusion_matrix(labels[batch, :, frame], frame_logits[batch, :, frame])
+        #     f_FP = confusion_matrix.sum(axis=0) - np.diag(confusion_matrix)
+        #     f_FN = confusion_matrix.sum(axis=1) - np.diag(confusion_matrix)
+        #     f_TP = np.diag(confusion_matrix)
+        #     f_TN = confusion_matrix.sum() - (f_FP + f_FN + f_TP)
+        #
+        #     FP += f_FP
+        #     FN += f_FN
+        #     TP += f_TP
+        #     TN += f_TN
 
     # preds = np.argmax(frame_logits.detach().cpu().numpy(), axis=1)
     # gts = np.argmax(labels.detach().cpu().numpy(), axis=1)
