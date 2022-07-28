@@ -219,7 +219,7 @@ def run(cfg_path, mode='rgb'):
 
                     per_frame_logits = i3d(inputs)
                     # upsample to input size
-                    per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
+                    per_frame_logits = F.interpolate(per_frame_logits, size=t, mode='linear')
 
                     # compute localization loss
                     loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
