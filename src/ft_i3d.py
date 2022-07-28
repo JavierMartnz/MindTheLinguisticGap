@@ -234,12 +234,12 @@ def run(cfg_path, mode='rgb'):
                     tot_loss += loss.item()
                     loss.backward()
 
-                    b_TP, b_TN, b_FP, b_TN = get_prediction_measures(labels, per_frame_logits)
-                    batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_TN)
+                    b_TP, b_TN, b_FP, b_FN = get_prediction_measures(labels, per_frame_logits)
+                    batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_FN)
                     TP += b_TP
                     TN += b_TN
                     FP += b_FP
-                    TN += b_TN
+                    FN += b_FN
 
                     if num_iter == num_steps_per_update and phase == 'train':
                         steps += 1
@@ -249,7 +249,7 @@ def run(cfg_path, mode='rgb'):
                         lr_sched.step()
                         if steps % 10 == 0:
 
-                            total_acc, total_f1, _, _ = f1_score(TP, TN, FP, TN)
+                            total_acc, total_f1, _, _ = f1_score(TP, TN, FP, FN)
 
                             tepoch.set_postfix(loc_loss=round(tot_loc_loss / (10 * num_steps_per_update), 4),
                                                cls_loss=round(tot_cls_loss / (10 * num_steps_per_update), 4),
