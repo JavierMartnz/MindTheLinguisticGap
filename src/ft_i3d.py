@@ -33,6 +33,8 @@ import numpy as np
 from time import sleep
 from tqdm import tqdm
 
+from sklearn.metrics import f1_score, accuracy_score
+
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_data import I3Dataset
 from src.utils.resnet import r2plus1d_18
@@ -40,36 +42,36 @@ from src.utils.util import extract_zip
 from src.utils.loss import f1_loss
 
 
-def f1_score(TN, TP, FP, FN):
-    acc = (TP + TN) / (TN + TP + FN + FP)
-    precision = TP / (TP + FP + 1e-6)
-    recall = TP / (TP + FN + 1e-6)
-    F1 = 2 * precision * recall / (precision + recall + 1e-6)
-    return acc, F1, precision, recall
+# def f1_score(TN, TP, FP, FN):
+#     acc = (TP + TN) / (TN + TP + FN + FP)
+#     precision = TP / (TP + FP + 1e-6)
+#     recall = TP / (TP + FN + 1e-6)
+#     F1 = 2 * precision * recall / (precision + recall + 1e-6)
+#     return acc, F1, precision, recall
 
 
-def get_prediction_measures(labels, frame_logits):
-
-    preds = np.argmax(frame_logits.detach().cpu().numpy(), axis=1)
-    gts = np.argmax(labels.detach().cpu().numpy(), axis=1)
-
-    print(preds, gts)
-
-    TP = (preds & gts).sum()
-    TN = ((~preds) & (~gts)).sum()
-    FP = (preds & (~gts)).sum()
-    FN = ((~preds) & gts).sum()
-
-    # batch_f1 = []
-    # window_f1 = []
-    # for batch in range(labels.size(0)):  # batch
-    #     for frame in range(labels.size(2)):
-    #         one_hot = torch.zeros(labels[batch, :, frame].shape)
-    #         one_hot[torch.topk(frame_logits[batch, :, frame], 1).indices] = 1
-    #         window_f1.append(f1_loss(labels[batch, :, frame], one_hot.cuda()))
-    #     batch_f1.append(window_f1)
-
-    return TP, TN, FP, FN
+# def get_prediction_measures(labels, frame_logits):
+#
+#     preds = np.argmax(frame_logits.detach().cpu().numpy(), axis=1)
+#     gts = np.argmax(labels.detach().cpu().numpy(), axis=1)
+#
+#     print(preds[0], gts[0])
+#
+#     TP = (preds & gts).sum()
+#     TN = ((~preds) & (~gts)).sum()
+#     FP = (preds & (~gts)).sum()
+#     FN = ((~preds) & gts).sum()
+#
+#     # batch_f1 = []
+#     # window_f1 = []
+#     # for batch in range(labels.size(0)):  # batch
+#     #     for frame in range(labels.size(2)):
+#     #         one_hot = torch.zeros(labels[batch, :, frame].shape)
+#     #         one_hot[torch.topk(frame_logits[batch, :, frame], 1).indices] = 1
+#     #         window_f1.append(f1_loss(labels[batch, :, frame], one_hot.cuda()))
+#     #     batch_f1.append(window_f1)
+#
+#     return TP, TN, FP, FN
 
 
 def get_class_encodings(cngt_gloss_ids, sb_gloss_ids):
@@ -203,12 +205,14 @@ def run(cfg_path, mode='rgb'):
                     tot_loss += loss.item()
                     loss.backward()
 
-                    b_TP, b_TN, b_FP, b_TN = get_prediction_measures(labels, per_frame_logits)
-                    batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_TN)
-                    TP += b_TP
-                    TN += b_TN
-                    FP += b_FP
-                    TN += b_TN
+                    # b_TP, b_TN, b_FP, b_TN = get_prediction_measures(labels, per_frame_logits)
+                    # batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_TN)
+                    # TP += b_TP
+                    # TN += b_TN
+                    # FP += b_FP
+                    # TN += b_TN
+                    batch_acc = np.mean([accuracy_score(labels[i], per_frame_logits[i]) for i in range(labels.size(dim=1))])
+                    batch_f1 = np.mean([f1_score(labels[i], per_frame_logits[i], average='macro') for i in range(labels.size(dim=1))])
 
                     if num_iter == num_steps_per_update and phase == 'train':
                         steps += 1
