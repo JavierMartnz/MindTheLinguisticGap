@@ -65,9 +65,9 @@ def get_prediction_measures(labels, frame_logits):
         y_true = np.argmax(labels[batch], axis=0)
 
         conf_matrix = confusion_matrix(y_true, y_pred)
-        FP += conf_matrix.sum(axis=0) - np.diag(conf_matrix)
-        FN += conf_matrix.sum(axis=1) - np.diag(conf_matrix)
-        TP += np.diag(conf_matrix)
+        FP += np.sum(conf_matrix.sum(axis=0) - np.diag(conf_matrix))
+        FN += np.sum(conf_matrix.sum(axis=1) - np.diag(conf_matrix))
+        TP += np.sum(np.diag(conf_matrix))
         TN += conf_matrix.sum() - (FP + FN + TP)
 
         # for frame in range(np.shape(labels)[2]):
