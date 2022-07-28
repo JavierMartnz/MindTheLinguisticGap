@@ -196,7 +196,7 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
     # THIS NEXT LINES ARE ONLY FOR TESTING, SHOULD BE REMOVED
     cngt_gloss_ids = {}
     sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
-    sb_gloss_ids = filter_top_glosses(sb_gloss_ids, filter_num)
+    _, sb_gloss_ids = filter_top_glosses(sb_gloss_ids, filter_num)
 
     classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
 
