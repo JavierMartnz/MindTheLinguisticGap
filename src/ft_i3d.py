@@ -51,7 +51,6 @@ from src.utils.loss import f1_loss
 
 
 def get_prediction_measures(labels, frame_logits):
-
     labels = labels.detach().cpu().numpy()
     frame_logits = frame_logits.detach().cpu().numpy()
     FP = 0
@@ -60,7 +59,6 @@ def get_prediction_measures(labels, frame_logits):
     TN = 0
 
     for batch in range(np.shape(labels)[0]):
-
         y_pred = np.argmax(frame_logits[batch], axis=0)
         y_true = np.argmax(labels[batch], axis=0)
 
@@ -178,7 +176,8 @@ def run(cfg_path, mode='rgb'):
     lr = init_lr
     # optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
     optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
-    lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
+    # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
+    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
     num_steps_per_update = 1  # accumulate gradient
     steps = 0
@@ -198,12 +197,9 @@ def run(cfg_path, mode='rgb'):
             tot_loc_loss = 0.0
             tot_cls_loss = 0.0
             num_iter = 0
-            optimizer.zero_grad()
             min_loss = np.inf
-            TP = 0
-            TN = 0
-            FP = 0
-            FN = 0
+            print_freq = 10
+
             acc_list = []
             f1_list = []
 
@@ -214,6 +210,8 @@ def run(cfg_path, mode='rgb'):
                     # get the inputs
                     inputs, labels = data
 
+                    optimizer.zero_grad()  # clear gradients
+
                     # wrap them in Variable
                     inputs = Variable(inputs.cuda())
                     t = inputs.size(2)
@@ -223,27 +221,59 @@ def run(cfg_path, mode='rgb'):
                     # upsample to input size
                     per_frame_logits = F.interpolate(per_frame_logits, size=t, mode='linear')
 
-                    # compute localization loss
-                    loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
-                    tot_loc_loss += loc_loss.item()
-
-                    # compute classification loss (with max-pooling along time B x C x T)
-                    cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0],
-                                                                  torch.max(labels, dim=2)[0])
-                    tot_cls_loss += cls_loss.item()
-
-                    loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
-                    tot_loss += loss.item()
+                    loss = torch.nn.CrossEntropyLoss(per_frame_logits, labels)
                     loss.backward()
+                    optimizer.step()
 
+                    tot_loss += loss.item()
+
+                    # get batch accuracy and f1
                     y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
                     y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                     batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
-                    batch_f1 = np.mean([f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
+                    batch_f1 = np.mean(
+                        [f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
 
                     acc_list.append(batch_acc)
                     f1_list.append(batch_f1)
+
+                    if num_iter % print_freq == 0 and phase == 'train':
+                        tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
+                                           batch_acc=round(batch_acc, 4),
+                                           batch_f1=round(batch_f1, 4),
+                                           total_acc=round(np.mean(acc_list) / len(acc_list), 4),
+                                           total_f1=round(np.mean(f1_list) / len(f1_list), 4))
+
+                        # save model only when loss is lower than the minimum loss
+                        if tot_loss < min_loss:
+                            min_loss = tot_loss
+                            # save model
+                            torch.save(i3d.module.state_dict(),
+                                       save_model + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
+                                           num_iter).zfill(6) + '.pt')
+
+                        tot_loss = 0.0
+
+                # after processing the data
+                if phase == 'val':
+                    print(f'Epoch {epoch + 1} validation phase:\n'
+                          f'Tot Loss: {tot_loss / num_iter:.4f}\n'
+                          f'Acc: {np.mean(acc_list) / len(acc_list):.4f}\n'
+                          f'F1: {np.mean(f1_list) / len(f1_list):.4f} ')
+
+                    # # compute localization loss
+                    # loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
+                    # tot_loc_loss += loc_loss.item()
+                    #
+                    # # compute classification loss (with max-pooling along time B x C x T)
+                    # cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0],
+                    #                                               torch.max(labels, dim=2)[0])
+                    # tot_cls_loss += cls_loss.item()
+                    #
+                    # loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
+                    # tot_loss += loss.item()
+                    # loss.backward()
 
                     # b_TP, b_TN, b_FP, b_FN = get_prediction_measures(labels, per_frame_logits)
                     # batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_FN)
@@ -252,44 +282,44 @@ def run(cfg_path, mode='rgb'):
                     # FP += b_FP
                     # FN += b_FN
 
-                    if num_iter == num_steps_per_update and phase == 'train':
-                        steps += 1
-                        num_iter = 0
-                        optimizer.step()
-                        optimizer.zero_grad()
-                        lr_sched.step()
-                        if steps % 10 == 0:
-
-                            # total_acc, total_f1, _, _ = f1_score(TP, TN, FP, FN)
-
-                            tepoch.set_postfix(loc_loss=round(tot_loc_loss / (10 * num_steps_per_update), 4),
-                                               cls_loss=round(tot_cls_loss / (10 * num_steps_per_update), 4),
-                                               loss=round(tot_loss / 10, 4),
-                                               batch_acc=round(batch_acc, 4),
-                                               batch_f1=round(batch_f1, 4),
-                                               total_acc=round(np.mean(acc_list)/len(acc_list), 4),
-                                               total_f1=round(np.mean(f1_list)/len(f1_list), 4))
-                            # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
-                            #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
-                            #                                                                       tot_loss / 10))
-
-                            # save the model only if the loss is better
-                            if tot_loss < min_loss:
-                                min_loss = tot_loss
-                                # save model
-                                torch.save(i3d.module.state_dict(),
-                                           save_model + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
-                                               steps).zfill(6) + '.pt')
-                            tot_loss = tot_loc_loss = tot_cls_loss = 0.
-
-                if phase == 'val':
-
-                    print(f'Epoch {epoch + 1} validation phase:\n'
-                          f'Loc Loss: {tot_loc_loss / num_iter:.4f}\n'
-                          f'Cls Loss: {tot_cls_loss / num_iter:.4f}\n'
-                          f'Tot Loss: {(tot_loss * num_steps_per_update) / num_iter:.4f}\n'
-                          f'Acc: {np.mean(acc_list)/len(acc_list):.4f}\n'
-                          f'F1: {np.mean(f1_list)/len(f1_list):.4f} ')
+                #     if num_iter == num_steps_per_update and phase == 'train':
+                #         steps += 1
+                #         num_iter = 0
+                #         optimizer.step()
+                #         optimizer.zero_grad()
+                #         lr_sched.step()
+                #         if steps % 10 == 0:
+                #
+                #             # total_acc, total_f1, _, _ = f1_score(TP, TN, FP, FN)
+                #
+                #             tepoch.set_postfix(loc_loss=round(tot_loc_loss / (10 * num_steps_per_update), 4),
+                #                                cls_loss=round(tot_cls_loss / (10 * num_steps_per_update), 4),
+                #                                loss=round(tot_loss / 10, 4),
+                #                                batch_acc=round(batch_acc, 4),
+                #                                batch_f1=round(batch_f1, 4),
+                #                                total_acc=round(np.mean(acc_list)/len(acc_list), 4),
+                #                                total_f1=round(np.mean(f1_list)/len(f1_list), 4))
+                #             # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
+                #             #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
+                #             #                                                                       tot_loss / 10))
+                #
+                #             # save the model only if the loss is better
+                #             if tot_loss < min_loss:
+                #                 min_loss = tot_loss
+                #                 # save model
+                #                 torch.save(i3d.module.state_dict(),
+                #                            save_model + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
+                #                                steps).zfill(6) + '.pt')
+                #             tot_loss = tot_loc_loss = tot_cls_loss = 0.
+                #
+                # if phase == 'val':
+                #
+                #     print(f'Epoch {epoch + 1} validation phase:\n'
+                #           f'Loc Loss: {tot_loc_loss / num_iter:.4f}\n'
+                #           f'Cls Loss: {tot_cls_loss / num_iter:.4f}\n'
+                #           f'Tot Loss: {(tot_loss * num_steps_per_update) / num_iter:.4f}\n'
+                #           f'Acc: {np.mean(acc_list)/len(acc_list):.4f}\n'
+                #           f'F1: {np.mean(f1_list)/len(f1_list):.4f} ')
 
 
 def main(params):
