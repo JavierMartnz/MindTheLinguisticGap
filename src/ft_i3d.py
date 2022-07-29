@@ -223,7 +223,7 @@ def run(cfg_path, mode='rgb'):
 
                     print(per_frame_logits.size(), labels.size())
 
-                    loss = torch.nn.CrossEntropyLoss(per_frame_logits, labels)
+                    loss = torch.nn.functional.binary_cross_entropy_with_logits(per_frame_logits, labels)
                     loss.backward()
                     optimizer.step()
 
