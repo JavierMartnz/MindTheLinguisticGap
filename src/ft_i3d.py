@@ -220,9 +220,7 @@ def run(cfg_path, mode='rgb'):
                     per_frame_logits = i3d(inputs)
                     # upsample to input size
                     per_frame_logits = F.interpolate(per_frame_logits, size=t, mode='linear')
-
-                    print(per_frame_logits.size(), labels.size())
-
+                    
                     loss = torch.nn.functional.binary_cross_entropy_with_logits(per_frame_logits, labels)
                     loss.backward()
                     optimizer.step()
