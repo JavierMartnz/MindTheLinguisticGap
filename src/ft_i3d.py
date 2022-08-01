@@ -133,7 +133,7 @@ def run(cfg_path, mode='rgb'):
                                            ])
     val_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
-    filter_top_glosses = 400  # should be None if no filtering wanted
+    filter_top_glosses = None  # should be None if no filtering wanted
 
     print("Loading training split...")
     train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, train_transforms, filter_top_glosses)
@@ -220,7 +220,7 @@ def run(cfg_path, mode='rgb'):
                     per_frame_logits = i3d(inputs)
                     # upsample to input size
                     per_frame_logits = F.interpolate(per_frame_logits, size=t, mode='linear')
-                    
+
                     loss = torch.nn.functional.binary_cross_entropy_with_logits(per_frame_logits, labels)
                     loss.backward()
                     optimizer.step()

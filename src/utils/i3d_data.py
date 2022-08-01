@@ -142,7 +142,7 @@ def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, s
 
     all_video_paths = cngt_folds[split]
     # THIS NEXT LINE IS ONLY FOR TESTING, SHOULD BE REMOVED
-    all_video_paths = []
+    # all_video_paths = []
     all_video_paths.extend(sb_folds[split])
 
     for video_path in tqdm(all_video_paths):
@@ -194,9 +194,9 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
         cngt_gloss_ids = top_cngt_ids
 
     # THIS NEXT LINES ARE ONLY FOR TESTING, SHOULD BE REMOVED
-    cngt_gloss_ids = {}
-    sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
-    _, sb_gloss_ids = filter_top_glosses(sb_gloss_ids, filter_num)
+    # cngt_gloss_ids = {}
+    # sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
+    # _, sb_gloss_ids = filter_top_glosses(sb_gloss_ids, filter_num)
 
     classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
 
