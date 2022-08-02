@@ -158,6 +158,8 @@ def run(cfg_path, mode='rgb'):
 
     i3d.replace_logits(len(train_dataset.class_encodings))
 
+    print(f"The model has {len(train_dataset.class_encodings)} classes")
+
     # model = r2plus1d_18(pretrained=True, progress=True)
 
     # prints number of parameters
