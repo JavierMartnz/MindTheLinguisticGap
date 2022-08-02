@@ -175,6 +175,8 @@ def run(cfg_path, mode='rgb'):
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
+    print(f"The last {len(unfreeze_layers)+1} out of {len(param.requires_grad)} layers are unfrozen.")
+
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
 
