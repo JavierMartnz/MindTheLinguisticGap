@@ -163,12 +163,12 @@ def run(cfg_path, mode='rgb'):
     # prints number of parameters
     # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
-    for param in i3d.parameters():
-        param.requires_grad = False
-    # freeze all layers for fine-tuning
-
-    # unfreeze the ones we want
-    i3d.logits.requires_grad_(True)
+    # for param in i3d.parameters():
+    #     param.requires_grad = False
+    # # freeze all layers for fine-tuning
+    #
+    # # unfreeze the ones we want
+    # i3d.logits.requires_grad_(True)
 
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
