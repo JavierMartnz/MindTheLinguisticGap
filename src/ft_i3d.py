@@ -175,10 +175,8 @@ def run(cfg_path, mode='rgb'):
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
-    i3d.cuda()
-    print(i3d.device_ids)
+    # i3d.cuda()
     i3d = nn.DataParallel(i3d)
-    print(i3d.device_ids)
 
     lr = init_lr
     # optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
