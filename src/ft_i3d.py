@@ -6,8 +6,8 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 from src.utils import videotransforms
 from src.utils.helpers import load_config
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 import argparse
 #
 # parser = argparse.ArgumentParser()
@@ -175,8 +175,8 @@ def run(cfg_path, mode='rgb'):
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
-    # i3d.cuda()
-    i3d = nn.DataParallel(i3d, [0, 1])
+    i3d.cuda()
+    i3d = nn.DataParallel(i3d)
 
     lr = init_lr
     # optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
