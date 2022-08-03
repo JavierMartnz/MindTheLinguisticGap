@@ -104,13 +104,13 @@ def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, s
         cngt_extracted_root = extract_zip(cngt_zip)
     else:
         cngt_extracted_root = cngt_zip[:-4]
-        print(f"{cngt_extracted_root} already exists, no need to extract")
+        # print(f"{cngt_extracted_root} already exists, no need to extract")
 
     if not os.path.isdir(sb_zip[:-4]):
         sb_extracted_root = extract_zip(cngt_zip)
     else:
         sb_extracted_root = sb_zip[:-4]
-        print(f"{sb_extracted_root} already exists, no need to extract")
+        # print(f"{sb_extracted_root} already exists, no need to extract")
 
     # we filter the top 400 most occurrent glosses
     cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]

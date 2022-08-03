@@ -266,6 +266,7 @@ def run(cfg_path, mode='rgb'):
 
                 # after processing the data
                 if phase == 'val':
+                    lr_sched.step(tot_loss)
                     print(f'Epoch {epoch + 1} validation phase:\n'
                           f'Tot Loss: {tot_loss / num_iter:.4f}\n'
                           f'Acc: {np.mean(acc_list) / len(acc_list):.4f}\n'
