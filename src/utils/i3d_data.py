@@ -112,11 +112,11 @@ def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, s
         sb_extracted_root = sb_zip[:-4]
         # print(f"{sb_extracted_root} already exists, no need to extract")
 
-    # we filter the top 400 most occurrent glosses
+    # we filter the top n most occurrent glosses
     cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
     # cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in cngt_videos]
     # cngt_video_flags, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, 400)
-    #
+
     sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
     # sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in sb_videos]
     # sb_video_flags, _ = filter_top_glosses(sb_gloss_ids, 400, top_gloss_ids=top_cngt_ids)
@@ -142,7 +142,7 @@ def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, s
 
     all_video_paths = cngt_folds[split]
     # THIS NEXT LINE IS ONLY FOR TESTING, SHOULD BE REMOVED
-    all_video_paths = []
+    # all_video_paths = []
     all_video_paths.extend(sb_folds[split])
 
     for video_path in tqdm(all_video_paths):
@@ -193,10 +193,10 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
         _, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, filter_num)
         cngt_gloss_ids = top_cngt_ids
 
-    # THIS NEXT LINES ARE ONLY FOR TESTING, SHOULD BE REMOVED
-    cngt_gloss_ids = {}
-    sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
-    _, sb_gloss_ids = filter_top_glosses(sb_gloss_ids, filter_num)
+    # THE NEXT 3 LINES ARE ONLY FOR TESTING, SHOULD BE REMOVED
+    # cngt_gloss_ids = {}
+    # sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
+    # _, sb_gloss_ids = filter_top_glosses(sb_gloss_ids, filter_num)
 
     classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
 
