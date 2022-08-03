@@ -133,7 +133,7 @@ def run(cfg_path, mode='rgb'):
                                            ])
     val_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
-    filter_top_glosses = 400  # should be None if no filtering wanted
+    filter_top_glosses = 157  # should be None if no filtering wanted
 
     print("Loading training split...")
     train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, train_transforms, filter_top_glosses)
