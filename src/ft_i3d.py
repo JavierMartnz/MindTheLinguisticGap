@@ -167,9 +167,12 @@ def run(cfg_path, mode='rgb'):
     # prints number of parameters
     # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
+    n_layers = 0
+    # freeze all layers for fine-tuning
     for param in i3d.parameters():
         param.requires_grad = False
-    # freeze all layers for fine-tuning
+        n_layers += 1
+
 
     # unfreeze the ones we want
     i3d.logits.requires_grad_(True)
@@ -178,7 +181,7 @@ def run(cfg_path, mode='rgb'):
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
-    print(f"The last {len(unfreeze_layers)+1} out of {len(i3d.parameters())} layers are unfrozen.")
+    print(f"The last {len(unfreeze_layers)+1} out of {n_layers} layers are unfrozen.")
 
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
