@@ -140,7 +140,7 @@ def run(cfg_path, mode='rgb'):
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                                    pin_memory=True)
 
-    print(train_dataset.class_encodings)
+    print(len(train_dataset.class_encodings))
 
 
     print("Loading val split...")
