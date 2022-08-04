@@ -23,7 +23,7 @@ def filter_top_glosses(gloss_ids: list, n_kept: int, top_gloss_ids=None) -> list
     else:
         id_occ = count_occurrences(gloss_ids)
         sorted_id_occ = dict(sorted(id_occ.items(), key=lambda item: item[1], reverse=True))
-        top_gloss_ids = list(sorted_id_occ.keys())[:400]
+        top_gloss_ids = list(sorted_id_occ.keys())[:top_gloss_ids]
 
     video_flags = [0] * len(gloss_ids)
     for i, gloss in enumerate(gloss_ids):
