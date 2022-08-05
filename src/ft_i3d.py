@@ -178,7 +178,7 @@ def run(cfg_path, mode='rgb'):
     # unfreeze the ones we want
     i3d.logits.requires_grad_(True)
     # layers are ['Mixed_5c', 'Mixed_5b', 'MaxPool3d_5a_2x2', 'Mixed_4f', 'Mixed_4e', 'Mixed_4d', 'Mixed_4c', 'Mixed_4b']
-    unfreeze_layers = ['Mixed_5c', 'Mixed_5b']
+    unfreeze_layers = []
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
