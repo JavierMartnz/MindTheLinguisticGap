@@ -23,7 +23,7 @@ def filter_top_glosses(gloss_ids: list, n_kept: int, top_gloss_ids=None) -> list
     else:
         id_occ = count_occurrences(gloss_ids)
         sorted_id_occ = dict(sorted(id_occ.items(), key=lambda item: item[1], reverse=True))
-        top_gloss_ids = list(sorted_id_occ.keys())[:top_gloss_ids]
+        top_gloss_ids = list(sorted_id_occ.keys())[:n_kept]
 
     video_flags = [0] * len(gloss_ids)
     for i, gloss in enumerate(gloss_ids):
@@ -175,13 +175,13 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
         cngt_extracted_root = extract_zip(cngt_zip)
     else:
         cngt_extracted_root = cngt_zip[:-4]
-        print(f"{cngt_extracted_root} already exists, no need to extract")
+        # print(f"{cngt_extracted_root} already exists, no need to extract")
 
     if not os.path.isdir(sb_zip[:-4]):
         sb_extracted_root = extract_zip(cngt_zip)
     else:
         sb_extracted_root = sb_zip[:-4]
-        print(f"{sb_extracted_root} already exists, no need to extract")
+        # print(f"{sb_extracted_root} already exists, no need to extract")
 
     cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in os.listdir(cngt_extracted_root) if video.endswith('.mpg')]
     sb_gloss_ids = {}

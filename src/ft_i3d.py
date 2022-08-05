@@ -133,13 +133,12 @@ def run(cfg_path, mode='rgb'):
                                            ])
     val_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
-    filter_top_glosses = 157  # should be None if no filtering wanted
+    filter_top_glosses = 2  # should be None if no filtering wanted
 
     print("Loading training split...")
     train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, train_transforms, filter_top_glosses)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                                    pin_memory=True)
-
 
     print("Loading val split...")
     val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, val_transforms, filter_top_glosses)
@@ -178,11 +177,11 @@ def run(cfg_path, mode='rgb'):
     # unfreeze the ones we want
     i3d.logits.requires_grad_(True)
     # layers are ['Mixed_5c', 'Mixed_5b', 'MaxPool3d_5a_2x2', 'Mixed_4f', 'Mixed_4e', 'Mixed_4d', 'Mixed_4c', 'Mixed_4b']
-    unfreeze_layers = ['Mixed_5c']
+    unfreeze_layers = []
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
-    print(f"The last {len(unfreeze_layers)+1} out of {n_layers} layers are unfrozen.")
+    print(f"The last {len(unfreeze_layers)+1} out of 17 blocks are unfrozen.")
 
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
