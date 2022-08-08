@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 import numpy as np
+import math
 
 import os
 import sys
@@ -186,7 +187,7 @@ class InceptionI3d(nn.Module):
     )
 
     def __init__(self, num_classes=400, spatial_squeeze=True,
-                 final_endpoint='Logits', name='inception_i3d', in_channels=3, dropout_keep_prob=0.5):
+                 final_endpoint='Logits', name='inception_i3d', in_channels=3, dropout_keep_prob=0.5, window_size=64):
         """Initializes I3D model instance.
         Args:
           num_classes: The number of outputs in the logit layer (default 400, which
@@ -212,6 +213,7 @@ class InceptionI3d(nn.Module):
         self._spatial_squeeze = spatial_squeeze
         self._final_endpoint = final_endpoint
         self.logits = None
+        self.window_size = window_size
 
         if self._final_endpoint not in self.VALID_ENDPOINTS:
             raise ValueError('Unknown final endpoint %s' % self._final_endpoint)
@@ -292,7 +294,12 @@ class InceptionI3d(nn.Module):
         if self._final_endpoint == end_point: return
 
         end_point = 'Logits'
-        self.avg_pool = nn.AvgPool3d(kernel_size=[2, 7, 7],
+
+        # allow the change of window size
+        last_duration = int(math.ceil(self.window_size / 8))
+        last_size = 7
+
+        self.avg_pool = nn.AvgPool3d(kernel_size=[last_duration, last_size, last_size],
                                      stride=(1, 1, 1))
         self.dropout = nn.Dropout(dropout_keep_prob)
         self.logits = Unit3D(in_channels=384 + 384 + 128 + 128, output_channels=self._num_classes,
