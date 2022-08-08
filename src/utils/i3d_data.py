@@ -214,7 +214,7 @@ class I3Dataset(data_utl.Dataset):
         self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num)
         self.window_size = window_size
         self.transforms = transforms
-        self.data = make_dataset(cngt_zip, sb_zip, mode, self.class_encodings, split, window_size)
+        self.data = make_dataset(cngt_zip, sb_zip, mode, self.class_encodings, window_size, split)
 
     def __getitem__(self, index):
         """
