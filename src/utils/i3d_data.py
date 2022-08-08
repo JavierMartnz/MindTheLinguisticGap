@@ -92,7 +92,7 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
 #     frames.append(img)
 #     return np.asarray(frames, dtype=np.float32)
 
-def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, split: str) -> list:
+def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, window_size: int, split: str) -> list:
     assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
 
     num_classes = len(class_encodings)
@@ -156,15 +156,15 @@ def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, s
         if mode == 'flow':
             num_frames = num_frames // 2
 
-        label = np.zeros((num_classes, 64), np.float32)
+        label = np.zeros((num_classes, window_size), np.float32)
         label_idx = class_encodings[gloss_id]
-        for frame in range(64):
+        for frame in range(np.shape(label)[1]):
             label[label_idx, frame] = 1
 
-        num_windows = math.ceil(num_frames / 64)
+        num_windows = math.ceil(num_frames / window_size)
 
         for i in range(num_windows):
-            dataset.append((video_path, label, num_frames, i * 64))
+            dataset.append((video_path, label, num_frames, i * window_size))
 
     return dataset
 
@@ -214,7 +214,7 @@ class I3Dataset(data_utl.Dataset):
         self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num)
         self.window_size = window_size
         self.transforms = transforms
-        self.data = make_dataset(cngt_zip, sb_zip, mode, self.class_encodings, split)
+        self.data = make_dataset(cngt_zip, sb_zip, mode, self.class_encodings, split, window_size)
 
     def __getitem__(self, index):
         """

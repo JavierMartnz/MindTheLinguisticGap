@@ -251,7 +251,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--window_size",
         type=str,
-        default="64"
+        default="16"
     )
 
     params, _ = parser.parse_known_args()
