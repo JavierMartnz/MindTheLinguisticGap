@@ -158,7 +158,7 @@ def make_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, w
 
         label = np.zeros((num_classes, window_size), np.float32)
         label_idx = class_encodings[gloss_id]
-        for frame in range(np.shape(label)[1]):
+        for frame in range(window_size):
             label[label_idx, frame] = 1
 
         num_windows = math.ceil(num_frames / window_size)
