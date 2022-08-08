@@ -128,6 +128,8 @@ def run(cfg_path, mode='rgb'):
     sb_zip = cfg.get("data").get("signbank_path")
     window_size = cfg.get("data").get("window_size")
 
+    print(f"Using window size of {window_size} frames")
+
     # setup dataset
     train_transforms = transforms.Compose([videotransforms.RandomCrop(224),
                                            videotransforms.RandomHorizontalFlip(),
