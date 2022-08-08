@@ -198,7 +198,7 @@ def run(cfg_path, mode='rgb'):
     # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
     lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
-    num_steps_per_update = 1  # accumulate gradient
+    num_steps_per_update = 4  # accumulate gradient
     steps = 0
     # train it
     for epoch in range(epochs):
@@ -242,7 +242,7 @@ def run(cfg_path, mode='rgb'):
 
                     loss = torch.nn.functional.binary_cross_entropy_with_logits(per_frame_logits, labels)
                     loss.backward()
-                    optimizer.step()
+
 
                     tot_loss += loss.item()
 
@@ -257,13 +257,9 @@ def run(cfg_path, mode='rgb'):
                     acc_list.append(batch_acc)
                     f1_list.append(batch_f1)
 
-                    if num_iter % print_freq == 0 and phase == 'train':
-                        tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
-                                           batch_acc=round(batch_acc, 4),
-                                           batch_f1=round(batch_f1, 4),
-                                           total_acc=round(np.mean(acc_list) / len(acc_list), 4),
-                                           total_f1=round(np.mean(f1_list) / len(f1_list), 4))
-
+                    if num_iter == num_steps_per_update and phase == 'train':
+                        optimizer.step()
+                        steps += 1
                         # save model only when loss is lower than the minimum loss
                         if tot_loss < min_loss:
                             min_loss = tot_loss
@@ -273,6 +269,13 @@ def run(cfg_path, mode='rgb'):
                                            num_iter).zfill(6) + '.pt')
 
                         tot_loss = 0.0
+
+                    if steps % print_freq == 0 and phase == 'train':
+                        tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
+                                           batch_acc=round(batch_acc, 4),
+                                           batch_f1=round(batch_f1, 4),
+                                           total_acc=round(np.mean(acc_list) / len(acc_list), 4),
+                                           total_f1=round(np.mean(f1_list) / len(f1_list), 4))
 
                 # after processing the data
                 if phase == 'val':
