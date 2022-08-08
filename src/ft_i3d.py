@@ -158,7 +158,7 @@ def run(cfg_path, mode='rgb'):
     else:
         # i3d = InceptionI3d(400, in_channels=3)
         # i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
-        i3d = InceptionI3d(157, in_channels=3)
+        i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
 
         # THIS LINE IS ADDED TO TRAIN FROM SCRATCH
