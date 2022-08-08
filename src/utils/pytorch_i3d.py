@@ -300,7 +300,7 @@ class InceptionI3d(nn.Module):
         last_duration = int(math.ceil(self.window_size / 8))
         last_size = int(math.ceil(self.input_size / 32))
 
-        print(last_duration, last_size)
+        print(self.window_size, last_duration, self.input_size, last_size)
 
         self.avg_pool = nn.AvgPool3d(kernel_size=[last_duration, last_size, last_size],
                                      stride=(1, 1, 1))
