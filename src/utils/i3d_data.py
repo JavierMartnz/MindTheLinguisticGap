@@ -231,7 +231,8 @@ class I3Dataset(data_utl.Dataset):
         # else:
         #     imgs = load_flow_frames(self.root, vid, start_frame)
 
-        imgs = self.transforms(imgs)
+        if self.transforms:
+            imgs = self.transforms(imgs)
 
         return video_to_tensor(imgs), torch.from_numpy(label)
 
