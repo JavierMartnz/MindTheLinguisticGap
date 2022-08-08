@@ -158,10 +158,13 @@ def run(cfg_path, mode='rgb'):
     else:
         # i3d = InceptionI3d(400, in_channels=3)
         # i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
-        i3d = InceptionI3d(157, in_channels=3)
-        i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
+        # i3d = InceptionI3d(157, in_channels=3)
+        # i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
 
-    i3d.replace_logits(len(train_dataset.class_encodings))
+        # THIS LINE IS ADDED TO TRAIN FROM SCRATCH
+        i3d = InceptionI3d(2, in_channels=3, window_size=window_size, input_size=224)
+
+    # i3d.replace_logits(len(train_dataset.class_encodings))
 
     print(f"The model has {len(train_dataset.class_encodings)} classes")
 
@@ -172,22 +175,19 @@ def run(cfg_path, mode='rgb'):
 
     n_layers = 0
     # freeze all layers for fine-tuning
-    for param in i3d.parameters():
-        param.requires_grad = False
-        n_layers += 1
+    # for param in i3d.parameters():
+    #     param.requires_grad = False
+    #     n_layers += 1
 
 
     # unfreeze the ones we want
-    i3d.logits.requires_grad_(True)
+    # i3d.logits.requires_grad_(True)
     # layers are ['Mixed_5c', 'Mixed_5b', 'MaxPool3d_5a_2x2', 'Mixed_4f', 'Mixed_4e', 'Mixed_4d', 'Mixed_4c', 'Mixed_4b']
-    unfreeze_layers = []
-    for layer in unfreeze_layers:
-        i3d.end_points[layer].requires_grad_(True)
+    # unfreeze_layers = []
+    # for layer in unfreeze_layers:
+    #     i3d.end_points[layer].requires_grad_(True)
 
-    print(f"The last {len(unfreeze_layers)+1} out of 17 blocks are unfrozen.")
-
-    # THIS LINE IS ADDED TO TRAIN FROM SCRATCH
-    i3d = InceptionI3d(2, in_channels=3, window_size=window_size, input_size=224)
+    # print(f"The last {len(unfreeze_layers)+1} out of 17 blocks are unfrozen.")
 
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
