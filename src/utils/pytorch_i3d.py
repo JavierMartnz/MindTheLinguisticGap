@@ -186,8 +186,8 @@ class InceptionI3d(nn.Module):
         'Predictions',
     )
 
-    def __init__(self, num_classes=400, spatial_squeeze=True,
-                 final_endpoint='Logits', name='inception_i3d', in_channels=3, dropout_keep_prob=0.5, window_size=64):
+    def __init__(self, num_classes=400, spatial_squeeze=True, final_endpoint='Logits', name='inception_i3d',
+                 in_channels=3, dropout_keep_prob=0.5, window_size=64, input_size=256):
         """Initializes I3D model instance.
         Args:
           num_classes: The number of outputs in the logit layer (default 400, which
@@ -214,11 +214,10 @@ class InceptionI3d(nn.Module):
         self._final_endpoint = final_endpoint
         self.logits = None
         self.window_size = window_size
+        self.input_size = input_size
 
         if self._final_endpoint not in self.VALID_ENDPOINTS:
             raise ValueError('Unknown final endpoint %s' % self._final_endpoint)
-
-        print(in_channels)
 
         self.end_points = {}
         end_point = 'Conv3d_1a_7x7'
@@ -299,7 +298,7 @@ class InceptionI3d(nn.Module):
 
         # allow the change of window size
         last_duration = int(math.ceil(self.window_size / 8))
-        last_size = 7
+        last_size = int(math.ceil(self.input_size / 32))
 
         self.avg_pool = nn.AvgPool3d(kernel_size=[last_duration, last_size, last_size],
                                      stride=(1, 1, 1))

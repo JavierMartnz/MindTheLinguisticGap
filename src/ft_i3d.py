@@ -187,7 +187,7 @@ def run(cfg_path, mode='rgb'):
     print(f"The last {len(unfreeze_layers)+1} out of 17 blocks are unfrozen.")
 
     # THIS LINE IS ADDED TO TRAIN FROM SCRATCH
-    i3d = InceptionI3d(2, in_channels=3, window_size=window_size)
+    i3d = InceptionI3d(2, in_channels=3, window_size=window_size, input_size=256)
 
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
