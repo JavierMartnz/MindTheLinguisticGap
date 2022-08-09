@@ -282,8 +282,8 @@ def run(cfg_path, mode='rgb'):
                     lr_sched.step(tot_loss)
                     print('-------------------------\n'
                           f'Epoch {epoch + 1} validation phase:\n'
-                          f'Tot Loss: {tot_loss / num_iter:.4f}\n'
-                          f'Acc: {np.mean(acc_list):.4f}\n'
+                          f'Tot Loss: {tot_loss / num_iter:.4f}\t'
+                          f'Acc: {np.mean(acc_list):.4f}\t'
                           f'F1: {np.mean(f1_list):.4f}\n'
                           '-------------------------\n')
 
@@ -299,52 +299,6 @@ def run(cfg_path, mode='rgb'):
                     # loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
                     # tot_loss += loss.item()
                     # loss.backward()
-
-                    # b_TP, b_TN, b_FP, b_FN = get_prediction_measures(labels, per_frame_logits)
-                    # batch_acc, batch_f1, _, _ = f1_score(b_TP, b_TN, b_FP, b_FN)
-                    # TP += b_TP
-                    # TN += b_TN
-                    # FP += b_FP
-                    # FN += b_FN
-
-                #     if num_iter == num_steps_per_update and phase == 'train':
-                #         steps += 1
-                #         num_iter = 0
-                #         optimizer.step()
-                #         optimizer.zero_grad()
-                #         lr_sched.step()
-                #         if steps % 10 == 0:
-                #
-                #             # total_acc, total_f1, _, _ = f1_score(TP, TN, FP, FN)
-                #
-                #             tepoch.set_postfix(loc_loss=round(tot_loc_loss / (10 * num_steps_per_update), 4),
-                #                                cls_loss=round(tot_cls_loss / (10 * num_steps_per_update), 4),
-                #                                loss=round(tot_loss / 10, 4),
-                #                                batch_acc=round(batch_acc, 4),
-                #                                batch_f1=round(batch_f1, 4),
-                #                                total_acc=round(np.mean(acc_list)/len(acc_list), 4),
-                #                                total_f1=round(np.mean(f1_list)/len(f1_list), 4))
-                #             # print('{} Loc Loss: {:.4f} Cls Loss: {:.4f}\tTot Loss: {:.4f}'.format(phase, tot_loc_loss / (
-                #             #             10 * num_steps_per_update), tot_cls_loss / (10 * num_steps_per_update),
-                #             #                                                                       tot_loss / 10))
-                #
-                #             # save the model only if the loss is better
-                #             if tot_loss < min_loss:
-                #                 min_loss = tot_loss
-                #                 # save model
-                #                 torch.save(i3d.module.state_dict(),
-                #                            save_model + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
-                #                                steps).zfill(6) + '.pt')
-                #             tot_loss = tot_loc_loss = tot_cls_loss = 0.
-                #
-                # if phase == 'val':
-                #
-                #     print(f'Epoch {epoch + 1} validation phase:\n'
-                #           f'Loc Loss: {tot_loc_loss / num_iter:.4f}\n'
-                #           f'Cls Loss: {tot_cls_loss / num_iter:.4f}\n'
-                #           f'Tot Loss: {(tot_loss * num_steps_per_update) / num_iter:.4f}\n'
-                #           f'Acc: {np.mean(acc_list)/len(acc_list):.4f}\n'
-                #           f'F1: {np.mean(f1_list)/len(f1_list):.4f} ')
 
 
 def main(params):
