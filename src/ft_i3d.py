@@ -257,7 +257,7 @@ def run(cfg_path, mode='rgb'):
                     f1_list.append(batch_f1)
 
                     if phase == 'train' and steps % print_freq == 0:
-                        tepoch.set_postfix(loss=tot_loss / print_freq,
+                        tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
                                            batch_acc=round(batch_acc, 4),
                                            batch_f1=round(batch_f1, 4),
                                            total_acc=round(np.mean(acc_list), 4),
@@ -280,12 +280,12 @@ def run(cfg_path, mode='rgb'):
                 # after processing the data
                 if phase == 'val':
                     lr_sched.step(tot_loss)
-                    print('------------------------------\n'
+                    print('-------------------------\n'
                           f'Epoch {epoch + 1} validation phase:\n'
-                          f'Tot Loss: {tot_loss / num_iter}\n'
+                          f'Tot Loss: {tot_loss / num_iter:.4f}\n'
                           f'Acc: {np.mean(acc_list):.4f}\n'
                           f'F1: {np.mean(f1_list):.4f}\n'
-                          '------------------------------\n')
+                          '-------------------------\n')
 
                     # # compute localization loss
                     # loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
