@@ -256,7 +256,7 @@ def run(cfg_path, mode='rgb'):
                     acc_list.append(batch_acc)
                     f1_list.append(batch_f1)
 
-                    if num_iter == num_steps_per_update and phase == 'train':
+                    if phase == 'train' and num_iter == num_steps_per_update:
                         optimizer.step()
                         steps += 1
                         num_iter = 0
@@ -270,8 +270,8 @@ def run(cfg_path, mode='rgb'):
 
                         tot_loss = 0.0
 
-                    if steps % print_freq == 0 and phase == 'train':
-                        tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
+                    if phase == 'train' and steps % print_freq == 0:
+                        tepoch.set_postfix(loss=tot_loss / print_freq,
                                            batch_acc=round(batch_acc, 4),
                                            batch_f1=round(batch_f1, 4),
                                            total_acc=round(np.mean(acc_list), 4),
@@ -280,10 +280,12 @@ def run(cfg_path, mode='rgb'):
                 # after processing the data
                 if phase == 'val':
                     lr_sched.step(tot_loss)
-                    print(f'Epoch {epoch + 1} validation phase:\n'
-                          f'Tot Loss: {tot_loss / num_iter:.4f}\n'
+                    print('------------------------------\n'
+                          f'Epoch {epoch + 1} validation phase:\n'
+                          f'Tot Loss: {tot_loss / num_iter}\n'
                           f'Acc: {np.mean(acc_list):.4f}\n'
-                          f'F1: {np.mean(f1_list):.4f} ')
+                          f'F1: {np.mean(f1_list):.4f}\n'
+                          '------------------------------\n')
 
                     # # compute localization loss
                     # loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
