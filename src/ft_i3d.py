@@ -260,6 +260,7 @@ def run(cfg_path, mode='rgb'):
                     if num_iter == num_steps_per_update and phase == 'train':
                         optimizer.step()
                         steps += 1
+                        num_iter = 0
                         # save model only when loss is lower than the minimum loss
                         if tot_loss < min_loss:
                             min_loss = tot_loss
