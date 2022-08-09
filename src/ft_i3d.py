@@ -274,16 +274,16 @@ def run(cfg_path, mode='rgb'):
                         tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
                                            batch_acc=round(batch_acc, 4),
                                            batch_f1=round(batch_f1, 4),
-                                           total_acc=round(np.mean(acc_list) / len(acc_list), 4),
-                                           total_f1=round(np.mean(f1_list) / len(f1_list), 4))
+                                           total_acc=round(np.mean(acc_list), 4),
+                                           total_f1=round(np.mean(f1_list), 4))
 
                 # after processing the data
                 if phase == 'val':
                     lr_sched.step(tot_loss)
                     print(f'Epoch {epoch + 1} validation phase:\n'
                           f'Tot Loss: {tot_loss / num_iter:.4f}\n'
-                          f'Acc: {np.mean(acc_list) / len(acc_list):.4f}\n'
-                          f'F1: {np.mean(f1_list) / len(f1_list):.4f} ')
+                          f'Acc: {np.mean(acc_list):.4f}\n'
+                          f'F1: {np.mean(f1_list):.4f} ')
 
                     # # compute localization loss
                     # loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
