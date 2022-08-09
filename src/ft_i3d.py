@@ -217,7 +217,7 @@ def run(cfg_path, mode='rgb'):
             tot_cls_loss = 0.0
             num_iter = 0
             min_loss = np.inf
-            print_freq = 10
+            print_freq = 2
 
             acc_list = []
             f1_list = []
@@ -242,7 +242,6 @@ def run(cfg_path, mode='rgb'):
 
                     loss = torch.nn.functional.binary_cross_entropy_with_logits(per_frame_logits, labels)
                     loss.backward()
-
 
                     tot_loss += loss.item()
 
