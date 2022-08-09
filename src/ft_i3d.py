@@ -198,7 +198,7 @@ def run(cfg_path, mode='rgb'):
     # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
     lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
-    num_steps_per_update = 4  # accumulate gradient
+    num_steps_per_update = 1  # accumulate gradient
     steps = 0
     # train it
     for epoch in range(epochs):
