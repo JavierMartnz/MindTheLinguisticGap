@@ -2,6 +2,7 @@ import pickle
 import gzip
 import os
 import cv2
+from zipfile import ZipFile
 
 def save_gzip(obj, filepath):
     with gzip.open(filepath, "wb") as f:
