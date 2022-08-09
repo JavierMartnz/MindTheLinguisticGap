@@ -256,6 +256,13 @@ def run(cfg_path, mode='rgb'):
                     acc_list.append(batch_acc)
                     f1_list.append(batch_f1)
 
+                    if phase == 'train' and steps % print_freq == 0:
+                        tepoch.set_postfix(loss=tot_loss / print_freq,
+                                           batch_acc=round(batch_acc, 4),
+                                           batch_f1=round(batch_f1, 4),
+                                           total_acc=round(np.mean(acc_list), 4),
+                                           total_f1=round(np.mean(f1_list), 4))
+
                     if phase == 'train' and num_iter == num_steps_per_update:
                         optimizer.step()
                         steps += 1
@@ -269,13 +276,6 @@ def run(cfg_path, mode='rgb'):
                                            num_iter).zfill(6) + '.pt')
 
                         tot_loss = 0.0
-
-                    if phase == 'train' and steps % print_freq == 0:
-                        tepoch.set_postfix(loss=tot_loss / print_freq,
-                                           batch_acc=round(batch_acc, 4),
-                                           batch_f1=round(batch_f1, 4),
-                                           total_acc=round(np.mean(acc_list), 4),
-                                           total_f1=round(np.mean(f1_list), 4))
 
                 # after processing the data
                 if phase == 'val':
