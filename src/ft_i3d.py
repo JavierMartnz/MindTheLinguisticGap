@@ -333,12 +333,12 @@ def run(cfg_path, mode='rgb'):
                 if phase == 'val':
                     lr_sched.step(tot_loss)
 
-                    cm = confusion_matrix(y_true, y_pred)
-                    cm_fig = plot_confusion_matrix(cm, [str(i) for i in arange(len(train_dataset.class_encodings))])
+                    # cm = confusion_matrix(y_true, y_pred)
+                    # cm_fig = plot_confusion_matrix(cm, [str(i) for i in arange(len(train_dataset.class_encodings))])
                     writer.add_scalar("Loss/val", tot_loss / num_steps_per_update, steps)
                     writer.add_scalar("Acc/val", np.mean(acc_list), steps)
                     writer.add_scalar("F1/val", np.mean(f1_list), steps)
-                    writer.add_figure("Val confusion matrix", cm_fig, steps)
+                    # writer.add_figure("Val confusion matrix", cm_fig, steps)
 
                     print('-------------------------\n'
                           f'Epoch {epoch + 1} validation phase:\n'
