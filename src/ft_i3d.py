@@ -311,9 +311,9 @@ def run(cfg_path, mode='rgb'):
 
                         # cm = confusion_matrix(y_true, y_pred)
                         # cm_fig = plot_confusion_matrix(cm, [str(i) for i in arange(len(train_dataset.class_encodings))])
-                        writer.add_scalar("Loss/train", tot_loss / num_steps_per_update, steps)
-                        writer.add_scalar("Acc/train", np.mean(acc_list), steps)
-                        writer.add_scalar("F1/train", np.mean(f1_list), steps)
+                        writer.add_scalar("train/loss", tot_loss / num_steps_per_update, steps)
+                        writer.add_scalar("train/acc", np.mean(acc_list), steps)
+                        writer.add_scalar("train/f1", np.mean(f1_list), steps)
                         # writer.add_figure("Train confusion matrix", cm_fig, steps)
 
                         optimizer.step()
@@ -335,9 +335,9 @@ def run(cfg_path, mode='rgb'):
 
                     # cm = confusion_matrix(y_true, y_pred)
                     # cm_fig = plot_confusion_matrix(cm, [str(i) for i in arange(len(train_dataset.class_encodings))])
-                    writer.add_scalar("Loss/val", tot_loss / num_steps_per_update, steps)
-                    writer.add_scalar("Acc/val", np.mean(acc_list), steps)
-                    writer.add_scalar("F1/val", np.mean(f1_list), steps)
+                    writer.add_scalar("val/loss", tot_loss / num_iter, steps)
+                    writer.add_scalar("val/acc", np.mean(acc_list), steps)
+                    writer.add_scalar("val/f1", np.mean(f1_list), steps)
                     # writer.add_figure("Val confusion matrix", cm_fig, steps)
 
                     print('-------------------------\n'
@@ -359,7 +359,7 @@ def run(cfg_path, mode='rgb'):
                     # loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
                     # tot_loss += loss.item()
                     # loss.backward()
-
+        writer.close()
 
 def main(params):
     config_path = params.config_path
