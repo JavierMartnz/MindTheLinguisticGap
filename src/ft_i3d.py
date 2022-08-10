@@ -35,6 +35,7 @@ from time import sleep
 from tqdm import tqdm
 
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
+import matplotlib.pyplot as plt
 
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_data import I3Dataset
