@@ -23,6 +23,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.autograd import Variable
+from torch.utils.tensorboard import SummaryWriter
 
 import torchvision
 from torchvision import datasets, transforms
@@ -48,6 +49,43 @@ from src.utils.loss import f1_loss
 #     recall = TP / (TP + FN + 1e-6)
 #     F1 = 2 * precision * recall / (precision + recall + 1e-6)
 #     return acc, F1, precision, recall
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    # print(cm)
+
+    figure = plt.figure(figsize=(8, 8))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+    return figure
 
 
 def get_prediction_measures(labels, frame_logits):
@@ -198,6 +236,9 @@ def run(cfg_path, mode='rgb'):
     # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
     lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
+    # just before the actual training loop, create a file where the training log will be saved
+    writer = SummaryWriter()
+
     num_steps_per_update = 1  # accumulate gradient
     steps = 0
     # train it
@@ -249,6 +290,8 @@ def run(cfg_path, mode='rgb'):
                     y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
                     y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
+
+
                     batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
                     batch_f1 = np.mean(
                         [f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
@@ -264,6 +307,14 @@ def run(cfg_path, mode='rgb'):
                                            total_f1=round(np.mean(f1_list), 4))
 
                     if phase == 'train' and num_iter == num_steps_per_update:
+
+                        cm = confusion_matrix(y_true, y_pred)
+                        cm_fig = plot_confusion_matrix(cm, [str(i) for i in arange(len(train_dataset.class_encodings))])
+                        writer.add_scalar("Loss/train", tot_loss / num_steps_per_update, steps)
+                        writer.add_scalar("Acc/train", np.mean(acc_list), steps)
+                        writer.add_scalar("F1/train", np.mean(f1_list), steps)
+                        writer.add_figure("Train confusion matrix", cm_fig, steps)
+
                         optimizer.step()
                         steps += 1
                         num_iter = 0
@@ -280,6 +331,14 @@ def run(cfg_path, mode='rgb'):
                 # after processing the data
                 if phase == 'val':
                     lr_sched.step(tot_loss)
+
+                    cm = confusion_matrix(y_true, y_pred)
+                    cm_fig = plot_confusion_matrix(cm, [str(i) for i in arange(len(train_dataset.class_encodings))])
+                    writer.add_scalar("Loss/val", tot_loss / num_steps_per_update, steps)
+                    writer.add_scalar("Acc/val", np.mean(acc_list), steps)
+                    writer.add_scalar("F1/val", np.mean(f1_list), steps)
+                    writer.add_figure("Val confusion matrix", cm_fig, steps)
+
                     print('-------------------------\n'
                           f'Epoch {epoch + 1} validation phase:\n'
                           f'Tot Loss: {tot_loss / num_iter:.4f}\t'
