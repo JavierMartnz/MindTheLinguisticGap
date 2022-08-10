@@ -232,8 +232,8 @@ def run(cfg_path, mode='rgb'):
     i3d = nn.DataParallel(i3d)
 
     lr = init_lr
-    # optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
-    optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
+    optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
+    # optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
     # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
     lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
@@ -309,12 +309,9 @@ def run(cfg_path, mode='rgb'):
 
                     if phase == 'train' and num_iter == num_steps_per_update:
 
-                        # cm = confusion_matrix(y_true, y_pred)
-                        # cm_fig = plot_confusion_matrix(cm, [str(i) for i in arange(len(train_dataset.class_encodings))])
                         writer.add_scalar("train/loss", tot_loss / num_steps_per_update, steps)
                         writer.add_scalar("train/acc", np.mean(acc_list), steps)
                         writer.add_scalar("train/f1", np.mean(f1_list), steps)
-                        # writer.add_figure("Train confusion matrix", cm_fig, steps)
 
                         optimizer.step()
                         steps += 1
@@ -333,12 +330,9 @@ def run(cfg_path, mode='rgb'):
                 if phase == 'val':
                     lr_sched.step(tot_loss)
 
-                    # cm = confusion_matrix(y_true, y_pred)
-                    # cm_fig = plot_confusion_matrix(cm, [str(i) for i in arange(len(train_dataset.class_encodings))])
                     writer.add_scalar("val/loss", tot_loss / num_iter, steps)
                     writer.add_scalar("val/acc", np.mean(acc_list), steps)
                     writer.add_scalar("val/f1", np.mean(f1_list), steps)
-                    # writer.add_figure("Val confusion matrix", cm_fig, steps)
 
                     print('-------------------------\n'
                           f'Epoch {epoch + 1} validation phase:\n'
