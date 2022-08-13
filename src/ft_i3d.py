@@ -177,25 +177,21 @@ def run(cfg_path, mode='rgb'):
                                            torchvision.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
                                            ])
 
-    # train_transforms = transforms.Compose([torchvision.transforms.RandomCrop(244),
-    #                                        torchvision.transforms.RandomHorizontalFlip()
-    #                                        ])
+    train_transforms = transforms.Compose([torchvision.transforms.RandomCrop(244),
+                                           torchvision.transforms.RandomHorizontalFlip()
+                                           ])
 
     val_transforms = transforms.Compose([torchvision.transforms.CenterCrop(224)])
 
     num_top_glosses = 2  # should be None if no filtering wanted
 
     print("Loading training split...")
-    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, transforms=train_transforms,
-                              filter_num=num_top_glosses)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
-                                                   pin_memory=True)
+    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, transforms=train_transforms, filter_num=num_top_glosses)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Loading val split...")
-    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, transforms=train_transforms,
-                            filter_num=num_top_glosses)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
-                                                 pin_memory=True)
+    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, transforms=val_transforms, filter_num=num_top_glosses)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
     # datasets = {'train': train_dataset, 'val': val_dataset}
