@@ -63,7 +63,7 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
             sc = 1 + d / min(w, h)
             img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
         img = (img / 255.) * 2 - 1
-        # change the img from (H, W, C) to (C, H, W) for the transformations
+        # change the img from (H, W, C) to (C, H, W) for the transformations as they require [..., H, W]
         img = img.transpose([2, 0, 1])
         frames.append(img)
 
@@ -235,12 +235,12 @@ class I3Dataset(data_utl.Dataset):
         # else:
         #     imgs = load_flow_frames(self.root, vid, start_frame)
 
-        # pytorch transformations only work on Tensors with shape (C, H, W)
+        # pytorch transformations only work on Tensors [..., H, W]
         if self.transforms:
             imgs = self.transforms(imgs)
 
-        # change from (T, C, H, W)  to shape (C, T, H, W) for network input
-        imgs = imgs.transpose(0, 1)
+        # change from [T, C, H, W]  to shape [T, H, W, C] for network input
+        imgs = imgs.permute((0, 2, 3, 1))
 
         return imgs, torch.from_numpy(label)
 
