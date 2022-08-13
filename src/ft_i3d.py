@@ -178,8 +178,7 @@ def run(cfg_path, mode='rgb'):
                                            ])
 
     train_transforms = transforms.Compose([torchvision.transforms.RandomCrop(244),
-                                           torchvision.transforms.RandomHorizontalFlip(),
-                                           torchvision.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+                                           torchvision.transforms.RandomHorizontalFlip()
                                            ])
 
     val_transforms = transforms.Compose([torchvision.transforms.CenterCrop(224)])
@@ -289,6 +288,7 @@ def run(cfg_path, mode='rgb'):
 
                     per_frame_logits = i3d(inputs)
                     # upsample to input size
+                    print(per_frame_logits.size())
                     per_frame_logits = F.interpolate(per_frame_logits, size=t, mode='linear')
 
                     loss = torch.nn.functional.binary_cross_entropy_with_logits(per_frame_logits, labels)
