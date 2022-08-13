@@ -235,8 +235,6 @@ class I3Dataset(data_utl.Dataset):
         # else:
         #     imgs = load_flow_frames(self.root, vid, start_frame)
 
-        print(np.shape(imgs))
-
         # pytorch transformations only work on Tensors with shape (C, H, W)
         if self.transforms:
             imgs = self.transforms(imgs)
