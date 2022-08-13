@@ -61,6 +61,8 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
             sc = 1 + d / min(w, h)
             img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
         img = (img / 255.) * 2 - 1
+        # change the img to C, H, W for the transformations
+        print(type(img))
         frames.append(img)
 
     # now make sure that the corresponding number of windows is filled
@@ -233,6 +235,7 @@ class I3Dataset(data_utl.Dataset):
 
         print(np.shape(imgs))
 
+        # pytorch transformations only work on Tensors with shape (C, H, W)
         if self.transforms:
             imgs = self.transforms(imgs)
 
