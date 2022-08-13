@@ -170,7 +170,8 @@ def run(cfg_path, mode='rgb'):
     print(f"Using window size of {window_size} frames")
 
     # setup dataset
-    train_transforms = transforms.Compose([torchvision.transforms.RandomCrop(224),
+    train_transforms = transforms.Compose([torchvision.transforms.to_tensor(),
+                                           torchvision.transforms.RandomCrop(224),
                                            torchvision.transforms.RandomHorizontalFlip(p=0.5),
                                            torchvision.transforms.RandomPerspective(p=0.5),
                                            torchvision.transforms.ColorJitter(brightness=0.2, contrast=0.2,
