@@ -240,6 +240,8 @@ class I3Dataset(data_utl.Dataset):
         # change from [T, C, H, W]  to shape [C, T, H, W] for network input
         imgs = imgs.permute((3, 0, 1, 2))
 
+        print(imgs.size())
+
         return imgs, torch.from_numpy(label)
 
     def __len__(self):
