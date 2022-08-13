@@ -186,12 +186,14 @@ def run(cfg_path, mode='rgb'):
     num_top_glosses = 2  # should be None if no filtering wanted
 
     print("Loading training split...")
-    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, transforms=train_transforms, filter_num=num_top_glosses)
+    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, transforms=train_transforms,
+                              filter_num=num_top_glosses)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                                    pin_memory=True)
 
     print("Loading val split...")
-    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, transforms=train_transforms, filter_num=num_top_glosses)
+    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, transforms=train_transforms,
+                            filter_num=num_top_glosses)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                                  pin_memory=True)
 
@@ -226,7 +228,6 @@ def run(cfg_path, mode='rgb'):
         param.requires_grad = False
         n_layers += 1
 
-
     # unfreeze the ones we want
     i3d.logits.requires_grad_(True)
     # layers are ['Mixed_5c', 'Mixed_5b', 'MaxPool3d_5a_2x2', 'Mixed_4f', 'Mixed_4e', 'Mixed_4d', 'Mixed_4c', 'Mixed_4b']
@@ -234,7 +235,7 @@ def run(cfg_path, mode='rgb'):
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
-    print(f"The last {len(unfreeze_layers)+1} out of 17 blocks are unfrozen.")
+    print(f"The last {len(unfreeze_layers) + 1} out of 17 blocks are unfrozen.")
 
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
@@ -288,10 +289,22 @@ def run(cfg_path, mode='rgb'):
 
                     per_frame_logits = i3d(inputs)
                     # upsample to input size
-                    print(per_frame_logits.size())
                     per_frame_logits = F.interpolate(per_frame_logits, size=t, mode='linear')
 
-                    loss = torch.nn.functional.binary_cross_entropy_with_logits(per_frame_logits, labels)
+                    print(per_frame_logits.size(), labels.size())
+
+                    # compute localization loss
+                    loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
+                    tot_loc_loss += loc_loss.item()
+
+                    # compute classification loss (with max-pooling along time B x C x T)
+                    cls_loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                        torch.max(per_frame_logits, dim=2)[0],
+                        torch.max(labels, dim=2)[0])
+                    tot_cls_loss += cls_loss.item()
+
+                    loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
+                    tot_loss += loss.item()
                     loss.backward()
 
                     tot_loss += loss.item()
@@ -301,7 +314,8 @@ def run(cfg_path, mode='rgb'):
                     y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                     batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
-                    batch_f1 = np.mean([f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
+                    batch_f1 = np.mean(
+                        [f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
 
                     acc_list.append(batch_acc)
                     f1_list.append(batch_f1)
@@ -309,6 +323,8 @@ def run(cfg_path, mode='rgb'):
                     if phase == 'train' and num_iter == num_steps_per_update:
 
                         writer.add_scalar("train/loss", tot_loss / num_steps_per_update, steps)
+                        writer.add_scalar("train/loc_loss", tot_loc_loss / num_steps_per_update, steps)
+                        writer.add_scalar("train/cls_loss", tot_cls_loss / num_steps_per_update, steps)
                         writer.add_scalar("train/acc", np.mean(acc_list), steps)
                         writer.add_scalar("train/f1", np.mean(f1_list), steps)
 
@@ -318,8 +334,8 @@ def run(cfg_path, mode='rgb'):
 
                         if steps % print_freq == 0:
                             tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
-                                               batch_acc=round(batch_acc, 4),
-                                               batch_f1=round(batch_f1, 4),
+                                               loc_loss=round(tot_loc_loss / print_freq, 4),
+                                               cls_loss=round(tot_cls_loss / print_freq, 4),
                                                total_acc=round(np.mean(acc_list), 4),
                                                total_f1=round(np.mean(f1_list), 4))
 
@@ -332,35 +348,30 @@ def run(cfg_path, mode='rgb'):
                                            num_iter).zfill(6) + '.pt')
 
                         tot_loss = 0.0
+                        loc_loss = 0.0
+                        cls_loss = 0.0
 
                 # after processing the data
                 if phase == 'val':
                     lr_sched.step(tot_loss)
 
                     writer.add_scalar("val/loss", tot_loss / num_iter, steps)
+                    writer.add_scalar("val/loc_loss", tot_loc_loss / num_iter, steps)
+                    writer.add_scalar("val/cls_loss", tot_cls_loss / num_iter, steps)
                     writer.add_scalar("val/acc", np.mean(acc_list), steps)
                     writer.add_scalar("val/f1", np.mean(f1_list), steps)
 
                     print('-------------------------\n'
                           f'Epoch {epoch + 1} validation phase:\n'
                           f'Tot Loss: {tot_loss / num_iter:.4f}\t'
+                          f'Loc Loss: {tot_loc_loss / num_iter:.4f}\t'
+                          f'Cls Loss: {tot_cls_loss / num_iter:.4f}\t'
                           f'Acc: {np.mean(acc_list):.4f}\t'
                           f'F1: {np.mean(f1_list):.4f}\n'
                           '-------------------------\n')
 
-                    # # compute localization loss
-                    # loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
-                    # tot_loc_loss += loc_loss.item()
-                    #
-                    # # compute classification loss (with max-pooling along time B x C x T)
-                    # cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0],
-                    #                                               torch.max(labels, dim=2)[0])
-                    # tot_cls_loss += cls_loss.item()
-                    #
-                    # loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
-                    # tot_loss += loss.item()
-                    # loss.backward()
         writer.close()
+
 
 def main(params):
     config_path = params.config_path
