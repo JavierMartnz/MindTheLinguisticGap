@@ -54,7 +54,7 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
         success, img = vcap.read()
         if not success:
             break
-        w, h, c = img.shape
+        h, w, c = img.shape
         # change image from BGR space (OpenCV) to RGB
         img = img[:, :, [2, 1, 0]]
         # resize every frame to 256x256 and normalize them
@@ -63,8 +63,8 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
             sc = 1 + d / min(w, h)
             img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
         img = (img / 255.) * 2 - 1
-        # change the img from (W, H, C) to (C, H, W) for the transformations
-        img = img.transpose([2, 1, 0])
+        # change the img from (H, W, C) to (C, H, W) for the transformations
+        img = img.transpose([2, 0, 1])
         frames.append(img)
 
     # now make sure that the corresponding number of windows is filled
@@ -234,15 +234,13 @@ class I3Dataset(data_utl.Dataset):
             imgs = load_rgb_frames(video_path, start_frame, self.window_size)
         # else:
         #     imgs = load_flow_frames(self.root, vid, start_frame)
-        print(imgs.size())
+
         # pytorch transformations only work on Tensors with shape (C, H, W)
         if self.transforms:
             imgs = self.transforms(imgs)
 
-        print(imgs.size())
         # change from (T, C, H, W)  to shape (C, T, H, W) for network input
         imgs = imgs.transpose(0, 1)
-        print(imgs.size())
 
         return imgs, torch.from_numpy(label)
 
