@@ -233,14 +233,14 @@ class I3Dataset(data_utl.Dataset):
         # else:
         #     imgs = load_flow_frames(self.root, vid, start_frame)
 
-        # pytorch transformations only work on Tensors [..., H, W] so change shape from [T, H, W, C] to [C, T, H, W]
-        imgs = imgs.permute((3, 0, 1, 2))
+        # pytorch transformations only work on Tensors [... C, H, W] so change shape from [T, H, W, C] to [T, C, H, W]
+        imgs = imgs.permute((0, 3, 1, 2))
 
         if self.transforms:
             imgs = self.transforms(imgs)
 
         # change from [T, C, H, W]  to shape [C, T, H, W] for network input
-        # imgs = imgs.permute((3, 0, 1, 2))
+        imgs = imgs.permute((3, 0, 1, 2))
 
         return imgs, torch.from_numpy(label)
 
