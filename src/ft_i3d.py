@@ -5,6 +5,7 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 from src.utils import videotransforms
 from src.utils.helpers import load_config
+from src.utils.util import make_dir
 
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = '1'
@@ -159,7 +160,7 @@ def run(cfg_path, mode='rgb'):
     epochs = training_cfg.get("epochs")
     init_lr = training_cfg.get("init_lr")
     batch_size = training_cfg.get("batch_size")
-    save_model = training_cfg.get("model_dir")
+    save_model_root = training_cfg.get("model_dir")
     weights_dir = training_cfg.get("weights_dir")
 
     # data configs
@@ -237,17 +238,18 @@ def run(cfg_path, mode='rgb'):
     i3d = nn.DataParallel(i3d)
 
     lr = init_lr
-    optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
-    # optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
+    # optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
+    optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
     # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
     lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
-    print(str(optimizer).split('(')[0].replace(" ", ""))
-
-    return
-
     # just before the actual training loop, create a file where the training log will be saved
     writer = SummaryWriter()
+
+    # before starting the train loop, make sure the directory where the model will be stored is created/exists
+    new_save_dir = f'b{str(batch_size)}_{str(optimizer).split("(")[0].strip()}_lr{str(lr)}_ep{str(epochs)}'
+    save_model_dir = os.path.join(save_model_root, new_save_dir)
+    make_dir(save_model_dir)
 
     num_steps_per_update = 1  # accumulate gradient
     steps = 0
@@ -342,7 +344,7 @@ def run(cfg_path, mode='rgb'):
                             min_loss = tot_loss
                             # save model
                             torch.save(i3d.module.state_dict(),
-                                       save_model + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
+                                       save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
                                         num_iter).zfill(6) + '.pt')
 
                         tot_loss = 0.0

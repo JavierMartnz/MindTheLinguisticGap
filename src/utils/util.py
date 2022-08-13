@@ -17,10 +17,10 @@ def load_gzip(filepath):
         return loaded_object
 
 
-def make_dir(dir: str) -> str:
-    if not os.path.isdir(dir):
-        os.makedirs(dir)
-    return dir
+def make_dir(directory: str) -> str:
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+    return directory
 
 
 def save_vocab(gloss_to_id_dict, vocab_path):
