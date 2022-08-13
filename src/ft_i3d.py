@@ -242,6 +242,10 @@ def run(cfg_path, mode='rgb'):
     # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
     lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
+    print(str(optimizer), str(lr), str(batch_size), str(epochs))
+
+    return
+
     # just before the actual training loop, create a file where the training log will be saved
     writer = SummaryWriter()
 
@@ -339,7 +343,7 @@ def run(cfg_path, mode='rgb'):
                             # save model
                             torch.save(i3d.module.state_dict(),
                                        save_model + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
-                                           num_iter).zfill(6) + '.pt')
+                                        num_iter).zfill(6) + '.pt')
 
                         tot_loss = 0.0
                         loc_loss = 0.0
