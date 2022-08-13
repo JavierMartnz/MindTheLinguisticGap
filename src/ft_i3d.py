@@ -186,12 +186,12 @@ def run(cfg_path, mode='rgb'):
     num_top_glosses = 2  # should be None if no filtering wanted
 
     print("Loading training split...")
-    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, transforms=train_transforms, filter_num=num_top_glosses)
+    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, transforms=None, filter_num=num_top_glosses)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                                    pin_memory=True)
 
     print("Loading val split...")
-    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, transforms=val_transforms, filter_num=num_top_glosses)
+    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, transforms=None, filter_num=num_top_glosses)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                                  pin_memory=True)
 
