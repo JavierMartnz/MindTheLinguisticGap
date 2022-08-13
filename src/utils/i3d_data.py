@@ -70,7 +70,7 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
         for i in range(start_frame + window_size - last_frame):
             frames.append(frames[i])
 
-    return np.asarray(frames[start_frame:start_frame + window_size], dtype=np.float32)
+    return torch.Tensor(frames[start_frame:start_frame + window_size], dtype=np.float32)
 
 
 # def load_flow_frames(root, vid, start, num):
