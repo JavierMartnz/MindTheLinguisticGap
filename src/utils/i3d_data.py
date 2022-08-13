@@ -63,8 +63,6 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
             sc = 1 + d / min(w, h)
             img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
         img = (img / 255.) * 2 - 1
-        # change the img from (H, W, C) to (C, H, W) for the transformations as they require [..., H, W]
-        img = img.transpose([2, 0, 1])
         frames.append(img)
 
     # now make sure that the corresponding number of windows is filled
@@ -240,7 +238,7 @@ class I3Dataset(data_utl.Dataset):
             imgs = self.transforms(imgs)
 
         # change from [T, C, H, W]  to shape [C, T, H, W] for network input
-        imgs = imgs.permute((1, 0, 2, 3))
+        imgs = imgs.permute((3, 0, 1, 2))
 
         return imgs, torch.from_numpy(label)
 
