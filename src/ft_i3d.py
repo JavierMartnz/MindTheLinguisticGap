@@ -295,21 +295,11 @@ def run(cfg_path, mode='rgb'):
                     y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
                     y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
-
-
                     batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
-                    batch_f1 = np.mean(
-                        [f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
+                    batch_f1 = np.mean([f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
 
                     acc_list.append(batch_acc)
                     f1_list.append(batch_f1)
-
-                    if phase == 'train' and steps % print_freq == 0:
-                        tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
-                                           batch_acc=round(batch_acc, 4),
-                                           batch_f1=round(batch_f1, 4),
-                                           total_acc=round(np.mean(acc_list), 4),
-                                           total_f1=round(np.mean(f1_list), 4))
 
                     if phase == 'train' and num_iter == num_steps_per_update:
 
@@ -320,6 +310,14 @@ def run(cfg_path, mode='rgb'):
                         optimizer.step()
                         steps += 1
                         num_iter = 0
+
+                        if steps % print_freq == 0:
+                            tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
+                                               batch_acc=round(batch_acc, 4),
+                                               batch_f1=round(batch_f1, 4),
+                                               total_acc=round(np.mean(acc_list), 4),
+                                               total_f1=round(np.mean(f1_list), 4))
+
                         # save model only when loss is lower than the minimum loss
                         if tot_loss < min_loss:
                             min_loss = tot_loss
