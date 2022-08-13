@@ -263,7 +263,7 @@ def run(cfg_path, mode='rgb'):
             tot_cls_loss = 0.0
             num_iter = 0
             min_loss = np.inf
-            print_freq = 10
+            print_freq = 1
 
             acc_list = []
             f1_list = []
