@@ -184,11 +184,11 @@ def run(cfg_path, mode='rgb'):
 
     # CUSTOM TRANSFORMS FROM THE GITHUB REPOSITORY
 
-    train_transforms = transforms.Compose([videotransforms.RandomCrop(244),
-                                           videotransforms.RandomHorizontalFlip()
-                                           ])
-
-    val_transforms = transforms.Compose([videotransforms.CenterCrop(244)])
+    # train_transforms = transforms.Compose([videotransforms.RandomCrop(244),
+    #                                        videotransforms.RandomHorizontalFlip()
+    #                                        ])
+    #
+    # val_transforms = transforms.Compose([videotransforms.CenterCrop(244)])
 
     num_top_glosses = 2  # should be None if no filtering wanted
 
