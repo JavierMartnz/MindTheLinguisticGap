@@ -291,7 +291,7 @@ def run(cfg_path, mode='rgb'):
 
                     per_frame_logits = i3d(inputs)
 
-                    print(per_frame_logits.size())
+                    print(inputs.size(), per_frame_logits.size())
                     # upsample to input size
                     per_frame_logits = F.interpolate(per_frame_logits, size=t, mode='linear')
 
