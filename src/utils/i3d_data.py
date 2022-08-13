@@ -234,13 +234,15 @@ class I3Dataset(data_utl.Dataset):
             imgs = load_rgb_frames(video_path, start_frame, self.window_size)
         # else:
         #     imgs = load_flow_frames(self.root, vid, start_frame)
-
+        print(images.size())
         # pytorch transformations only work on Tensors with shape (C, H, W)
         if self.transforms:
             imgs = self.transforms(imgs)
 
+        print(imgs.size())
         # change from (T, C, H, W)  to shape (C, T, H, W) for network input
         imgs = imgs.transpose(0, 1)
+        print(imgs.size())
 
         return imgs, torch.from_numpy(label)
 
