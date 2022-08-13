@@ -178,7 +178,9 @@ def run(cfg_path, mode='rgb'):
                                            ])
 
     train_transforms = transforms.Compose([torchvision.transforms.RandomCrop(244),
-                                           torchvision.transforms.RandomHorizontalFlip()])
+                                           torchvision.transforms.RandomHorizontalFlip(),
+                                           torchvision.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+                                           ])
 
     val_transforms = transforms.Compose([torchvision.transforms.CenterCrop(224)])
 
