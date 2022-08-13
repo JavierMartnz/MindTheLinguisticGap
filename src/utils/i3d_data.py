@@ -242,7 +242,7 @@ class I3Dataset(data_utl.Dataset):
             imgs = self.transforms(imgs)
 
         # change from (T, C, H, W)  to shape (C, T, H, W) for network input
-        imgs = imgs.transpose([1, 0, 2, 3])
+        imgs = imgs.transpose(0, 1)
 
         return video_to_tensor(imgs), torch.from_numpy(label)
 
