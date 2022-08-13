@@ -239,10 +239,8 @@ class I3Dataset(data_utl.Dataset):
         if self.transforms:
             imgs = self.transforms(imgs)
 
-        # change from [T, C, H, W]  to shape [T, H, W, C] for network input
-        imgs = imgs.permute((0, 2, 3, 1))
-
-        print(imgs.size())
+        # change from [T, C, H, W]  to shape [C, T, H, W] for network input
+        imgs = imgs.permute((1, 0, 2, 3))
 
         return imgs, torch.from_numpy(label)
 
