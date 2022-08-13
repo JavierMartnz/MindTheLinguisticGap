@@ -170,6 +170,8 @@ def run(cfg_path, mode='rgb'):
 
     print(f"Using window size of {window_size} frames")
 
+    # TRANSFORMS BASED ON TORCHVISION IMPLEMENTATION
+
     train_transforms = transforms.Compose([torchvision.transforms.RandomCrop(224),
                                            torchvision.transforms.RandomHorizontalFlip(p=0.5),
                                            torchvision.transforms.RandomPerspective(p=0.5),
@@ -178,11 +180,15 @@ def run(cfg_path, mode='rgb'):
                                            torchvision.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
                                            ])
 
-    train_transforms = transforms.Compose([torchvision.transforms.RandomCrop(244),
-                                           torchvision.transforms.RandomHorizontalFlip()
-                                           ])
-
     val_transforms = transforms.Compose([torchvision.transforms.CenterCrop(224)])
+
+    # CUSTOM TRANSFORMS FROM THE GITHUB REPOSITORY
+
+    train_transforms = transforms.Compose[(videotransforms.RandomCrop(244),
+                                           videotransforms.RandomHorizontalFlip()
+                                           )]
+
+    val_transforms = transforms.Compose[(videotransforms.CenterCrop(244))]
 
     num_top_glosses = 2  # should be None if no filtering wanted
 
