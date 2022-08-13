@@ -56,7 +56,7 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
             break
         h, w, c = img.shape
         # change image from BGR space (OpenCV) to RGB
-        img = img[:, :, [2, 1, 0]]
+        # img = img[:, :, [2, 1, 0]]
         # resize every frame to 256x256 and normalize them
         if w < 256 or h < 256:
             d = 256. - min(w, h)
