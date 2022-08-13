@@ -171,8 +171,13 @@ def run(cfg_path, mode='rgb'):
 
     # setup dataset
     train_transforms = transforms.Compose([videotransforms.RandomCrop(224),
-                                           videotransforms.RandomHorizontalFlip(),
+                                           videotransforms.RandomHorizontalFlip(p=0.5),
+                                           torchvision.transforms.RandomPerspective(p=0.5),
+                                           torchvision.transforms.ColorJitter(brightness=0.2, contrast=0.2,
+                                                                              saturation=0.2, hue=0.2)
+                                           torchvision.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
                                            ])
+
     val_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
     num_top_glosses = 2  # should be None if no filtering wanted
@@ -183,7 +188,7 @@ def run(cfg_path, mode='rgb'):
                                                    pin_memory=True)
 
     print("Loading val split...")
-    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, transforms=val_transforms, filter_num=num_top_glosses)
+    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, transforms=train_transforms, filter_num=num_top_glosses)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                                  pin_memory=True)
 
