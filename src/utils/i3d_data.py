@@ -244,7 +244,7 @@ class I3Dataset(data_utl.Dataset):
         # change from (T, C, H, W)  to shape (C, T, H, W) for network input
         imgs = imgs.transpose(0, 1)
 
-        return video_to_tensor(imgs), torch.from_numpy(label)
+        return imgs, torch.from_numpy(label)
 
     def __len__(self):
         return len(self.data)
