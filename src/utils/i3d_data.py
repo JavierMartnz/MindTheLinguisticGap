@@ -61,8 +61,10 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
             sc = 1 + d / min(w, h)
             img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
         img = (img / 255.) * 2 - 1
-        # change the img to C, H, W for the transformations
-        print(type(img))
+        # change the img from W, H, C to C, H, W for the transformations
+        print(np.shape(img))
+        img = img.transpose(2, 1, 0)
+        print(np.shape(img))
         frames.append(img)
 
     # now make sure that the corresponding number of windows is filled
