@@ -247,21 +247,22 @@ def run(cfg_path, mode='rgb'):
     # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
     lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
-    # just before the actual training loop, create a file where the training log will be saved
+    # create a new tensorboard log
     writer = SummaryWriter()
 
-    # before starting the train loop, make sure the directory where the model will be stored is created/exists
+    # before starting the training loop, make sure the directory where the model will be stored is created/exists
     new_save_dir = f'b{str(batch_size)}_{str(optimizer).split("(")[0].strip()}_lr{str(lr)}_ep{str(epochs)}'
     save_model_dir = os.path.join(save_model_root, new_save_dir)
     make_dir(save_model_dir)
 
-    num_steps_per_update = 1  # accumulate gradient
-    steps = 0
-    # train it
-    for epoch in range(epochs):
-        # print('Epoch {}/{}'.format(steps, max_steps))
-        # print('-' * 10)
+    steps = 0  # count the number of optimizer steps
 
+    # THESE PARAMETERS CAN BE CHANGED
+    num_steps_per_update = 1  # number of batches for which the gradient accumulates before backpropagation
+    print_freq = 1  # number of optimizer steps before printing batch loss and metrics
+
+    # start training
+    for epoch in range(epochs):
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -272,9 +273,8 @@ def run(cfg_path, mode='rgb'):
             tot_loss = 0.0
             tot_loc_loss = 0.0
             tot_cls_loss = 0.0
-            num_iter = 0
+            num_iter = 0  # count number of iterations in an epoch
             min_loss = np.inf
-            print_freq = 1
 
             acc_list = []
             f1_list = []
@@ -283,36 +283,34 @@ def run(cfg_path, mode='rgb'):
                 for data in tepoch:
                     tepoch.set_description(f"Epoch {str(epoch + 1).zfill(len(str(epochs)))}/{epochs} -- ")
                     num_iter += 1
+
+                    # clear gradients
+                    optimizer.zero_grad()
+
                     # get the inputs
                     inputs, labels = data
-
-                    optimizer.zero_grad()  # clear gradients
-
-                    # wrap them in Variable
                     inputs = Variable(inputs.cuda())
-                    t = inputs.size(2)
                     labels = Variable(labels.cuda())
 
+                    # forward pass of the inputs through the network
                     per_frame_logits = i3d(inputs)
 
-                    # upsample to input size
-                    per_frame_logits = F.interpolate(per_frame_logits, size=t, mode='linear')
+                    # upsample output to input size
+                    per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
 
                     # compute localization loss
                     loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
                     tot_loc_loss += loc_loss.item()
 
                     # compute classification loss (with max-pooling along time B x C x T)
-                    cls_loss = torch.nn.functional.binary_cross_entropy_with_logits(
-                        torch.max(per_frame_logits, dim=2)[0],
-                        torch.max(labels, dim=2)[0])
+                    cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0], torch.max(labels, dim=2)[0])
                     tot_cls_loss += cls_loss.item()
 
-                    loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
+                    # compute total loss by calculating the mean of previous losses
+                    loss = (0.5 * loc_loss + 0.5 * cls_loss)
                     tot_loss += loss.item()
+                    # backpropagate the loss
                     loss.backward()
-
-                    tot_loss += loss.item()
 
                     # get batch accuracy and f1
                     y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
@@ -325,8 +323,9 @@ def run(cfg_path, mode='rgb'):
                     acc_list.append(batch_acc)
                     f1_list.append(batch_f1)
 
-                    if phase == 'train' and num_iter == num_steps_per_update:
+                    if phase == 'train' and num_iter % num_steps_per_update == 0:
 
+                        # add values to tensorboard
                         writer.add_scalar("train/loss", tot_loss / num_steps_per_update, steps)
                         writer.add_scalar("train/loc_loss", tot_loc_loss / num_steps_per_update, steps)
                         writer.add_scalar("train/cls_loss", tot_cls_loss / num_steps_per_update, steps)
@@ -335,7 +334,6 @@ def run(cfg_path, mode='rgb'):
 
                         optimizer.step()
                         steps += 1
-                        num_iter = 0
 
                         if steps % print_freq == 0:
                             tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
@@ -344,17 +342,16 @@ def run(cfg_path, mode='rgb'):
                                                total_acc=round(np.mean(acc_list), 4),
                                                total_f1=round(np.mean(f1_list), 4))
 
-                        # save model only when loss is lower than the minimum loss
+                        # save model only when total loss is lower than the minimum loss achieved so far
                         if tot_loss < min_loss:
                             min_loss = tot_loss
                             # save model
                             torch.save(i3d.module.state_dict(),
                                        save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
-                                        num_iter).zfill(6) + '.pt')
+                                        num_iter).zfill(len(tepoch)) + '.pt')
 
-                        tot_loss = 0.0
-                        loc_loss = 0.0
-                        cls_loss = 0.0
+                            # reset the losses
+                            tot_loss = tot_loc_loss = tot_cls_loss = 0.0
 
                 # after processing the data
                 if phase == 'val':
