@@ -246,7 +246,7 @@ def run(cfg_path, mode='rgb'):
     # optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
     optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
     # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
-    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
+    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
 
     # create a new tensorboard log
     writer = SummaryWriter()
@@ -349,20 +349,20 @@ def run(cfg_path, mode='rgb'):
                 # after processing the data
                 if phase == "train":
                     # add values to tensorboard
-                    writer.add_scalar("train/loss", tot_loss / num_iter, steps)
-                    writer.add_scalar("train/loss_loc", tot_loc_loss / num_iter, steps)
-                    writer.add_scalar("train/loss_cls", tot_cls_loss / num_iter, steps)
-                    writer.add_scalar("train/acc", np.mean(acc_list), steps)
-                    writer.add_scalar("train/f1", np.mean(f1_list), steps)
+                    writer.add_scalar("train/loss", tot_loss / num_iter, epoch)
+                    writer.add_scalar("train/loss_loc", tot_loc_loss / num_iter, epoch)
+                    writer.add_scalar("train/loss_cls", tot_cls_loss / num_iter, epoch)
+                    writer.add_scalar("train/acc", np.mean(acc_list), epoch)
+                    writer.add_scalar("train/f1", np.mean(f1_list), epoch)
 
                 if phase == 'val':
                     lr_sched.step(tot_loss)
 
-                    writer.add_scalar("val/loss", tot_loss / num_iter, steps)
-                    writer.add_scalar("val/loss_loc", tot_loc_loss / num_iter, steps)
-                    writer.add_scalar("val/loss_cls", tot_cls_loss / num_iter, steps)
-                    writer.add_scalar("val/acc", np.mean(acc_list), steps)
-                    writer.add_scalar("val/f1", np.mean(f1_list), steps)
+                    writer.add_scalar("val/loss", tot_loss / num_iter, epoch)
+                    writer.add_scalar("val/loss_loc", tot_loc_loss / num_iter, epoch)
+                    writer.add_scalar("val/loss_cls", tot_cls_loss / num_iter, epoch)
+                    writer.add_scalar("val/acc", np.mean(acc_list), epoch)
+                    writer.add_scalar("val/f1", np.mean(f1_list), epoch)
 
                     print('-------------------------\n'
                           f'Epoch {epoch + 1} validation phase:\n'
