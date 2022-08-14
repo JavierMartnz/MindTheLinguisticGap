@@ -157,6 +157,7 @@ def run(cfg_path, mode='rgb'):
     training_cfg = cfg.get("training")
 
     # training configs
+    run_name = training_cfg.get("run_name")
     epochs = training_cfg.get("epochs")
     init_lr = training_cfg.get("init_lr")
     batch_size = training_cfg.get("batch_size")
@@ -348,7 +349,7 @@ def run(cfg_path, mode='rgb'):
                             # save model
                             torch.save(i3d.module.state_dict(),
                                        save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
-                                        num_iter).zfill(len(tepoch)) + '.pt')
+                                        num_iter).zfill(len(tepoch)) + run_name + '.pt')
 
                             # reset the losses
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.0

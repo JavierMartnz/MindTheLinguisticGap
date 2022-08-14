@@ -5,6 +5,7 @@ data:
   window_size: 64
 
 training:
+  run_name: ""
   use_cuda: True
   epochs: 5
   random_seed: 42
