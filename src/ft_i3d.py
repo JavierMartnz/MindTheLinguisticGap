@@ -325,14 +325,6 @@ def run(cfg_path, mode='rgb'):
                     f1_list.append(batch_f1)
 
                     if phase == 'train' and num_iter % num_steps_per_update == 0:
-
-                        # add values to tensorboard
-                        writer.add_scalar("train/loss", tot_loss / num_steps_per_update, steps)
-                        writer.add_scalar("train/loc_loss", tot_loc_loss / num_steps_per_update, steps)
-                        writer.add_scalar("train/cls_loss", tot_cls_loss / num_steps_per_update, steps)
-                        writer.add_scalar("train/acc", np.mean(acc_list), steps)
-                        writer.add_scalar("train/f1", np.mean(f1_list), steps)
-
                         optimizer.step()
                         steps += 1
 
@@ -355,12 +347,20 @@ def run(cfg_path, mode='rgb'):
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.0
 
                 # after processing the data
+                if phase == "train":
+                    # add values to tensorboard
+                    writer.add_scalar("train/loss", tot_loss / num_iter, steps)
+                    writer.add_scalar("train/loss_loc", tot_loc_loss / num_iter, steps)
+                    writer.add_scalar("train/loss_cls", tot_cls_loss / num_iter, steps)
+                    writer.add_scalar("train/acc", np.mean(acc_list), steps)
+                    writer.add_scalar("train/f1", np.mean(f1_list), steps)
+
                 if phase == 'val':
                     lr_sched.step(tot_loss)
 
                     writer.add_scalar("val/loss", tot_loss / num_iter, steps)
-                    writer.add_scalar("val/loc_loss", tot_loc_loss / num_iter, steps)
-                    writer.add_scalar("val/cls_loss", tot_cls_loss / num_iter, steps)
+                    writer.add_scalar("val/loss_loc", tot_loc_loss / num_iter, steps)
+                    writer.add_scalar("val/loss_cls", tot_cls_loss / num_iter, steps)
                     writer.add_scalar("val/acc", np.mean(acc_list), steps)
                     writer.add_scalar("val/f1", np.mean(f1_list), steps)
 
