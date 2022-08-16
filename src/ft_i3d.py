@@ -275,6 +275,7 @@ def run(cfg_path, mode='rgb'):
             tot_loc_loss = 0.0
             tot_cls_loss = 0.0
             num_iter = 0  # count number of iterations in an epoch
+            num_acc_loss = 0  # count number of iterations in which the model hasn't been stored
             min_loss = np.inf
 
             acc_list = []
@@ -284,6 +285,7 @@ def run(cfg_path, mode='rgb'):
                 for data in tepoch:
                     tepoch.set_description(f"Epoch {str(epoch + 1).zfill(len(str(epochs)))}/{epochs} -- ")
                     num_iter += 1
+                    num_acc_loss += 1
 
                     # clear gradients
                     optimizer.zero_grad()
@@ -329,18 +331,18 @@ def run(cfg_path, mode='rgb'):
                         steps += 1
 
                         if steps % print_freq == 0:
-                            tepoch.set_postfix(loss=round(tot_loss / print_freq, 4),
-                                               loc_loss=round(tot_loc_loss / print_freq, 4),
-                                               cls_loss=round(tot_cls_loss / print_freq, 4),
+                            tepoch.set_postfix(loss=round(tot_loss / num_acc_loss, 4),
+                                               loc_loss=round(tot_loc_loss / num_acc_loss, 4),
+                                               cls_loss=round(tot_cls_loss / num_acc_loss, 4),
                                                total_acc=round(np.mean(acc_list), 4),
                                                total_f1=round(np.mean(f1_list), 4))
 
                         # add values to tensorboard
-                        writer.add_scalar("train/loss", tot_loss / num_iter, epoch)
-                        writer.add_scalar("train/loss_loc", tot_loc_loss / num_iter, epoch)
-                        writer.add_scalar("train/loss_cls", tot_cls_loss / num_iter, epoch)
-                        writer.add_scalar("train/acc", np.mean(acc_list), epoch)
-                        writer.add_scalar("train/f1", np.mean(f1_list), epoch)
+                        writer.add_scalar("train/loss", tot_loss / num_acc_loss, steps)
+                        writer.add_scalar("train/loss_loc", tot_loc_loss / num_acc_loss, steps)
+                        writer.add_scalar("train/loss_cls", tot_cls_loss / num_acc_loss, steps)
+                        writer.add_scalar("train/acc", np.mean(acc_list), steps)
+                        writer.add_scalar("train/f1", np.mean(f1_list), steps)
 
                         # save model only when total loss is lower than the minimum loss achieved so far
                         if tot_loss < min_loss:
@@ -349,8 +351,8 @@ def run(cfg_path, mode='rgb'):
                             torch.save(i3d.module.state_dict(),
                                        save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
                                         num_iter) + '.pt')
-
-                            # reset the losses
+                            # reset losses and counter
+                            num_acc_loss = 0
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.0
 
                 # after processing the data
