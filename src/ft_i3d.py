@@ -252,7 +252,7 @@ def run(cfg_path, mode='rgb'):
     writer = SummaryWriter()
 
     # before starting the training loop, make sure the directory where the model will be stored is created/exists
-    new_save_dir = f'b{str(batch_size)}_{str(optimizer).split("(")[0].strip()}_lr{str(lr)}_ep{str(epochs)}'
+    new_save_dir = f'b{str(batch_size)}_{str(optimizer).split("(")[0].strip()}_lr{str(lr)}_ep{str(epochs)}_{run_name}'
     save_model_dir = os.path.join(save_model_root, new_save_dir)
     make_dir(save_model_dir)
 
@@ -335,25 +335,25 @@ def run(cfg_path, mode='rgb'):
                                                total_acc=round(np.mean(acc_list), 4),
                                                total_f1=round(np.mean(f1_list), 4))
 
+                        # add values to tensorboard
+                        writer.add_scalar("train/loss", tot_loss / num_iter, epoch)
+                        writer.add_scalar("train/loss_loc", tot_loc_loss / num_iter, epoch)
+                        writer.add_scalar("train/loss_cls", tot_cls_loss / num_iter, epoch)
+                        writer.add_scalar("train/acc", np.mean(acc_list), epoch)
+                        writer.add_scalar("train/f1", np.mean(f1_list), epoch)
+
                         # save model only when total loss is lower than the minimum loss achieved so far
                         if tot_loss < min_loss:
                             min_loss = tot_loss
                             # save model
                             torch.save(i3d.module.state_dict(),
                                        save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
-                                        num_iter).zfill(len(tepoch)) + run_name + '.pt')
+                                        num_iter) + '.pt')
 
                             # reset the losses
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.0
 
                 # after processing the data
-                if phase == "train":
-                    # add values to tensorboard
-                    writer.add_scalar("train/loss", tot_loss / num_iter, epoch)
-                    writer.add_scalar("train/loss_loc", tot_loc_loss / num_iter, epoch)
-                    writer.add_scalar("train/loss_cls", tot_cls_loss / num_iter, epoch)
-                    writer.add_scalar("train/acc", np.mean(acc_list), epoch)
-                    writer.add_scalar("train/f1", np.mean(f1_list), epoch)
 
                 if phase == 'val':
                     lr_sched.step(tot_loss)
