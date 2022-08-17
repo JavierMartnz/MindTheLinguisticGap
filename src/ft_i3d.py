@@ -290,6 +290,8 @@ def run(cfg_path, mode='rgb'):
                     # forward pass of the inputs through the network
                     per_frame_logits = i3d(inputs)
 
+                    print(inputs.size(), per_frame_logits.size())
+
                     # upsample output to input size
                     per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
 
