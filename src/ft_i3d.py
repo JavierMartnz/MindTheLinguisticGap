@@ -177,8 +177,9 @@ def run(cfg_path, mode='rgb'):
                             transforms.RandomAffine(degrees=10),
                             transforms.RandomHorizontalFlip(),
                             spatial_transforms.ColorJitter(num_in_frames=window_size),
-                            transforms.RandomCrop(244)])
+                            transforms.RandomCrop(224)])
 
+    # validation transforms should never contain any randomness
     val_transforms = transforms.Compose([transforms.CenterCrop(224)])
 
     num_top_glosses = 2  # should be None if no filtering wanted
