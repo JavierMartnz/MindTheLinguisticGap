@@ -40,6 +40,7 @@ import matplotlib.pyplot as plt
 
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_data import I3Dataset
+from src.utils import spatial_transforms
 from src.utils.resnet import r2plus1d_18
 from src.utils.util import extract_zip
 from src.utils.loss import f1_loss
@@ -171,23 +172,14 @@ def run(cfg_path, mode='rgb'):
 
     print(f"Using window size of {window_size} frames")
 
-    # TRANSFORMS BASED ON TORCHVISION IMPLEMENTATION
+    train_transforms = transforms.Compose([
+                            transforms.RandomPerspective(),
+                            transforms.RandomAffine(degrees=10),
+                            transforms.RandomHorizontalFlip(),
+                            spatial_transforms.ColorJitter(num_in_frames=window_size),
+                            transforms.RandomCrop(244)])
 
-    train_transforms = transforms.Compose([torchvision.transforms.RandomCrop(224),
-                                           torchvision.transforms.RandomHorizontalFlip(p=0.5),
-                                           torchvision.transforms.RandomPerspective(p=0.5),
-                                           torchvision.transforms.ColorJitter(brightness=0.2, contrast=0.2,
-                                                                              saturation=0.2, hue=0.2),
-                                           torchvision.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-                                           ])
-
-    val_transforms = transforms.Compose([torchvision.transforms.CenterCrop(224)])
-
-    # CUSTOM TRANSFORMS FROM THE GITHUB REPOSITORY
-    train_transforms = transforms.Compose([videotransforms.RandomCrop(224),
-                                           videotransforms.RandomHorizontalFlip(),
-                                           ])
-    val_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
+    val_transforms = transforms.Compose([transforms.CenterCrop(224)])
 
     num_top_glosses = 2  # should be None if no filtering wanted
 

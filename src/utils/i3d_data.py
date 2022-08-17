@@ -60,17 +60,19 @@ def load_rgb_frames(video_path, start_frame, window_size=64):
             d = 256. - min(w, h)
             sc = 1 + d / min(w, h)
             img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
-        img = (img / 255.) * 2 - 1
+        # img = (img / 255.) * 2 - 1
+        img = img / 255.  # normalize values to range [0, 1]
+        img = img[:, :, [2, 1, 0]]  # opencv uses bgr so switch to rgb
         frames.append(img)
 
     # now make sure that the corresponding number of windows is filled
     last_frame = len(frames)
     if last_frame < start_frame + window_size:
-        # iterate the number of missing frames to fill window
+        # loop video from start to fill the window
         for i in range(start_frame + window_size - last_frame):
             frames.append(frames[i])
 
-    return np.asarray(frames[start_frame:start_frame + window_size], dtype=np.float32)
+    return torch.Tensor(np.asarray(frames[start_frame:start_frame + window_size], dtype=np.float32))
 
 
 # def load_flow_frames(root, vid, start, num):
@@ -230,10 +232,13 @@ class I3Dataset(data_utl.Dataset):
         # else:
         #     imgs = load_flow_frames(self.root, vid, start_frame)
 
+        # pytorch transforms take input tensor of shape [C, T, H, W]
+        imgs = imgs.permute([3, 0, 1, 2])
+
         if self.transforms:
             imgs = self.transforms(imgs)
 
-        return video_to_tensor(imgs), torch.from_numpy(label)
+        return imgs, torch.from_numpy(label)
 
     def __len__(self):
         return len(self.data)
