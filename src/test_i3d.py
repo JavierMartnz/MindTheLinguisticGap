@@ -5,6 +5,7 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 import argparse
 import torch
 import torch.nn.functional as F
+from torch.autograd import Variable
 from torchvision import transforms
 from tqdm import tqdm
 import numpy as np
@@ -15,59 +16,72 @@ from src.utils.helpers import load_config
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.loss import f1_loss
 
-def test(cfg_path, checkpoint_filename, mode="rgb"):
+def test(cfg_path, mode="rgb"):
     cfg = load_config(cfg_path)
-    training_cfg = cfg.get("training")
+    test_cfg = cfg.get("test")
 
-    batch_size = training_cfg.get("batch_size")
-    save_model = training_cfg.get("model_dir")
-    weights_dir = training_cfg.get("weights_dir")
+    # test parameters
+    save_model = test_cfg.get("model_dir")
+    run_name = test_cfg.get("run_name")
+    batch_size = test_cfg.get("batch_size")
+    optimizer = test_cfg.get("optimizer").upper()
+    learning_rate = test_cfg.get("lr")
+    num_epochs = test_cfg.get("epochs")
+    ckpt_epoch = test_cfg.get("ckpt_epoch")
+    ckpt_step = test_cfg.get("ckpt_step")
 
     # data configs
     cngt_zip = cfg.get("data").get("cngt_clips_path")
     sb_zip = cfg.get("data").get("signbank_path")
     window_size = cfg.get("data").get("window_size")
 
-    test_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
+    num_top_glosses = 2
 
     print("Loading test split...")
-    test_dataset = I3Dataset(cngt_zip, sb_zip, mode, "test", window_size, test_transforms)
-    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
-                                                 pin_memory=True)
+    dataset = I3Dataset(cngt_zip, sb_zip, mode, 'test', window_size, transforms=None, filter_num=num_top_glosses)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
-    # set up the model
-    i3d = InceptionI3d(len(test_dataset.class_encodings))
-    i3d.load_state_dict(torch.load(os.path.join(weights_dir, checkpoint_filename)))
+    run_dir = f"b{batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
+    ckpt_filename = f"i3d_{ckpt_epoch}_{ckpt_step}.pt"
+
+    # load model and specified checkpoint
+    i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
+    i3d.load_state_dict(torch.load(os.path.join(save_model, run_dir, ckpt_filename)))
+
     i3d.cuda()
+    i3d.train(False)  # Set model to evaluate mode
 
-    for data in tqdm(test_dataloader):
-        i3d.train(False)
+    with tqdm(dataloader, unit="batch") as tepoch:
+        for data in tepoch:
+            # get the inputs
+            inputs, labels = data
+            inputs = Variable(inputs.cuda())
+            labels = Variable(labels.cuda())
 
-        inputs, labels = data
+            # forward pass of the inputs through the network
+            per_frame_logits = i3d(inputs)
 
-        inputs = inputs.cuda()
-        labels = labels.cuda()
+            # upsample output to input size
+            per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
 
-        preds = i3d(inputs)
-        preds = F.upsample(preds, inputs.size(2), mode='linear')
-        preds = torch.nn.Softmax(dim=1)(preds
+            print(per_frame_logits.size())
+
+            # get prediction
+            # y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
+            # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
+
+
 
 
 def main(params):
     config_path = params.config_path
-    checkpoint_filename = params.checkpoint_filename
-    test(config_path, checkpoint_filename)
+    test(config_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--config_path",
-        type=str,
-    )
-
-    parser.add_argument(
-        "--checkpoint_filename",
         type=str,
     )
 

@@ -1,0 +1,17 @@
+data:
+
+  cngt_clips_path: "/vol/tensusers5/jmartinez/datasets/cngt_train_clips.zip"
+  signbank_path: "/vol/tensusers5/jmartinez/datasets/NGT_Signbank_resized.zip"
+  window_size: 16
+
+test:
+  model_dir: "/vol/tensusers5/jmartinez/models/i3d"
+  run_name: "advanced_transformations"
+  use_cuda: True
+  random_seed: 42
+  batch_size: 32
+  optimizer: "SGD"
+  lr: 0.1
+  epochs: 50
+  ckpt_epoch: 16
+  ckpt_step: 4
