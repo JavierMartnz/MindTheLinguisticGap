@@ -23,12 +23,13 @@ def test(cfg_path, mode="rgb"):
     # test parameters
     save_model = test_cfg.get("model_dir")
     run_name = test_cfg.get("run_name")
-    batch_size = test_cfg.get("batch_size")
+    run_batch_size = test_cfg.get("run_batch_size")
     optimizer = test_cfg.get("optimizer").upper()
     learning_rate = test_cfg.get("lr")
     num_epochs = test_cfg.get("epochs")
     ckpt_epoch = test_cfg.get("ckpt_epoch")
     ckpt_step = test_cfg.get("ckpt_step")
+    batch_size = test_cfg.get("batch_size")
 
     # data configs
     cngt_zip = cfg.get("data").get("cngt_clips_path")
@@ -41,7 +42,7 @@ def test(cfg_path, mode="rgb"):
     dataset = I3Dataset(cngt_zip, sb_zip, mode, 'test', window_size, transforms=None, filter_num=num_top_glosses)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
-    run_dir = f"b{batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
+    run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
     ckpt_filename = f"i3d_{ckpt_epoch}_{ckpt_step}.pt"
 
     # load model and specified checkpoint

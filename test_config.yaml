@@ -9,9 +9,10 @@ test:
   run_name: "advanced_transformations"
   use_cuda: True
   random_seed: 42
-  batch_size: 32
+  run_batch_size: 128
   optimizer: "SGD"
   lr: 0.1
   epochs: 50
   ckpt_epoch: 16
   ckpt_step: 4
+  batch_size: 64
