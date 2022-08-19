@@ -57,6 +57,7 @@ def test(cfg_path, mode="rgb"):
     total_pred = []
     total_true = []
 
+    print("Predicting on test set...")
     with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
         with tqdm(dataloader, unit="batch") as tepoch:
             for data in tepoch:
@@ -87,7 +88,7 @@ def test(cfg_path, mode="rgb"):
     acc = accuracy_score(total_true, total_pred)
 
     print(cm)
-    print(f"F1 = {f1}\tAcc = {acc}")
+    print(f"F1 = {f1:4.f}\tAcc = {acc:4.f}")
 
 
 
