@@ -79,8 +79,8 @@ def test(cfg_path, mode="rgb"):
                     total_pred = y_pred
                     total_true = y_true
                 else:
-                    total_pred.append(y_pred, axis=0)
-                    total_true.append(y_true, axis=0)
+                    np.append(total_pred, y_pred, axis=0)
+                    np.append(total_true, y_true, axis=0)
 
                 # calculate batch metrics by averaging
                 # batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
