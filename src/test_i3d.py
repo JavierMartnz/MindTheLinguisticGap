@@ -83,6 +83,7 @@ def test(cfg_path, mode="rgb"):
                     total_pred = np.append(total_pred, y_pred.flatten())
                     total_true = np.append(total_true, y_true.flatten())
 
+    np.set_printoptions(threshold=sys.maxsize)
     print(total_pred)
     print(total_true)
 
