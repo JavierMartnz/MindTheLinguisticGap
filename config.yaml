@@ -2,15 +2,15 @@ data:
 
   cngt_clips_path: "/vol/tensusers5/jmartinez/datasets/cngt_train_clips.zip"
   signbank_path: "/vol/tensusers5/jmartinez/datasets/NGT_Signbank_resized.zip"
-  window_size: 64
+  window_size: 16
 
 training:
-  run_name: ""
+  run_name: "advanced_transformations"
   use_cuda: True
-  epochs: 5
+  epochs: 100
   random_seed: 42
-  batch_size: 32
-  init_lr: 0.1
+  batch_size: 128
+  init_lr: 0.01
   momentum: 0.9
   weight_decay: 0.0000001
   model_dir: "/vol/tensusers5/jmartinez/models/i3d"
