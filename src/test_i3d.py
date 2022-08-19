@@ -9,6 +9,8 @@ from torch.autograd import Variable
 from torchvision import transforms
 from tqdm import tqdm
 import numpy as np
+from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
+
 
 from src.utils import videotransforms
 from src.utils.i3d_data import I3Dataset
@@ -52,7 +54,7 @@ def test(cfg_path, mode="rgb"):
     i3d.cuda()
     i3d.train(False)  # Set model to evaluate mode
 
-    with torch.no_grad():
+    with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
         with tqdm(dataloader, unit="batch") as tepoch:
             for data in tepoch:
                 # get the inputs
@@ -66,11 +68,19 @@ def test(cfg_path, mode="rgb"):
                 # upsample output to input size
                 per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
 
-                print(per_frame_logits.size())
-
                 # get prediction
-                # y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
-                # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
+                y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
+                y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
+
+                print(np.shape(y_pred), np.shape(y_true))
+
+
+                # calculate batch metrics by averaging
+                # batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
+                # batch_f1 = np.mean([f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
+                #
+                # acc_list.append(batch_acc)
+                # f1_list.append(batch_f1)
 
 
 
