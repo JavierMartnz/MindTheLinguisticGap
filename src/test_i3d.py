@@ -83,18 +83,12 @@ def test(cfg_path, mode="rgb"):
                     total_pred = np.append(total_pred, y_pred.flatten())
                     total_true = np.append(total_true, y_true.flatten())
 
-    np.set_printoptions(threshold=sys.maxsize)
-    print(total_pred)
-    print(total_true)
-
     cm = confusion_matrix(total_true, total_pred)
     f1 = f1_score(total_true, total_pred)
     acc = accuracy_score(total_true, total_pred)
 
     print(cm)
     print(f"F1 = {f1:.4f}\tAcc = {acc:.4f}")
-
-
 
 def main(params):
     config_path = params.config_path
