@@ -208,7 +208,6 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
 
     return class_to_idx
 
-
 class I3Dataset(data_utl.Dataset):
 
     def __init__(self, cngt_zip, sb_zip, mode, split, window_size=64, transforms=None, filter_num=None):
