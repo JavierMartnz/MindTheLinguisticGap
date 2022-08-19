@@ -52,24 +52,25 @@ def test(cfg_path, mode="rgb"):
     i3d.cuda()
     i3d.train(False)  # Set model to evaluate mode
 
-    with tqdm(dataloader, unit="batch") as tepoch:
-        for data in tepoch:
-            # get the inputs
-            inputs, labels = data
-            inputs = Variable(inputs.cuda())
-            labels = Variable(labels.cuda())
+    with torch.no_grad():
+        with tqdm(dataloader, unit="batch") as tepoch:
+            for data in tepoch:
+                # get the inputs
+                inputs, labels = data
+                inputs = Variable(inputs.cuda())
+                labels = Variable(labels.cuda())
 
-            # forward pass of the inputs through the network
-            per_frame_logits = i3d(inputs)
+                # forward pass of the inputs through the network
+                per_frame_logits = i3d(inputs)
 
-            # upsample output to input size
-            per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
+                # upsample output to input size
+                per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
 
-            print(per_frame_logits.size())
+                print(per_frame_logits.size())
 
-            # get prediction
-            # y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
-            # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
+                # get prediction
+                # y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
+                # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
 
 
