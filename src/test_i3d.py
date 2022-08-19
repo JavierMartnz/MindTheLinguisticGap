@@ -76,11 +76,11 @@ def test(cfg_path, mode="rgb"):
                 y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                 if len(total_pred) == 0:
-                    total_pred = y_pred
-                    total_true = y_true
+                    total_pred = y_pred.flatten()
+                    total_true = y_true.flatten()
                 else:
-                    total_pred = np.append(total_pred, y_pred, axis=0)
-                    total_true = np.append(total_true, y_true, axis=0)
+                    total_pred = np.append(total_pred, y_pred.flatten())
+                    total_true = np.append(total_true, y_true.flatten())
 
                 # calculate batch metrics by averaging
                 # batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
@@ -89,7 +89,7 @@ def test(cfg_path, mode="rgb"):
                 # acc_list.append(batch_acc)
                 # f1_list.append(batch_f1)
 
-    cm = confusion_matrix(y_true, y_pred)
+    cm = confusion_matrix(total_true, total_pred)
 
     print(cm)
 
