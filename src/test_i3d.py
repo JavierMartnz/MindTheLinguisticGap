@@ -82,16 +82,12 @@ def test(cfg_path, mode="rgb"):
                     total_pred = np.append(total_pred, y_pred.flatten())
                     total_true = np.append(total_true, y_true.flatten())
 
-                # calculate batch metrics by averaging
-                # batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
-                # batch_f1 = np.mean([f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
-                #
-                # acc_list.append(batch_acc)
-                # f1_list.append(batch_f1)
-
     cm = confusion_matrix(total_true, total_pred)
+    f1 = f1_score(total_true, total_pred)
+    acc = accuracy_score(total_true, total_pred)
 
     print(cm)
+    print(f"F1 = {f1}\tAcc = {acc}")
 
 
 
