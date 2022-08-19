@@ -54,6 +54,9 @@ def test(cfg_path, mode="rgb"):
     i3d.cuda()
     i3d.train(False)  # Set model to evaluate mode
 
+    total_pred = []
+    total_true = []
+
     with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
         with tqdm(dataloader, unit="batch") as tepoch:
             for data in tepoch:
@@ -72,8 +75,12 @@ def test(cfg_path, mode="rgb"):
                 y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
                 y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
-                print(np.shape(y_pred), np.shape(y_true))
-
+                if len(total_pred) == 0:
+                    total_pred = y_pred
+                    total_true = y_true
+                else:
+                    total_pred.append(y_pred, axis=0)
+                    total_true.append(y_true, axis=0)
 
                 # calculate batch metrics by averaging
                 # batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
@@ -82,7 +89,7 @@ def test(cfg_path, mode="rgb"):
                 # acc_list.append(batch_acc)
                 # f1_list.append(batch_f1)
 
-
+    print(np.shape(total_pred))
 
 
 def main(params):
