@@ -88,7 +88,7 @@ def test(cfg_path, mode="rgb"):
     acc = accuracy_score(total_true, total_pred)
 
     print(cm)
-    print(f"F1 = {f1:4.f}\tAcc = {acc:4.f}")
+    print(f"F1 = {f1:.4f}\tAcc = {acc:.4f}")
 
 
 
