@@ -82,6 +82,8 @@ def test(cfg_path, mode="rgb"):
                     total_pred = np.append(total_pred, y_pred, axis=0)
                     total_true = np.append(total_true, y_true, axis=0)
 
+                print(np.shape(total_pred), np.shape(y_pred))
+
                 # calculate batch metrics by averaging
                 # batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
                 # batch_f1 = np.mean([f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
@@ -89,7 +91,7 @@ def test(cfg_path, mode="rgb"):
                 # acc_list.append(batch_acc)
                 # f1_list.append(batch_f1)
 
-    print(np.shape(total_pred))
+    # print(np.shape(total_pred))
 
 
 def main(params):
