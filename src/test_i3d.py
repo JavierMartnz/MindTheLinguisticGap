@@ -10,6 +10,7 @@ from torch.autograd import Variable
 from tqdm import tqdm
 import numpy as np
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
+from sklearn.metrics import matthews_corrcoef as MCC
 import matplotlib.pyplot as plt
 import itertools
 
@@ -142,10 +143,11 @@ def test(cfg_path, mode="rgb"):
 
     f1 = f1_score(total_true, total_pred, average='macro')
     acc = accuracy_score(total_true, total_pred)
+    mcc = MCC(total_true, total_pred)
     cm = confusion_matrix(total_true, total_pred)
     plot_confusion_matrix(cm, glosses)
 
-    print(f"F1 = {f1:.4f}\tAcc = {acc:.4f}")
+    print(f"F1 = {f1:.4f}\tAcc = {acc:.4f}\tMCC = {mcc:.4f}")
 
 def main(params):
     config_path = params.config_path
