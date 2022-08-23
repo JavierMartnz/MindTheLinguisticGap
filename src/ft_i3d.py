@@ -313,7 +313,7 @@ def run(cfg_path, mode='rgb'):
                     y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                     acc_list.append(accuracy_score(y_true.flatten(), y_pred.flatten()))
-                    f1_list.extend(f1_score(y_true.flatten(), y_pred.flatten(), average='macro'))
+                    f1_list.append(f1_score(y_true.flatten(), y_pred.flatten(), average='macro'))
 
                     if phase == 'train' and num_iter % num_steps_per_update == 0:
                         optimizer.step()
