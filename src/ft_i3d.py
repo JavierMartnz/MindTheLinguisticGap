@@ -312,12 +312,8 @@ def run(cfg_path, mode='rgb'):
                     y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
                     y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
-                    batch_acc = np.mean([accuracy_score(y_true[i], y_pred[i]) for i in range(np.shape(y_pred)[0])])
-                    batch_f1 = np.mean(
-                        [f1_score(y_true[i], y_pred[i], average='macro') for i in range(np.shape(y_pred)[0])])
-
-                    acc_list.append(batch_acc)
-                    f1_list.append(batch_f1)
+                    acc_list.append(accuracy_score(y_true.flatten(), y_pred.flatten()))
+                    f1_list.extend(f1_score(y_true.flatten(), y_pred.flatten(), average='macro'))
 
                     if phase == 'train' and num_iter % num_steps_per_update == 0:
                         optimizer.step()
