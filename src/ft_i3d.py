@@ -239,7 +239,7 @@ def run(cfg_path, mode='rgb'):
     # optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
     optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
     # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
-    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
+    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
 
     # create a new tensorboard log
     writer = SummaryWriter()
