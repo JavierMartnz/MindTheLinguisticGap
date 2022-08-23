@@ -140,7 +140,7 @@ def test(cfg_path, mode="rgb"):
                     total_pred = np.append(total_pred, y_pred.flatten())
                     total_true = np.append(total_true, y_true.flatten())
 
-    f1 = f1_score(total_true, total_pred)
+    f1 = f1_score(total_true, total_pred, average='macro')
     acc = accuracy_score(total_true, total_pred)
     cm = confusion_matrix(total_true, total_pred)
     plot_confusion_matrix(cm, glosses)
