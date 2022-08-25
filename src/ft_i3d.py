@@ -182,7 +182,7 @@ def run(cfg_path, mode='rgb'):
     # validation transforms should never contain any randomness
     val_transforms = transforms.Compose([transforms.CenterCrop(224)])
 
-    num_top_glosses = 2  # should be None if no filtering wanted
+    num_top_glosses = 10  # should be None if no filtering wanted
 
     print("Loading training split...")
     train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, transforms=train_transforms, filter_num=num_top_glosses)
@@ -308,13 +308,15 @@ def run(cfg_path, mode='rgb'):
                     # backpropagate the loss
                     loss.backward()
 
-                    # get batch accuracy and f1
+                    # get batch accuracy and f1 and append it
                     y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
                     y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                     acc_list.append(accuracy_score(y_true.flatten(), y_pred.flatten()))
                     f1_list.append(f1_score(y_true.flatten(), y_pred.flatten(), average='macro'))
 
+                    # this if clause allows gradient accumulation. It also saves losses and metrics to
+                    # tensorboard and saves the model weights if the loss improves
                     if phase == 'train' and num_iter % num_steps_per_update == 0:
                         optimizer.step()
                         steps += 1
@@ -344,8 +346,7 @@ def run(cfg_path, mode='rgb'):
                             num_acc_loss = 0
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.0
 
-                # after processing the data
-
+                # after processing the data, record validation metrics
                 if phase == 'val':
                     lr_sched.step(tot_loss / num_iter)
 

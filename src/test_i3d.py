@@ -13,9 +13,10 @@ from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 from sklearn.metrics import matthews_corrcoef as MCC
 import matplotlib.pyplot as plt
 import itertools
+from torchvision.utils import save_image
 
 from src.utils.i3d_data import I3Dataset
-from src.utils.helpers import load_config
+from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.util import load_gzip
 
@@ -59,8 +60,11 @@ def test(cfg_path, mode="rgb"):
     cfg = load_config(cfg_path)
     test_cfg = cfg.get("test")
 
-    # test parameters
+    # test parametersf
     model_dir = test_cfg.get("model_dir")
+    pred_dir = test_cfg.get("pred_dir")
+    fold = test_cfg.get("fold")
+    assert fold in {"test", "val"}, f"Please, make sure the parameter 'fold' in {cfg_path} is either 'val' or 'test'"
     run_name = test_cfg.get("run_name")
     run_batch_size = test_cfg.get("run_batch_size")
     optimizer = test_cfg.get("optimizer").upper()
@@ -78,12 +82,19 @@ def test(cfg_path, mode="rgb"):
 
     # get directory and filename for the checkpoints
     run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
-    ckpt_filename = f"i3d_{ckpt_epoch}_{ckpt_step}.pt"
+    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}_{ckpt_step}.pt"
+
+    pred_path = os.path.join(pred_dir, run_dir, fold, ckpt_filename.split('.')[0])
+    make_dir(pred_path)
+    make_dir(os.path.join(pred_path, "TP"))
+    make_dir(os.path.join(pred_path, "TN"))
+    make_dir(os.path.join(pred_path, "FP"))
+    make_dir(os.path.join(pred_path, "FN"))
 
     num_top_glosses = 2
 
-    print("Loading test split...")
-    dataset = I3Dataset(cngt_zip, sb_zip, mode, 'test', window_size, transforms=None, filter_num=num_top_glosses)
+    print(f"Loading {fold} split...")
+    dataset = I3Dataset(cngt_zip, sb_zip, mode, fold, window_size, transforms=None, filter_num=num_top_glosses)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     # get glosses from the class encodings
@@ -134,6 +145,7 @@ def test(cfg_path, mode="rgb"):
                 y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
                 y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
+                # save predicitions for later
                 if len(total_pred) == 0:
                     total_pred = y_pred.flatten()
                     total_true = y_true.flatten()
@@ -141,13 +153,45 @@ def test(cfg_path, mode="rgb"):
                     total_pred = np.append(total_pred, y_pred.flatten())
                     total_true = np.append(total_true, y_true.flatten())
 
+                # swap to [B, T, H, W, C] for storing
+                images = inputs.permute([0, 2, 1, 3, 4])
+
+                for batch_sample in range(images.size(0)):
+                    for frame in range(images.size(1)):
+                        pred = y_pred[batch_sample][frame]
+                        label = y_true[batch_sample][frame]
+                        filename = f"b{batch_sample}_f{frame}.png"
+
+                        # THIS IS DONE FOR BINARY CLASSIFICATION, SHOULD BE CHANGED FOR MULTICLASS
+                        # CLASS 0 IS POSITIVE, 1 IS NEGATIVE
+                        if label == pred and label == 0:  # TP
+                            save_image(images[batch_sample][frame], os.path.join(pred_path, "TP", filename))
+                        elif label == pred and label == 1:  # TN
+                            save_image(images[batch_sample][frame], os.path.join(pred_path, "TN", filename))
+                        elif label != pred and label == 0:  # FN
+                            save_image(images[batch_sample][frame], os.path.join(pred_path, "FN", filename))
+                        elif label != pred and label == 1:  # FP
+                            save_image(images[batch_sample][frame], os.path.join(pred_path, "FP", filename))
+
     f1 = f1_score(total_true, total_pred, average='macro')
     acc = accuracy_score(total_true, total_pred)
     mcc = MCC(total_true, total_pred)
-    cm = confusion_matrix(total_true, total_pred)
-    plot_confusion_matrix(cm, glosses)
-
     print(f"F1 = {f1:.4f}\tAcc = {acc:.4f}\tMCC = {mcc:.4f}")
+
+    cm = confusion_matrix(total_true, total_pred)
+    print(cm)
+    # plot_confusion_matrix(cm, glosses)
+
+    # FP = cm.sum(axis=0) - np.diag(cm)
+    # FN = cm.sum(axis=1) - np.diag(cm)
+    # TP = np.diag(cm)
+    # TN = cm.sum() - (FP + FN + TP)
+    #
+    # p = TP/(TP+FP)
+    # r = TP/(TP+FN)
+    # print((TP+TN)/(TP+FP+FN+TN))
+    # print(2*p*r/(p+r))
+
 
 def main(params):
     config_path = params.config_path

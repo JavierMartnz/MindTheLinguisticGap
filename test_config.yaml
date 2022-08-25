@@ -6,6 +6,8 @@ data:
 
 test:
   model_dir: "D:Thesis/models/i3d"
+  pred_dir: "D:Thesis/predictions/i3d"
+  fold: "val"
   run_name: "advanced_transformations"
   use_cuda: False
   random_seed: 42
