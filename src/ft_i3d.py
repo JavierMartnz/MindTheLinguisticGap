@@ -348,7 +348,7 @@ def run(cfg_path, mode='rgb'):
 
                 # after processing the data, record validation metrics
                 if phase == 'val':
-                    lr_sched.step(tot_loss / num_iter)
+                    lr_sched.step(tot_loss)
 
                     writer.add_scalar("val/loss", tot_loss / num_iter, epoch)
                     writer.add_scalar("val/loss_loc", tot_loc_loss / num_iter, epoch)
