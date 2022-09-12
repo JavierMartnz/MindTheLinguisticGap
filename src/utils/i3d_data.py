@@ -92,12 +92,15 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
         img = img[:, :, [2, 1, 0]]  # opencv uses bgr so switch to rgb
         frames.append(img)
 
+    print(len(frames))
+
     assert len(frames) <= window_size, "ERROR: more frames than window size"
 
     # if the number of frames didn't fill the window, we loop the video from the start until the window is filled
     if len(frames) < window_size:
         for i in range(window_size - len(frames)):
             frames.append(frames[i])
+            print(i, len(frames))
 
     return torch.Tensor(np.asarray(frames, dtype=np.float32))
 
