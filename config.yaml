@@ -2,6 +2,8 @@ data:
 
   cngt_clips_path: "/vol/tensusers5/jmartinez/datasets/cngt_train_clips.zip"
   signbank_path: "/vol/tensusers5/jmartinez/datasets/NGT_Signbank_resized.zip"
+  cngt_vocab_path: "/vol/tensusers5/jmartinez/datasets/cngt_vocab.gzip"
+  sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
   window_size: 16
 
 training:

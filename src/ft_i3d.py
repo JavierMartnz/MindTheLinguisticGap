@@ -168,6 +168,8 @@ def run(cfg_path, mode='rgb'):
     # data configs
     cngt_zip = cfg.get("data").get("cngt_clips_path")
     sb_zip = cfg.get("data").get("signbank_path")
+    cngt_vocab_path = cfg.get("data").get("cngt_vocab_path")
+    sb_vocab_path = cfg.get("data").get("signbank_vocab_path")
     window_size = cfg.get("data").get("window_size")
 
     print(f"Using window size of {window_size} frames")
@@ -185,11 +187,13 @@ def run(cfg_path, mode='rgb'):
     num_top_glosses = 2  # should be None if no filtering wanted
 
     print("Loading training split...")
-    train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, transforms=train_transforms, filter_num=num_top_glosses)
+    train_dataset = I3Dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train', window_size,
+                              transforms=train_transforms, filter_num=num_top_glosses)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Loading val split...")
-    val_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'val', window_size, transforms=val_transforms, filter_num=num_top_glosses)
+    val_dataset = I3Dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'val', window_size,
+                            transforms=val_transforms, filter_num=num_top_glosses)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}

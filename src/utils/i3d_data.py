@@ -121,7 +121,7 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
 #     frames.append(img)
 #     return np.asarray(frames, dtype=np.float32)
 
-def build_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, window_size: int, split: str) -> list:
+def build_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict, window_size: int, split: str) -> list:
     assert split in {"train", "val", "test"}, "The variable 'split' can only have value  'train', 'val', and 'test'."
 
     num_classes = len(class_encodings)
@@ -249,8 +249,8 @@ def build_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, 
 
         # TEST
         # get glosses from the class encodings
-        cngt_vocab = load_gzip("D:/Thesis/datasets/cngt_vocab.gzip")
-        sb_vocab = load_gzip("D:/Thesis/datasets/signbank_vocab.gzip")
+        cngt_vocab = load_gzip(cngt_vocab_path)
+        sb_vocab = load_gzip(sb_vocab_path)
         # join cngt and sb vocabularies (gloss to id dictionary)
         sb_vocab.update(cngt_vocab)
         gloss_to_id = sb_vocab['gloss_to_id']
@@ -315,12 +315,12 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
 
 class I3Dataset(data_utl.Dataset):
 
-    def __init__(self, cngt_zip, sb_zip, mode, split, window_size=64, transforms=None, filter_num=None):
+    def __init__(self, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, split, window_size=64, transforms=None, filter_num=None):
         self.mode = mode
         self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num)
         self.window_size = window_size
         self.transforms = transforms
-        self.data = build_dataset(cngt_zip, sb_zip, mode, self.class_encodings, window_size, split)
+        self.data = build_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, self.class_encodings, window_size, split)
 
     def __getitem__(self, index):
         """
