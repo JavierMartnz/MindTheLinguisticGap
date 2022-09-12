@@ -78,6 +78,7 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
     vcap = cv2.VideoCapture(video_path)
     # to save some reading time, set initial frame to the given start frame
     vcap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+    print(video_path, start_frame)
     while len(frames) < window_size:
         success, img = vcap.read()
         if not success:
@@ -124,7 +125,8 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
 #     frames.append(img)
 #     return np.asarray(frames, dtype=np.float32)
 
-def build_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict, window_size: int, split: str) -> list:
+def build_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict, window_size: int,
+                  split: str) -> list:
     assert split in {"train", "val", "test"}, "The variable 'split' can only have value  'train', 'val', and 'test'."
 
     num_classes = len(class_encodings)
@@ -211,9 +213,9 @@ def build_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_pat
 
     cnt_dict = {}
     # print the videos per signer count for every split
-    for split in ['train', 'val', 'test']:
-        cnt_dict[split] = count_occurrences([os.path.basename(path).split('_')[0] for path in cngt_folds[split]])
-        print(f"The {split} split has {len(cnt_dict[split].keys())} different signers and a total of {sum(cnt_dict[split].values())} clips")
+    for t_split in ['train', 'val', 'test']:
+        cnt_dict[t_split] = count_occurrences([os.path.basename(path).split('_')[0] for path in cngt_folds[t_split]])
+        print(f"The {t_split} split has {len(cnt_dict[t_split].keys())} different signers and a total of {sum(cnt_dict[t_split].values())} clips")
 
     print(f"train-val overlap: {set(cnt_dict['train'].keys()).intersection(set(cnt_dict['val'].keys()))}")
     print(f"val-test overlap: {set(cnt_dict['val'].keys()).intersection(set(cnt_dict['test'].keys()))}")
