@@ -270,8 +270,8 @@ def build_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_pat
             label_dict[gloss] += 1
             dataset.append((video_path, label, num_frames, i * window_size))
 
-    print(label_dict)
-
+    print(f"The labels and label count is {label_dict}")
+    
     return dataset
 
 
