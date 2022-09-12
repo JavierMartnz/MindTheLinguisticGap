@@ -143,8 +143,8 @@ def build_dataset(cngt_zip: str, sb_zip: str, mode: str, class_encodings: dict, 
     sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
 
     # only load the paths that correspond to filtered glosses and attribute it to a given signer
-    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for i, video in enumerate(cngt_videos) if
-                        int(video.split("_")[-1][:-4]) in classes]
+    # cngt_video_paths = [os.path.join(cngt_extracted_root, video) for i, video in enumerate(cngt_videos) if
+    #                     int(video.split("_")[-1][:-4]) in classes]
     sb_video_paths = [os.path.join(sb_extracted_root, video) for i, video in enumerate(sb_videos) if
                       int(video.split("-")[-1][:-4]) in classes]
 
