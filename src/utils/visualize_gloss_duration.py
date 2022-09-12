@@ -81,7 +81,7 @@ def get_stats_signbank(signbank_root, fig: int):
 
 
 def main():
-    cngt_root = "D:/Thesis/datasets/cngt_train_clips"
+    cngt_root = "D:/Thesis/datasets/cngt_single_signs/train"
     signbank_root = "D:/Thesis/datasets/NGT_Signbank_resized"
 
     get_stats_cngt(cngt_root, 0)

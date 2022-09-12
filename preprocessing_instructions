@@ -22,14 +22,5 @@ It is important to keep this order, since files from the Corpus NGT pre-processi
     training of the transformer model
 
 5. trim_signs_cngt.py
-    To pre-train the I3D network, videos containing only one annotated sign are needed. Trim these clips by checking
-    first their presence in the signbank vocabulary. Done only for training fold of the
-    CNGT data.
-
-6. preprocess_windows.py
-    For every cngt clip trimed previously, creates a gzip with the necessary window information for data loading during
-    the training. Zips the entire folder containing
-
-
-
-####### PRE-TRAINING OF I3D ###########
+    To train the I3D network, videos isolated signs are needed. Trim these clips by checking first their presence in the signbank
+    vocabulary. Done only for training fold of the CNGT data. Metadata files are created

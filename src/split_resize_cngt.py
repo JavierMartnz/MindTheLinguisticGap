@@ -53,18 +53,17 @@ def split_annotations_and_resize_videos(dataset_root, ann_filename, output_root)
         signer_eaf_obj[signer].external_refs = eaf_file.external_refs
         signer_eaf_obj[signer].lexicon_refs = eaf_file.lexicon_refs
 
-        # the tier can be copied, but when a single annotation fails then nothing is copied, therefore it's safer
-        # to copy them one by one
+        # the tier and its contents can be copied directly, but when a single annotation fails then nothing
+        # is copied, therefore it's safer to copy them one by one
         for tier in eaf_file.tiers.keys():
             tier_anns = eaf_file.get_annotation_data_for_tier(tier)
-            # we have already filtered out the files with no annotation, so we copy every tier even if empty to keep
-            # consistency
+            # we have already filtered out the files with no annotation, so we copy every tier even if empty to keep consistency
             if signer in tier:
                 signer_eaf_obj[signer].add_tier(tier)  # add tier
                 for ann in tier_anns:
                     # if annotations don't have duration 0
                     if ann[0] != ann[1]:
-                        signer_eaf_obj[signer].add_annotation(tier, ann[0], ann[1], ann[2])  # add anotation
+                        signer_eaf_obj[signer].add_annotation(tier, ann[0], ann[1], ann[2])
 
         # remove default tier that comes when creating an elan file
         signer_eaf_obj[signer].remove_tier("default")
@@ -72,7 +71,7 @@ def split_annotations_and_resize_videos(dataset_root, ann_filename, output_root)
         new_filename = signers_dict[signer] + "_" + ann_filename.split('_')[-1]
         new_filepath = os.path.join(output_root, new_filename)
 
-        # add linked file, to associate .eaf and its corresponding video
+        # add linked video file, so that opening an .eaf file opens its corresponding video automatically
         new_video_filename = new_filename[:-4] + '.mpg'
         new_video_path = os.path.join(output_root, new_video_filename)
         signer_eaf_obj[signer].add_linked_file(new_video_path, new_video_path, mimetype='video/mpeg')
@@ -91,7 +90,7 @@ def split_annotations_and_resize_videos(dataset_root, ann_filename, output_root)
         # when video with only one signer just scale
         if w < 704:
             cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale=256:256" -r 25 {os.path.join(output_root, new_video_filename)}'
-        # S1 is left, S2 is right
+        # S1 is always left , S2 is right
         elif signer == "S1":
             cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "crop=w={w / 2}:h={h}:x={0}, scale=256:256" -r 25 {os.path.join(output_root, new_video_filename)}'
         elif signer == "S2":
@@ -136,7 +135,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_root",
         type=str,
-        default="D:/Thesis/datasets/CNGT_split"
+        default="D:/Thesis/datasets/CNGT_isolated_signers"
     )
 
     params, _ = parser.parse_known_args()

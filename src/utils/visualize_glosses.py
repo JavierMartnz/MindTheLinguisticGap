@@ -28,11 +28,9 @@ def main():
 
     print(len(filtered_gloss_count))
 
-    return
-
     sorted_gloss_count = dict(sorted(gloss_count.items(), key=lambda item: item[1], reverse=True))
 
-    n_top = 10
+    n_top = 2
     # print(f"The {n_top} most frequent annotated glosses are:\n{list(sorted_gloss_count.keys())[:n_top]}")
     most_freq_summary = f"Top {n_top} most frequent glosses\n"
     most_freq_summary += "\n".join([f"{key}: {sorted_gloss_count[key]}" for key in list(sorted_gloss_count.keys())[:n_top]])

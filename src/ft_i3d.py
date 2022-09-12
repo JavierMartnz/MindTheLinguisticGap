@@ -182,7 +182,7 @@ def run(cfg_path, mode='rgb'):
     # validation transforms should never contain any randomness
     val_transforms = transforms.Compose([transforms.CenterCrop(224)])
 
-    num_top_glosses = 10  # should be None if no filtering wanted
+    num_top_glosses = 2  # should be None if no filtering wanted
 
     print("Loading training split...")
     train_dataset = I3Dataset(cngt_zip, sb_zip, mode, 'train', window_size, transforms=train_transforms, filter_num=num_top_glosses)

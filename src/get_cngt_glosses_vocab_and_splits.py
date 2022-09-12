@@ -44,6 +44,7 @@ def main(params):
                 print(f"Early return: video {file} does not have an associated annotation file")
                 continue
 
+            # check that the video file is not empty
             vcap = cv2.VideoCapture(file_path)
             num_video_frames = int(vcap.get(cv2.CAP_PROP_FRAME_COUNT))
             if num_video_frames <= 0:
@@ -54,12 +55,14 @@ def main(params):
 
             ann_file = pympi.Elan.Eaf(ann_path)
 
+            # we're just working with glosses, so get the annotations for both hands separately
             glosses_lefth = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[0])
             glosses_righth = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[1])
 
             cls = np.full(num_video_frames, -1, dtype=int)
             glosses = ["" for i in range(num_video_frames)]
 
+            # these interval tree will help us identify overlap in annotations and avoid counting them twice
             left_intervalTree = IntervalTree()
             right_intervalTree = IntervalTree()
 
@@ -68,6 +71,7 @@ def main(params):
                 for ann in glosses_righth:
                     start_ms, stop_ms = ann[0], ann[1]
                     gloss = ann[2]
+                    # the function below will get rid of glosses that are not in the given vocabulary and that do not satisfy a set of rules
                     parsed_gloss = parse_cngt_gloss(gloss, signbank_vocab['glosses'])
                     start_frame = math.ceil(25.0 * (start_ms / 1000.0))
                     stop_frame = math.floor(25.0 * (stop_ms / 1000.0)) + 1
@@ -100,7 +104,7 @@ def main(params):
                     begin = start_ms
                     end = stop_ms
 
-                    # these code section stops duplicated annotation of glosses in different hands
+                    # these code section avoids duplicated annotation of glosses in different hands
                     overlaps = left_intervalTree.overlap(begin, end)
                     if overlaps:
                         overlap_exceeded = False
@@ -223,7 +227,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset_root",
         type=str,
-        default="D:/Thesis/datasets/CNGT_split"
+        default="D:/Thesis/datasets/CNGT_isolated_signers"
     )
 
     parser.add_argument(

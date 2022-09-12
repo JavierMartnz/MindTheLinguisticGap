@@ -11,13 +11,13 @@ def parse_cngt_gloss(gloss: str, canonical_vocab: Set) -> Union[str, None]:
     
     gloss = gloss.strip()
     
-    # only apply a vocaulary filter when a non-empty vocabulary set is passed
+    # only apply a vocabulary filter when a non-empty vocabulary set is passed
     apply_vocab_filter = bool(canonical_vocab)
 
     # convert our existing vocabulary to upper cases to treat each word as a gloss
     upper_vocab = set([word.upper() for word in canonical_vocab])
     
-    # gloss condidates separated by /
+    # gloss candidates separated by /
     gloss_candidates = gloss.split("/")
 
     for gloss in gloss_candidates:

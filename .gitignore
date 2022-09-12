@@ -121,3 +121,7 @@ config_local.yaml
 .idea/MindTheLinguisticGap.iml
 .idea/misc.xml
 .idea/MindTheLinguisticGap.iml
+*.0
+*.iml
+*.xml
+*.iml

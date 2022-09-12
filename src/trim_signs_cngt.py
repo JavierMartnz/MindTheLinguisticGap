@@ -8,11 +8,12 @@ import math
 # import numpy as np
 import argparse
 from pathlib import Path
-# import shutil
+import shutil
 from multiprocessing import Pool
 from tqdm import tqdm
 # import subprocess 
 from zipfile import ZipFile
+import random
 
 
 def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, gloss, cls, output_root,
@@ -172,15 +173,15 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
                                          interval_obj.begin, interval_obj.end, interval_obj.data['parsed_gloss'],
                                          signbank_vocab['gloss_to_id'][interval_obj.data['parsed_gloss']], output_root)
 
-            # save the metadata for data loading
+            # since opencv's number of frames is unreliable, we count the frames ourselves
             num_trimmed_frames = count_video_frames(trimmed_filename)
+            # we create metadata that will be helpful for the loading
             metadata = {"num_frames": num_trimmed_frames, "start_frames": []}
             num_clips = math.ceil(num_trimmed_frames / window_size)
             for j in range(num_clips):
                 metadata["start_frames"].append(j * window_size)
 
             save_gzip(metadata, trimmed_filename[:-3] + 'gzip')
-
 
 def main(params):
     dataset_root = params.dataset_root
@@ -207,24 +208,50 @@ def main(params):
     pool.close()
     pool.join()
 
-    # once the files are in a folder, zip that folder and delete the original one
-    # this is done in light of Ponyland's limitation handiling small files while
-    # backing up files (bigger files are preferred)
-
-    print("Start zipping isolated clips...")
-    zip_basedir = Path(output_root).parent
-    zip_filename = os.path.basename(output_root) + '.zip'
-
-    all_filenames = os.listdir(output_root)
-
-    # training
-    with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
-        for filename in tqdm(all_filenames):
-            zipfile.write(os.path.join(output_root, filename), filename)
-
-            # just delete the previous directory is the zip file was created
-    if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
-        print("Zipfile was successfully created")
+    # once the files are in output folder, we are going to create the splits
+    # datapoints = [file[:-4] for file in os.listdir(output_root) if file.endswith('.mpg')]
+    #
+    # random.seed(42)
+    # random.shuffle(datapoints)
+    #
+    # train_val_idx = int(len(datapoints) * (4 / 6))
+    # val_test_idx = int(len(datapoints) * (5 / 6))
+    #
+    # data = {"train": datapoints[:train_val_idx], "val": datapoints[train_val_idx:val_test_idx], "test": datapoints[val_test_idx:]}
+    #
+    # print(f"Split sizes:\n\t-train={len(data['train'])}\n\t-val={len(data['val'])}\n\t-test={len(data['test'])}")
+    #
+    # splits = ["train", "val", "test"]
+    #
+    # for split in splits:
+    #     print(f"Creating {split} split...")
+    #
+    #     # create the folder for the split
+    #     video_split_root = os.path.join(output_root, split)
+    #     os.makedirs(video_split_root, exist_ok=True)
+    #
+    #     # iterate over all datapoints and move the videos and annotation files to the new folder
+    #     for datapoint in tqdm(data[split]):
+    #         video = datapoint + ".mpg"
+    #         metadata = datapoint + ".gzip"
+    #         shutil.move(os.path.join(output_root, video), os.path.join(video_split_root, video))
+    #         shutil.move(os.path.join(output_root, metadata), os.path.join(video_split_root, metadata))
+    #
+    # # we zip the resulting folder and delete the original one since Ponyland backups break with smaller files
+    # # print("Start zipping isolated clips...")
+    # # zip_basedir = Path(output_root).parent
+    # # zip_filename = os.path.basename(output_root) + '.zip'
+    # #
+    # # all_filenames = os.listdir(output_root)
+    # #
+    # # # training
+    # # with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
+    # #     for filename in tqdm(all_filenames):
+    # #         zipfile.write(os.path.join(output_root, filename), filename)
+    # #
+    # #         # just delete the previous directory is the zip file was created
+    # # if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
+    # #     print("Zipfile was successfully created")
 
 
 if __name__ == "__main__":
@@ -245,7 +272,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_root",
         type=str,
-        default="D:/Thesis/datasets/cngt_train_clips"
+        default="D:/Thesis/datasets/cngt_single_signs"
     )
 
     parser.add_argument(

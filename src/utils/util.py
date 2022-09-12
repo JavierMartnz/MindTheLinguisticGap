@@ -32,6 +32,9 @@ def save_vocab(gloss_to_id_dict, vocab_path):
     print(f'Vocab saved at {vocab_path}')
 
 def count_video_frames(video_path):
+    """
+    Counts the number of frames in a video by iterating through the video itself. Arcaic but reliable.
+    """
     n_frames = 0
     vcap = cv2.VideoCapture(video_path)
     while True:
