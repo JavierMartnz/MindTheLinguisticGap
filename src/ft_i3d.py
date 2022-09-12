@@ -169,7 +169,7 @@ def run(cfg_path, mode='rgb'):
     cngt_zip = cfg.get("data").get("cngt_clips_path")
     sb_zip = cfg.get("data").get("signbank_path")
     cngt_vocab_path = cfg.get("data").get("cngt_vocab_path")
-    sb_vocab_path = cfg.get("data").get("signbank_vocab_path")
+    sb_vocab_path = cfg.get("data").get("sb_vocab_path")
     window_size = cfg.get("data").get("window_size")
 
     print(f"Using window size of {window_size} frames")
