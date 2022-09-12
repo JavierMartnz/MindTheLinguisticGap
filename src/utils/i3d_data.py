@@ -99,7 +99,6 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
     if len(frames) < window_size:
         for i in range(window_size - len(frames)):
             frames.append(frames[i])
-            print(i, len(frames))
 
     return torch.Tensor(np.asarray(frames, dtype=np.float32))
 
