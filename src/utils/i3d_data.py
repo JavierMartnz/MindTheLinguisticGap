@@ -77,8 +77,8 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
     frames = []
     vcap = cv2.VideoCapture(video_path)
     # to save some reading time, set initial frame to the given start frame
-    vcap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-    print(video_path, start_frame)
+    if start_frame != 0:
+        vcap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
     while len(frames) < window_size:
         success, img = vcap.read()
         if not success:
@@ -92,8 +92,6 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
         img = img / 255.  # normalize values to range [0, 1]
         img = img[:, :, [2, 1, 0]]  # opencv uses bgr so switch to rgb
         frames.append(img)
-
-    print(len(frames))
 
     assert len(frames) <= window_size, "ERROR: more frames than window size"
 
