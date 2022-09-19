@@ -2,12 +2,14 @@ data:
 
   cngt_clips_path: "D:/Thesis/datasets/cngt_train_clips.zip"
   signbank_path: "D:/Thesis/datasets/NGT_Signbank_resized.zip"
+  cngt_vocab_path: "D:/Thesis/datasets/cngt_vocab.gzip"
+  sb_vocab_path: "D:/Thesis/datasets/signbank_vocab.gzip"
   window_size: 16
 
 test:
   model_dir: "D:Thesis/models/i3d"
   pred_dir: "D:Thesis/predictions/i3d"
-  fold: "val"
+  fold: "train"
   run_name: "advanced_transformations"
   use_cuda: False
   random_seed: 42

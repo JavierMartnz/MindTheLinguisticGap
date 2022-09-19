@@ -6,6 +6,11 @@ It is important to keep this order, since files from the Corpus NGT pre-processi
     Corpus NGT videos come in pairs, so this scripts split the ones that need splitting. Additionally, it resizes
     them to 256x256 pixels and ensures that the framerate is 25fps.
 
+(OLD)
+
+1. resize_split_anns_cngt.py
+    Resizes CNGT videos to 256x256 and splits the annotation files to separate files for different signers
+
 2. get_signbank_vocab.py
     Gets all glosses in Signbank together with their corresponding ID and saves them in a dictionary.
 

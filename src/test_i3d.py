@@ -20,10 +20,8 @@ from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.util import load_gzip
 
-def plot_confusion_matrix(cm, classes,
-                          normalize=False,
-                          title='Confusion matrix',
-                          cmap=plt.cm.Blues):
+
+def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -34,7 +32,7 @@ def plot_confusion_matrix(cm, classes,
     else:
         print('Confusion matrix, without normalization')
 
-    print(cm)
+    # print(cm)
 
     figure = plt.figure(figsize=(8, 8))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
@@ -54,9 +52,12 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.show()
+    if root_path:
+        plt.savefig(os.path.join(root_path, "confusion_matrix"))
+    # plt.show()
 
-def test(cfg_path, mode="rgb"):
+
+def test(cfg_path, log_filename, mode="rgb"):
     cfg = load_config(cfg_path)
     test_cfg = cfg.get("test")
 
@@ -64,7 +65,7 @@ def test(cfg_path, mode="rgb"):
     model_dir = test_cfg.get("model_dir")
     pred_dir = test_cfg.get("pred_dir")
     fold = test_cfg.get("fold")
-    assert fold in {"test", "val"}, f"Please, make sure the parameter 'fold' in {cfg_path} is either 'val' or 'test'"
+    assert fold in {"train", "test", "val"}, f"Please, make sure the parameter 'fold' in {cfg_path} is either 'train' 'val' or 'test'"
     run_name = test_cfg.get("run_name")
     run_batch_size = test_cfg.get("run_batch_size")
     optimizer = test_cfg.get("optimizer").upper()
@@ -79,6 +80,8 @@ def test(cfg_path, mode="rgb"):
     cngt_zip = cfg.get("data").get("cngt_clips_path")
     sb_zip = cfg.get("data").get("signbank_path")
     window_size = cfg.get("data").get("window_size")
+    cngt_vocab_path = cfg.get("data").get("cngt_vocab_path")
+    sb_vocab_path = cfg.get("data").get("sb_vocab_path")
 
     # get directory and filename for the checkpoints
     run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
@@ -94,7 +97,8 @@ def test(cfg_path, mode="rgb"):
     num_top_glosses = 2
 
     print(f"Loading {fold} split...")
-    dataset = I3Dataset(cngt_zip, sb_zip, mode, fold, window_size, transforms=None, filter_num=num_top_glosses)
+    dataset = I3Dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
+                        filter_num=num_top_glosses)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     # get glosses from the class encodings
@@ -125,7 +129,7 @@ def test(cfg_path, mode="rgb"):
     total_pred = []
     total_true = []
 
-    print("Predicting on test set...")
+    print(f"Predicting on {fold} set...")
     with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
         with tqdm(dataloader, unit="batch") as tepoch:
             for data in tepoch:
@@ -176,26 +180,27 @@ def test(cfg_path, mode="rgb"):
     f1 = f1_score(total_true, total_pred, average='macro')
     acc = accuracy_score(total_true, total_pred)
     mcc = MCC(total_true, total_pred)
-    print(f"F1 = {f1:.4f}\tAcc = {acc:.4f}\tMCC = {mcc:.4f}")
-
     cm = confusion_matrix(total_true, total_pred)
-    print(cm)
-    # plot_confusion_matrix(cm, glosses)
 
-    # FP = cm.sum(axis=0) - np.diag(cm)
-    # FN = cm.sum(axis=1) - np.diag(cm)
-    # TP = np.diag(cm)
-    # TN = cm.sum() - (FP + FN + TP)
-    #
-    # p = TP/(TP+FP)
-    # r = TP/(TP+FN)
-    # print((TP+TN)/(TP+FP+FN+TN))
-    # print(2*p*r/(p+r))
+    print(f"F1 = {f1:.4f}\tAcc = {acc:.4f}\tMCC = {mcc:.4f}")
+    print(cm)
+
+    logfile_path = os.path.join(pred_path, log_filename)
+
+    if os.path.exists(logfile_path):
+        os.remove(logfile_path)
+    with open(logfile_path, 'w') as f:
+        print(f"Predicting for glosses {glosses} mapped as {list(dataset.class_encodings.values())}", file=f)
+        print(f"F1 = {f1:.4f}\nAcc = {acc:.4f}\nMCC = {mcc:.4f}", file=f)
+
+    plot_confusion_matrix(cm, glosses, root_path=pred_path)
 
 
 def main(params):
     config_path = params.config_path
-    test(config_path)
+    log_filename = params.log_filename
+    test(config_path, log_filename)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -203,6 +208,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_path",
         type=str,
+    )
+
+    parser.add_argument(
+        "--log_filename",
+        type=str,
+        default="test_metrics.txt"
     )
 
     params, _ = parser.parse_known_args()

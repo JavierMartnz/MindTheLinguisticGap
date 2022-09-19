@@ -154,8 +154,159 @@ def split_strat(signers: list, cngt_folds: dict, cngt_signer_paths: dict, train_
 
     return cngt_folds
 
-def build_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict, window_size: int,
-                  split: str) -> list:
+
+def build_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict, window_size: int, split: str) -> list:
+    assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
+
+    num_classes = len(class_encodings)
+    classes = list(class_encodings.keys())
+    dataset = []
+
+    # process zip files first
+    if not os.path.isdir(cngt_zip[:-4]):
+        cngt_extracted_root = extract_zip(cngt_zip)
+    else:
+        cngt_extracted_root = cngt_zip[:-4]
+        # print(f"{cngt_extracted_root} already exists, no need to extract")
+
+    if not os.path.isdir(sb_zip[:-4]):
+        sb_extracted_root = extract_zip(cngt_zip)
+    else:
+        sb_extracted_root = sb_zip[:-4]
+        # print(f"{sb_extracted_root} already exists, no need to extract")
+
+    cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
+    sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
+
+    # we filter the top n most frequent glosses
+    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
+    sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
+
+    # use the vocabs from cngt and signbank to be able to get the glosses from their ID
+    cngt_vocab = load_gzip(cngt_vocab_path)
+    sb_vocab = load_gzip(sb_vocab_path)
+    # join cngt and sb vocabularies (gloss to id dictionary)
+    sb_vocab.update(cngt_vocab)
+    gloss_to_id = sb_vocab['gloss_to_id']
+
+    class_cnt_dict = {}
+    class_paths_dict = {}
+    # check for the frames for each class in the cngt dataset
+    for cngt_video_path in cngt_video_paths:
+
+        metadata = load_gzip(cngt_video_path[:cngt_video_path.rfind(".m")] + ".gzip")
+        num_frames = metadata.get("num_frames")
+
+        gloss_id = int(cngt_video_path.split("_")[-1][:-4])
+        gloss = list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)]
+
+        # count number of frames taking into account window expansion
+        if gloss not in class_cnt_dict.keys():
+            class_cnt_dict[gloss] = 0
+
+        num_windows = math.ceil(num_frames / window_size)
+
+        for i in range(num_windows):
+            class_cnt_dict[gloss] += window_size
+
+        # separate video paths based on class
+        if gloss not in class_paths_dict.keys():
+            class_paths_dict[gloss] = [(cngt_video_path, num_frames)]
+        else:
+            class_paths_dict[gloss].append((cngt_video_path, num_frames))
+
+    total_num_frames = sum(class_cnt_dict.values())
+
+    # get the frame ratio for each class and store it for the splitting
+    ratio_dict = {key: class_cnt_dict[key]/total_num_frames for key in class_cnt_dict.keys()}
+
+    train_size = int(total_num_frames * (4 / 6))
+    val_test_size = int(total_num_frames * (1 / 6))
+
+    train_size_dict = {key: (train_size * ratio_dict[key]) for key in ratio_dict.keys()}
+    val_test_size_dict = {key: (val_test_size * ratio_dict[key]) for key in ratio_dict.keys()}
+
+    # randomize the paths' order
+    random.seed(42)
+    for key in class_paths_dict.keys():
+        random.shuffle(class_paths_dict[key])
+
+    cngt_split_dict = {}
+    for fold in {'train', 'val', 'test'}:
+        fold_paths = []
+        for gloss in class_paths_dict.keys():
+            max_windows = train_size_dict[gloss]//window_size if fold == 'train' else val_test_size_dict[gloss]//window_size
+            windows_filled = 0
+            while windows_filled < max_windows:
+                path, num_frames = class_paths_dict[gloss].pop()
+                fold_paths.append(path)
+                num_windows = math.ceil(num_frames / window_size)
+                windows_filled += num_windows
+        cngt_split_dict[fold] = fold_paths
+
+    # data splitting
+    # cngt_idx_train_val = int(len(cngt_video_paths) * (4 / 6))
+    # cngt_idx_val_test = int(len(cngt_video_paths) * (5 / 6))
+    sb_idx_train_val = int(len(sb_video_paths) * (4 / 6))
+    sb_idx_val_test = int(len(sb_video_paths) * (5 / 6))
+
+    # cngt_folds = {'train': cngt_video_paths[:cngt_idx_train_val],
+    #               'val': cngt_video_paths[cngt_idx_train_val:cngt_idx_val_test],
+    #               'test': cngt_video_paths[cngt_idx_val_test:]}
+
+    sb_folds = {'train': sb_video_paths[:sb_idx_train_val],
+                'val': sb_video_paths[sb_idx_train_val:sb_idx_val_test],
+                'test': sb_video_paths[sb_idx_val_test:]}
+
+    all_video_paths = cngt_split_dict[split]
+    # THIS NEXT LINE IS ONLY FOR TESTING, SHOULD BE REMOVED
+    # all_video_paths = []
+    all_video_paths.extend(sb_folds[split])
+
+    label_dict = {}
+
+    for video_path in tqdm(all_video_paths):
+        metadata = load_gzip(video_path[:video_path.rfind(".m")] + ".gzip")
+        num_frames = metadata.get("num_frames")
+        if video_path.endswith(".mpg"):  # cngt video
+            gloss_id = int(video_path.split("_")[-1][:-4])
+        else:
+            gloss_id = int(video_path.split("-")[-1][:-4])
+
+        if mode == 'flow':
+            num_frames = num_frames // 2
+
+        label = np.zeros((num_classes, window_size), np.float32)
+        label_idx = class_encodings[gloss_id]
+
+        # cngt_vocab = load_gzip(cngt_vocab_path)
+        # sb_vocab = load_gzip(sb_vocab_path)
+        # join cngt and sb vocabularies (gloss to id dictionary)
+        # sb_vocab.update(cngt_vocab)
+        # gloss_to_id = sb_vocab['gloss_to_id']
+
+        gloss = list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)]
+
+        if gloss not in label_dict.keys():
+            label_dict[gloss] = 0
+
+        for frame in range(window_size):
+            label[label_idx, frame] = 1
+
+        num_windows = math.ceil(num_frames / window_size)
+
+        for i in range(num_windows):
+            label_dict[gloss] += 1
+            dataset.append((video_path, label, num_frames, i * window_size))
+
+    print(f"The labels and label count is {label_dict}")
+
+    return dataset
+
+
+def build_dataset_stratified(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict,
+                             window_size: int,
+                             split: str) -> list:
     assert split in {"train", "val", "test"}, "The variable 'split' can only have value  'train', 'val', and 'test'."
 
     num_classes = len(class_encodings)
@@ -206,8 +357,8 @@ def build_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_pat
     random.seed(42)
     random.shuffle(signers)
 
-    train_size = int(n_paths * (4/6))
-    val_test_size = int(n_paths * (1/6))
+    train_size = int(n_paths * (4 / 6))
+    val_test_size = int(n_paths * (1 / 6))
 
     cngt_folds = {'train': [], 'val': [], 'test': []}
 
@@ -218,7 +369,8 @@ def build_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_pat
     # print the videos per signer count for every split
     for t_split in ['train', 'val', 'test']:
         cnt_dict[t_split] = count_occurrences([os.path.basename(path).split('_')[0] for path in cngt_folds[t_split]])
-        print(f"The {t_split} split has {len(cnt_dict[t_split].keys())} different signers and a total of {sum(cnt_dict[t_split].values())} clips")
+        print(
+            f"The {t_split} split has {len(cnt_dict[t_split].keys())} different signers and a total of {sum(cnt_dict[t_split].values())} clips")
 
     print(f"train-val overlap: {set(cnt_dict['train'].keys()).intersection(set(cnt_dict['val'].keys()))}")
     print(f"val-test overlap: {set(cnt_dict['val'].keys()).intersection(set(cnt_dict['test'].keys()))}")
