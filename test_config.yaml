@@ -9,8 +9,8 @@ data:
 test:
   model_dir: "D:Thesis/models/i3d"
   pred_dir: "D:Thesis/predictions/i3d"
-  fold: "train"
-  run_name: "advanced_transformations"
+  fold: "test"
+  run_name: "balanced_binary"
   use_cuda: False
   random_seed: 42
   run_batch_size: 128
@@ -18,5 +18,5 @@ test:
   lr: 0.1
   epochs: 50
   ckpt_epoch: 49
-  ckpt_step: 2
+  ckpt_step: 3
   batch_size: 16
