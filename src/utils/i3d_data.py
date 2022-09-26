@@ -412,7 +412,7 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_
             max_windows = train_size_dict[gloss] // window_size if fold == 'train' else val_test_size_dict[gloss] // window_size
             windows_filled = 0
             while windows_filled < max_windows:
-                if class_paths_dict[gloss] is None:
+                if len(class_paths_dict[gloss]) == 0:
                     break
                 path, num_frames = class_paths_dict[gloss].pop()
                 fold_paths.append(path)
