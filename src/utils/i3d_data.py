@@ -558,11 +558,13 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
 def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str,
                   class_encodings: dict, window_size: int, split: str) -> list:
     if loading_mode == "random":
-        build_random_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split)
+        dataset = build_random_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split)
     elif loading_mode == "balanced":
-        build_balanced_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split)
+        dataset = build_balanced_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split)
     elif loading_mode == "stratified":
-        build_stratified_dataset(cngt_zip, sb_zip,  cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split)
+        dataset = build_stratified_dataset(cngt_zip, sb_zip,  cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split)
+
+    return dataset
 
 
 def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
