@@ -1,15 +1,16 @@
 data:
 
-  cngt_clips_path: "/vol/tensusers5/jmartinez/datasets/cngt_train_clips.zip"
+  cngt_clips_path: "/vol/tensusers5/jmartinez/datasets/cngt_single_signs.zip"
   signbank_path: "/vol/tensusers5/jmartinez/datasets/NGT_Signbank_resized.zip"
   cngt_vocab_path: "/vol/tensusers5/jmartinez/datasets/cngt_vocab.gzip"
   sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
   window_size: 16
+  data_loading: "random"
 
 training:
-  run_name: "advanced_transformations"
+  run_name: ""
   use_cuda: True
-  epochs: 100
+  epochs: 50
   random_seed: 42
   batch_size: 128
   init_lr: 0.01

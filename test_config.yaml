@@ -9,14 +9,14 @@ data:
 test:
   model_dir: "D:Thesis/models/i3d"
   pred_dir: "D:Thesis/predictions/i3d"
-  fold: "test"
-  run_name: "balanced_binary"
-  use_cuda: False
+  fold: "val"
+  run_name: "strat_balanced"
+  use_cuda: True
   random_seed: 42
   run_batch_size: 128
   optimizer: "SGD"
   lr: 0.1
   epochs: 50
-  ckpt_epoch: 49
-  ckpt_step: 3
+  ckpt_epoch: 48
+  ckpt_step: 1
   batch_size: 16

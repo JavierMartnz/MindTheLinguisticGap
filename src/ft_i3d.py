@@ -25,70 +25,17 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
-
-import torchvision
 from torchvision import datasets, transforms
-import src.utils.videotransforms
 
 import numpy as np
 
-from time import sleep
 from tqdm import tqdm
 
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
-import matplotlib.pyplot as plt
 
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
-from src.utils.resnet import r2plus1d_18
-from src.utils.util import extract_zip
-from src.utils.loss import f1_loss
-
-
-# def f1_score(TN, TP, FP, FN):
-#     acc = (TP + TN) / (TN + TP + FN + FP)
-#     precision = TP / (TP + FP + 1e-6)
-#     recall = TP / (TP + FN + 1e-6)
-#     F1 = 2 * precision * recall / (precision + recall + 1e-6)
-#     return acc, F1, precision, recall
-
-# def plot_confusion_matrix(cm, classes,
-#                           normalize=False,
-#                           title='Confusion matrix',
-#                           cmap=plt.cm.Blues):
-#     """
-#     This function prints and plots the confusion matrix.
-#     Normalization can be applied by setting `normalize=True`.
-#     """
-#     if normalize:
-#         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-#         print("Normalized confusion matrix")
-#     else:
-#         print('Confusion matrix, without normalization')
-#
-#     # print(cm)
-#
-#     figure = plt.figure(figsize=(8, 8))
-#     plt.imshow(cm, interpolation='nearest', cmap=cmap)
-#     plt.title(title)
-#     plt.colorbar()
-#     tick_marks = np.arange(len(classes))
-#     plt.xticks(tick_marks, classes, rotation=45)
-#     plt.yticks(tick_marks, classes)
-#
-#     fmt = '.2f' if normalize else 'd'
-#     thresh = cm.max() / 2.
-#     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-#         plt.text(j, i, format(cm[i, j], fmt),
-#                  horizontalalignment="center",
-#                  color="white" if cm[i, j] > thresh else "black")
-#
-#     plt.tight_layout()
-#     plt.ylabel('True label')
-#     plt.xlabel('Predicted label')
-#
-#     return figure
 
 
 def get_prediction_measures(labels, frame_logits):
@@ -156,6 +103,7 @@ def run(cfg_path, mode='rgb'):
     print("Configuring model and parameters...")
     cfg = load_config(cfg_path)
     training_cfg = cfg.get("training")
+    data_cfg = cgt.get("data")
 
     # training configs
     run_name = training_cfg.get("run_name")
@@ -166,11 +114,12 @@ def run(cfg_path, mode='rgb'):
     weights_dir = training_cfg.get("weights_dir")
 
     # data configs
-    cngt_zip = cfg.get("data").get("cngt_clips_path")
-    sb_zip = cfg.get("data").get("signbank_path")
-    cngt_vocab_path = cfg.get("data").get("cngt_vocab_path")
-    sb_vocab_path = cfg.get("data").get("sb_vocab_path")
-    window_size = cfg.get("data").get("window_size")
+    cngt_zip = data_cfg.get("cngt_clips_path")
+    sb_zip = data_cfg.get("signbank_path")
+    cngt_vocab_path = data_cfg.get("cngt_vocab_path")
+    sb_vocab_path = data_cfg.get("sb_vocab_path")
+    window_size = data_cfg.get("window_size")
+    loading_mode = data_cfg.get("data_loading")
 
     print(f"Using window size of {window_size} frames")
 
@@ -187,17 +136,16 @@ def run(cfg_path, mode='rgb'):
     num_top_glosses = 2  # should be None if no filtering wanted
 
     print("Loading training split...")
-    train_dataset = I3Dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train', window_size,
+    train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train', window_size,
                               transforms=train_transforms, filter_num=num_top_glosses)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Loading val split...")
-    val_dataset = I3Dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'val', window_size,
+    val_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'val', window_size,
                             transforms=val_transforms, filter_num=num_top_glosses)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
-    # datasets = {'train': train_dataset, 'val': val_dataset}
 
     print("Setting up the model...")
     if mode == 'flow':

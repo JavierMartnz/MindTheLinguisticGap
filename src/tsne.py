@@ -19,8 +19,7 @@ from src.utils.i3d_data import I3Dataset
 from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.util import load_gzip
-from torchsummary import summary
-
+from sklearn.manifold import TSNE
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
     """
@@ -58,11 +57,11 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     # plt.show()
 
 
-def test(cfg_path, log_filename, mode="rgb"):
+def tsne(cfg_path, log_filename, mode="rgb"):
     cfg = load_config(cfg_path)
     test_cfg = cfg.get("test")
 
-    # test parametersf
+    # test parameters
     model_dir = test_cfg.get("model_dir")
     pred_dir = test_cfg.get("pred_dir")
     fold = test_cfg.get("fold")
@@ -88,13 +87,6 @@ def test(cfg_path, log_filename, mode="rgb"):
     run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
     ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}_{ckpt_step}.pt"
 
-    pred_path = os.path.join(pred_dir, run_dir, fold, ckpt_filename.split('.')[0])
-    make_dir(pred_path)
-    make_dir(os.path.join(pred_path, "TP"))
-    make_dir(os.path.join(pred_path, "TN"))
-    make_dir(os.path.join(pred_path, "FP"))
-    make_dir(os.path.join(pred_path, "FN"))
-
     num_top_glosses = 2
 
     print(f"Loading {fold} split...")
@@ -102,19 +94,19 @@ def test(cfg_path, log_filename, mode="rgb"):
                         filter_num=num_top_glosses)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
-    # get glosses from the class encodings
-    cngt_vocab = load_gzip("D:/Thesis/datasets/cngt_vocab.gzip")
-    sb_vocab = load_gzip("D:/Thesis/datasets/signbank_vocab.gzip")
-    # join cngt and sb vocabularies (gloss to id dictionary)
-    sb_vocab.update(cngt_vocab)
-    gloss_to_id = sb_vocab['gloss_to_id']
-
-    glosses = []
-
-    for gloss_id in dataset.class_encodings.keys():
-        glosses.append(list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)])
-
-    print(f"Predicting for glosses {glosses} mapped as classes {list(dataset.class_encodings.values())}")
+    # # get glosses from the class encodings
+    # cngt_vocab = load_gzip("D:/Thesis/datasets/cngt_vocab.gzip")
+    # sb_vocab = load_gzip("D:/Thesis/datasets/signbank_vocab.gzip")
+    # # join cngt and sb vocabularies (gloss to id dictionary)
+    # sb_vocab.update(cngt_vocab)
+    # gloss_to_id = sb_vocab['gloss_to_id']
+    #
+    # glosses = []
+    #
+    # for gloss_id in dataset.class_encodings.keys():
+    #     glosses.append(list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)])
+    #
+    # print(f"Predicting for glosses {glosses} mapped as classes {list(dataset.class_encodings.values())}")
 
     # load model and specified checkpoint
     i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
@@ -130,83 +122,52 @@ def test(cfg_path, log_filename, mode="rgb"):
     total_pred = []
     total_true = []
 
-    print(f"Predicting on {fold} set...")
+    X = torch.zeros((16, 1024))
+    Y = np.zeros(16)
+
+    print(f"Running datapoints through model...")
     with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
         with tqdm(dataloader, unit="batch") as tepoch:
             for data in tepoch:
                 # get the inputs
                 inputs, labels = data
-                if use_cuda:
-                    inputs = Variable(inputs.cuda())
-                    labels = Variable(labels.cuda())
 
-                # forward pass of the inputs through the network
-                per_frame_logits = i3d(inputs)
+                y_true = np.max(np.argmax(labels.numpy(), axis=1), axis=1)
 
-                # use these for whole sign prediction
-                # y_pred = np.squeeze(np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1))
-                # y_true = np.max(np.argmax(labels.detach().cpu().numpy(), axis=1), axis=1)
+                # get the features of the penultimate layer
+                features = i3d.extract_features(inputs)
 
-                # upsample output to input size
-                per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
-
-                # use these for "frame" prediction
-                y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
-                y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
-
-
-
-                # save predicitions for later
-                if len(total_pred) == 0:
-                    total_pred = y_pred.flatten()
-                    total_true = y_true.flatten()
+                # if X is empty
+                if X.sum() == 0:
+                    X = features.squeeze()
+                    Y = y_true
                 else:
-                    total_pred = np.append(total_pred, y_pred.flatten())
-                    total_true = np.append(total_true, y_true.flatten())
+                    X = torch.cat((X, features.squeeze()), dim=0)
+                    Y = np.append(Y, y_true)
 
-                # swap to [B, T, H, W, C] for storing
-                images = inputs.permute([0, 2, 1, 3, 4])
+    JA = Y == 0
+    GEBAREN = Y == 1
 
-                for batch_sample in range(images.size(0)):
-                    for frame in range(images.size(1)):
-                        pred = y_pred[batch_sample][frame]
-                        label = y_true[batch_sample][frame]
-                        filename = f"b{batch_sample}_f{frame}.png"
+    perplexities = [5, 10, 20, 30, 50, 100]
+    X_embeds = []
+    for perplexity in perplexities:
+        X_embeds.append(TSNE(n_components=2, perplexity=perplexity, n_jobs=-1).fit_transform(X))
 
-                        # THIS IS DONE FOR BINARY CLASSIFICATION, SHOULD BE CHANGED FOR MULTICLASS
-                        # CLASS 0 IS POSITIVE, 1 IS NEGATIVE
-                        if label == pred and label == 0:  # TP
-                            save_image(images[batch_sample][frame], os.path.join(pred_path, "TP", filename))
-                        elif label == pred and label == 1:  # TN
-                            save_image(images[batch_sample][frame], os.path.join(pred_path, "TN", filename))
-                        elif label != pred and label == 0:  # FN
-                            save_image(images[batch_sample][frame], os.path.join(pred_path, "FN", filename))
-                        elif label != pred and label == 1:  # FP
-                            save_image(images[batch_sample][frame], os.path.join(pred_path, "FP", filename))
+    fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(15, 12))
+    fig.suptitle(f"{fold} {run_name} {ckpt_filename}")
+    for i, ax in enumerate(axs.ravel()):
+        ax.scatter(X_embeds[i][JA, 0], X_embeds[i][JA, 1], c='orange', label="JA")
+        ax.scatter(X_embeds[i][GEBAREN, 0], X_embeds[i][GEBAREN, 1], c='blue', label="GEBAREN")
+        ax.set_title(f"Perplexity = {perplexities[i]}")
+        ax.legend()
 
-    f1 = f1_score(total_true, total_pred, average='macro')
-    acc = accuracy_score(total_true, total_pred)
-    mcc = MCC(total_true, total_pred)
-    cm = confusion_matrix(total_true, total_pred)
-
-    print(f"F1 = {f1:.4f}\tAcc = {acc:.4f}\tMCC = {mcc:.4f}")
-    print(cm)
-
-    logfile_path = os.path.join(pred_path, log_filename)
-
-    if os.path.exists(logfile_path):
-        os.remove(logfile_path)
-    with open(logfile_path, 'w') as f:
-        print(f"Predicting for glosses {glosses} mapped as {list(dataset.class_encodings.values())}", file=f)
-        print(f"F1 = {f1:.4f}\nAcc = {acc:.4f}\nMCC = {mcc:.4f}", file=f)
-
-    plot_confusion_matrix(cm, glosses, root_path=pred_path)
+    plt.show()
 
 
 def main(params):
     config_path = params.config_path
     log_filename = params.log_filename
-    test(config_path, log_filename)
+    tsne(config_path, log_filename)
 
 
 if __name__ == "__main__":
