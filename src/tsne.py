@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 
@@ -20,6 +21,7 @@ from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.util import load_gzip
 from sklearn.manifold import TSNE
+
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
     """
@@ -60,6 +62,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
 def tsne(cfg_path, log_filename, mode="rgb"):
     cfg = load_config(cfg_path)
     test_cfg = cfg.get("test")
+    data_cfg = cfg.get("data")
 
     # test parameters
     model_dir = test_cfg.get("model_dir")
@@ -77,11 +80,12 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     use_cuda = test_cfg.get("use_cuda")
 
     # data configs
-    cngt_zip = cfg.get("data").get("cngt_clips_path")
-    sb_zip = cfg.get("data").get("signbank_path")
-    window_size = cfg.get("data").get("window_size")
-    cngt_vocab_path = cfg.get("data").get("cngt_vocab_path")
-    sb_vocab_path = cfg.get("data").get("sb_vocab_path")
+    cngt_zip = data_cfg.get("cngt_clips_path")
+    sb_zip = data_cfg.get("signbank_path")
+    window_size = data_cfg.get("window_size")
+    cngt_vocab_path = data_cfg.get("cngt_vocab_path")
+    sb_vocab_path = data_cfg.get("sb_vocab_path")
+    loading_mode = data_cfg.get("data_loading")
 
     # get directory and filename for the checkpoints
     run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
@@ -90,7 +94,7 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     num_top_glosses = 2
 
     print(f"Loading {fold} split...")
-    dataset = I3Dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
+    dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
                         filter_num=num_top_glosses)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
@@ -131,8 +135,11 @@ def tsne(cfg_path, log_filename, mode="rgb"):
             for data in tepoch:
                 # get the inputs
                 inputs, labels = data
+                if use_cuda:
+                    inputs = Variable(inputs.cuda())
+                    labels = Variable(labels.cuda())
 
-                y_true = np.max(np.argmax(labels.numpy(), axis=1), axis=1)
+                y_true = np.max(np.argmax(labels.detach().cpu().numpy(), axis=1), axis=1)
 
                 # get the features of the penultimate layer
                 features = i3d.extract_features(inputs)
@@ -148,14 +155,17 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     JA = Y == 0
     GEBAREN = Y == 1
 
-    perplexities = [5, 10, 20, 30, 50, 100]
+    perplexities = [1, 2, 5, 10, 20, 30, 50, 100]
     X_embeds = []
     for perplexity in perplexities:
-        X_embeds.append(TSNE(n_components=2, perplexity=perplexity, n_jobs=-1).fit_transform(X))
+        X_embeds.append(TSNE(n_components=2, perplexity=perplexity, n_jobs=-1).fit_transform(X.detach().cpu()
+        ))
 
-    fig, axs = plt.subplots(nrows=3, ncols=2, figsize=(15, 12))
+    fig, axs = plt.subplots(nrows=math.ceil(len(perplexities)/3), ncols=3, figsize=(15, 12))
     fig.suptitle(f"{fold} {run_name} {ckpt_filename}")
     for i, ax in enumerate(axs.ravel()):
+        if i >= len(perplexities):
+            break
         ax.scatter(X_embeds[i][JA, 0], X_embeds[i][JA, 1], c='orange', label="JA")
         ax.scatter(X_embeds[i][GEBAREN, 0], X_embeds[i][GEBAREN, 1], c='blue', label="GEBAREN")
         ax.set_title(f"Perplexity = {perplexities[i]}")
