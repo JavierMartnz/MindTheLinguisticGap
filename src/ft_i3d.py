@@ -103,7 +103,7 @@ def run(cfg_path, mode='rgb'):
     print("Configuring model and parameters...")
     cfg = load_config(cfg_path)
     training_cfg = cfg.get("training")
-    data_cfg = cgt.get("data")
+    data_cfg = cfg.get("data")
 
     # training configs
     run_name = training_cfg.get("run_name")
