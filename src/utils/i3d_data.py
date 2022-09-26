@@ -548,6 +548,7 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
 
         for i in range(num_windows):
             label_dict[gloss] += 1
+            print((video_path, label, num_frames, i * window_size))
             dataset.append((video_path, label, num_frames, i * window_size))
 
     print(f"The labels and label count is {label_dict}")
