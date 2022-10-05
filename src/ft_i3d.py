@@ -134,7 +134,7 @@ def run(cfg_path, mode='rgb'):
     val_transforms = transforms.Compose([transforms.CenterCrop(224)])
 
     num_top_glosses = None  # should be None if no filtering wanted
-    specific_glosses = ["GAAN-NAAR-A", "NU-A"]
+    specific_glosses = ["AL", "ZO"]
 
     # get glosses from the class encodings
     cngt_vocab = load_gzip(cngt_vocab_path)
