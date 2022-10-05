@@ -489,7 +489,7 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
     cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
     sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
 
-    # we filter the top n most frequent glosses
+    # we filter the glosses
     cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
     sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
 
@@ -569,7 +569,7 @@ def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, cngt_vocab_path
     return dataset
 
 
-def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
+def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_gloss_ids=[]):
     # process zip files first
     if not os.path.isdir(cngt_zip[:-4]):
         cngt_extracted_root = extract_zip(cngt_zip)
@@ -587,7 +587,12 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
     sb_gloss_ids = {}
 
     if filter_num is None:  # default case
-        sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
+        if len(specific_gloss_ids) > 0:  # if some glosses are specified
+            assert type(specific_gloss_ids) == list, "The variable 'specific_glosses' must be a list"
+            assert type(specific_gloss_ids[0]) == int, "The variable 'specific_glosses' must be a list of integers"
+            cngt_gloss_ids = specific_gloss_ids
+        else:
+            sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
     else:
         assert type(filter_num) == int, "The variable 'filter_num' must be an integer"
         _, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, filter_num)
@@ -610,12 +615,12 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None):
 class I3Dataset(data_utl.Dataset):
 
     def __init__(self, loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, split, window_size=64, transforms=None,
-                 filter_num=None):
+                 filter_num=None, specific_gloss_ids=None):
         assert loading_mode in {'random', 'balanced',
                                 'stratified'}, "The 'loading_mode' argument must have values 'random', 'balanced', 'stratified'"
         assert mode in {'rgb', 'flow'}, "The 'mode' argument must have values 'rgb' or 'flow'"
         self.mode = mode
-        self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num)
+        self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num, specific_gloss_ids)
         self.window_size = window_size
         self.transforms = transforms
         self.data = build_dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, self.class_encodings, window_size, split)

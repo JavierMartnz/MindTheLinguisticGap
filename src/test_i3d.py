@@ -1,6 +1,8 @@
 import os
 import sys
 
+import cv2
+
 sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 import argparse
@@ -14,6 +16,7 @@ from sklearn.metrics import matthews_corrcoef as MCC
 import matplotlib.pyplot as plt
 import itertools
 from torchvision.utils import save_image
+from torchvision.io import write_video
 
 from src.utils.i3d_data import I3Dataset
 from src.utils.helpers import load_config, make_dir
@@ -61,6 +64,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
 def test(cfg_path, log_filename, mode="rgb"):
     cfg = load_config(cfg_path)
     test_cfg = cfg.get("test")
+    data_cfg = cfg.get("data")
 
     # test parametersf
     model_dir = test_cfg.get("model_dir")
@@ -78,11 +82,12 @@ def test(cfg_path, log_filename, mode="rgb"):
     use_cuda = test_cfg.get("use_cuda")
 
     # data configs
-    cngt_zip = cfg.get("data").get("cngt_clips_path")
-    sb_zip = cfg.get("data").get("signbank_path")
-    window_size = cfg.get("data").get("window_size")
-    cngt_vocab_path = cfg.get("data").get("cngt_vocab_path")
-    sb_vocab_path = cfg.get("data").get("sb_vocab_path")
+    cngt_zip = data_cfg.get("cngt_clips_path")
+    sb_zip = data_cfg.get("signbank_path")
+    window_size = data_cfg.get("window_size")
+    cngt_vocab_path = data_cfg.get("cngt_vocab_path")
+    sb_vocab_path = data_cfg.get("sb_vocab_path")
+    loading_mode = data_cfg.get("data_loading")
 
     # get directory and filename for the checkpoints
     run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
@@ -98,7 +103,7 @@ def test(cfg_path, log_filename, mode="rgb"):
     num_top_glosses = 2
 
     print(f"Loading {fold} split...")
-    dataset = I3Dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
+    dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
                         filter_num=num_top_glosses)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
@@ -130,6 +135,8 @@ def test(cfg_path, log_filename, mode="rgb"):
     total_pred = []
     total_true = []
 
+    img_cnt = 0
+
     print(f"Predicting on {fold} set...")
     with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
         with tqdm(dataloader, unit="batch") as tepoch:
@@ -144,17 +151,15 @@ def test(cfg_path, log_filename, mode="rgb"):
                 per_frame_logits = i3d(inputs)
 
                 # use these for whole sign prediction
-                # y_pred = np.squeeze(np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1))
-                # y_true = np.max(np.argmax(labels.detach().cpu().numpy(), axis=1), axis=1)
+                y_pred = np.squeeze(np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1))
+                y_true = np.max(np.argmax(labels.detach().cpu().numpy(), axis=1), axis=1)
 
                 # upsample output to input size
-                per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
+                # per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
 
                 # use these for "frame" prediction
-                y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
-                y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
-
-
+                # y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
+                # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                 # save predicitions for later
                 if len(total_pred) == 0:
@@ -167,22 +172,25 @@ def test(cfg_path, log_filename, mode="rgb"):
                 # swap to [B, T, H, W, C] for storing
                 images = inputs.permute([0, 2, 1, 3, 4])
 
-                for batch_sample in range(images.size(0)):
-                    for frame in range(images.size(1)):
-                        pred = y_pred[batch_sample][frame]
-                        label = y_true[batch_sample][frame]
-                        filename = f"b{batch_sample}_f{frame}.png"
+                for batch in range(images.size(0)):
+                    pred = y_pred[batch]
+                    label = y_true[batch]
 
-                        # THIS IS DONE FOR BINARY CLASSIFICATION, SHOULD BE CHANGED FOR MULTICLASS
-                        # CLASS 0 IS POSITIVE, 1 IS NEGATIVE
-                        if label == pred and label == 0:  # TP
-                            save_image(images[batch_sample][frame], os.path.join(pred_path, "TP", filename))
-                        elif label == pred and label == 1:  # TN
-                            save_image(images[batch_sample][frame], os.path.join(pred_path, "TN", filename))
-                        elif label != pred and label == 0:  # FN
-                            save_image(images[batch_sample][frame], os.path.join(pred_path, "FN", filename))
-                        elif label != pred and label == 1:  # FP
-                            save_image(images[batch_sample][frame], os.path.join(pred_path, "FP", filename))
+                    filename = f"{img_cnt}.avi"
+                    if label == pred and label == 0:  # TP
+                        video_path = os.path.join(pred_path, "TP", filename)
+                    elif label == pred and label == 1:  # TN
+                        video_path = os.path.join(pred_path, "TN", filename)
+                    elif label != pred and label == 0:  # FN
+                        video_path = os.path.join(pred_path, "FN", filename)
+                    elif label != pred and label == 1:  # FP
+                        video_path = os.path.join(pred_path, "FP", filename)
+
+                    # change video from [T, C, H, W] to [T, H, W, C] and denormalize
+                    video = images[batch].permute([0, 2, 3, 1]).detach().cpu() * 255.
+                    write_video(video_path, video, fps=25)
+                    img_cnt += 1
+
 
     f1 = f1_score(total_true, total_pred, average='macro')
     acc = accuracy_score(total_true, total_pred)

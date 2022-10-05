@@ -5,7 +5,7 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 from src.utils import videotransforms
 from src.utils.helpers import load_config
-from src.utils.util import make_dir
+from src.utils.util import make_dir, load_gzip
 
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = '1'
@@ -133,16 +133,26 @@ def run(cfg_path, mode='rgb'):
     # validation transforms should never contain any randomness
     val_transforms = transforms.Compose([transforms.CenterCrop(224)])
 
-    num_top_glosses = 2  # should be None if no filtering wanted
+    num_top_glosses = None  # should be None if no filtering wanted
+    specific_glosses = ["GAAN_NAAR-A", "NU-A"]
+
+    # get glosses from the class encodings
+    cngt_vocab = load_gzip("D:/Thesis/datasets/cngt_vocab.gzip")
+    sb_vocab = load_gzip("D:/Thesis/datasets/signbank_vocab.gzip")
+    # join cngt and sb vocabularies (gloss to id dictionary)
+    sb_vocab.update(cngt_vocab)
+    gloss_to_id = sb_vocab['gloss_to_id']
+
+    specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
     print("Loading training split...")
     train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train', window_size,
-                              transforms=train_transforms, filter_num=num_top_glosses)
+                              transforms=train_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Loading val split...")
     val_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'val', window_size,
-                            transforms=val_transforms, filter_num=num_top_glosses)
+                            transforms=val_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}

@@ -208,6 +208,51 @@ def main(params):
     pool.close()
     pool.join()
 
+    # once the files are in output folder, we are going to create the splits
+    # datapoints = [file[:-4] for file in os.listdir(output_root) if file.endswith('.mpg')]
+    #
+    # random.seed(42)
+    # random.shuffle(datapoints)
+    #
+    # train_val_idx = int(len(datapoints) * (4 / 6))
+    # val_test_idx = int(len(datapoints) * (5 / 6))
+    #
+    # data = {"train": datapoints[:train_val_idx], "val": datapoints[train_val_idx:val_test_idx], "test": datapoints[val_test_idx:]}
+    #
+    # print(f"Split sizes:\n\t-train={len(data['train'])}\n\t-val={len(data['val'])}\n\t-test={len(data['test'])}")
+    #
+    # splits = ["train", "val", "test"]
+    #
+    # for split in splits:
+    #     print(f"Creating {split} split...")
+    #
+    #     # create the folder for the split
+    #     video_split_root = os.path.join(output_root, split)
+    #     os.makedirs(video_split_root, exist_ok=True)
+    #
+    #     # iterate over all datapoints and move the videos and annotation files to the new folder
+    #     for datapoint in tqdm(data[split]):
+    #         video = datapoint + ".mpg"
+    #         metadata = datapoint + ".gzip"
+    #         shutil.move(os.path.join(output_root, video), os.path.join(video_split_root, video))
+    #         shutil.move(os.path.join(output_root, metadata), os.path.join(video_split_root, metadata))
+    #
+    # # we zip the resulting folder and delete the original one since Ponyland backups break with smaller files
+    # # print("Start zipping isolated clips...")
+    # # zip_basedir = Path(output_root).parent
+    # # zip_filename = os.path.basename(output_root) + '.zip'
+    # #
+    # # all_filenames = os.listdir(output_root)
+    # #
+    # # # training
+    # # with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
+    # #     for filename in tqdm(all_filenames):
+    # #         zipfile.write(os.path.join(output_root, filename), filename)
+    # #
+    # #         # just delete the previous directory is the zip file was created
+    # # if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
+    # #     print("Zipfile was successfully created")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

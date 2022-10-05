@@ -145,6 +145,8 @@ def main(params):
         print(f"{no_gloss_videos} out of {num_videos} videos discarded because they contained no gloss annotations:\n\n" + log_summary, file=f)
     print(f"Saving CNGT vocabulary file to {cngt_vocab_path}")
     # after iterating over every file, save the vocab
+    if os.path.exists(cngt_vocab_path):
+        os.remove(cngt_vocab_path)
     save_vocab(cngt_gloss_to_id, cngt_vocab_path)
 
     # now create the train/val/test splits

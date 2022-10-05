@@ -21,7 +21,9 @@ from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.util import load_gzip
 from sklearn.manifold import TSNE
-
+from sklearn.decomposition import PCA
+from umap import UMAP
+import plotly.express as px
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
     """
@@ -142,7 +144,8 @@ def tsne(cfg_path, log_filename, mode="rgb"):
                 y_true = np.max(np.argmax(labels.detach().cpu().numpy(), axis=1), axis=1)
 
                 # get the features of the penultimate layer
-                features = i3d.extract_features(inputs)
+                # features = i3d.extract_features(inputs)
+                features = i3d.extract_features_before(inputs)
 
                 # if X is empty
                 if X.sum() == 0:
@@ -152,26 +155,56 @@ def tsne(cfg_path, log_filename, mode="rgb"):
                     X = torch.cat((X, features.squeeze()), dim=0)
                     Y = np.append(Y, y_true)
 
+    print("Running TSNE...")
     JA = Y == 0
     GEBAREN = Y == 1
 
-    perplexities = [1, 2, 5, 10, 20, 30, 50, 100]
-    X_embeds = []
-    for perplexity in perplexities:
-        X_embeds.append(TSNE(n_components=2, perplexity=perplexity, n_jobs=-1).fit_transform(X.detach().cpu()
-        ))
+    X = X.detach().cpu()
 
-    fig, axs = plt.subplots(nrows=math.ceil(len(perplexities)/3), ncols=3, figsize=(15, 12))
+    X_tsne = TSNE(n_components=2, perplexity=50, learning_rate=10, n_iter=10000, n_jobs=-1).fit_transform(X)
+    X_pca = PCA(n_components=2).fit_transform(X)
+    X_umap = UMAP(n_components=2, n_neighbors=30).fit_transform(X)
+
+    X_embeds = [X_tsne, X_pca, X_umap]
+    names = ["tSNE", "PCA", "UMAP"]
+
+    fig, axs = plt.subplots(nrows=3, ncols=1)
     fig.suptitle(f"{fold} {run_name} {ckpt_filename}")
-    for i, ax in enumerate(axs.ravel()):
-        if i >= len(perplexities):
-            break
-        ax.scatter(X_embeds[i][JA, 0], X_embeds[i][JA, 1], c='orange', label="JA")
-        ax.scatter(X_embeds[i][GEBAREN, 0], X_embeds[i][GEBAREN, 1], c='blue', label="GEBAREN")
-        ax.set_title(f"Perplexity = {perplexities[i]}")
-        ax.legend()
+
+    for i in range(len(X_embeds)):
+        axs[i].scatter(X_embeds[i][JA, 0], X_embeds[i][JA, 1], c='orange', label="JA")
+        axs[i].scatter(X_embeds[i][GEBAREN, 0], X_embeds[i][GEBAREN, 1], c='blue', label="GEBAREN")
+        axs[i].set_title(names[i])
+        axs[i].legend()
 
     plt.show()
+
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection='3d')
+    #
+    # ax.scatter(X_embed[JA, 0], X_embed[JA, 1], X_embed[JA, 2], c='orange', label="JA")
+    # ax.scatter(X_embed[GEBAREN, 0], X_embed[GEBAREN, 1], X_embed[GEBAREN, 2], c='blue', label="GEBAREN")
+    # ax.legend()
+    #
+    # plt.show()
+
+    # perplexities = [1, 2, 5, 10, 20, 30, 50, 100, 200]
+    # perplexities = [50, 100, 200]
+    # X_embeds = []
+    # for perplexity in perplexities:
+    #     X_embeds.append(TSNE(n_components=3, perplexity=perplexity, learning_rate=10, n_iter=10000, n_jobs=-1).fit_transform(X.detach().cpu()))
+    #
+    # fig, axs = plt.subplots(nrows=math.ceil(len(perplexities)/3), ncols=3, figsize=(15, 12))
+    # fig.suptitle(f"{fold} {run_name} {ckpt_filename}")
+    # for i, ax in enumerate(axs.ravel()):
+    #     if i >= len(perplexities):
+    #         break
+    #     ax.scatter(X_embeds[i][JA, 0], X_embeds[i][JA, 1], X_embeds[i][JA, 2], c='orange', label="JA")
+    #     ax.scatter(X_embeds[i][GEBAREN, 0], X_embeds[i][GEBAREN, 1], X_embeds[i][GEBAREN, 2],  c='blue', label="GEBAREN")
+    #     ax.set_title(f"Perplexity = {perplexities[i]}")
+    #     ax.legend()
+    #
+    # plt.show()
 
 
 def main(params):

@@ -343,3 +343,9 @@ class InceptionI3d(nn.Module):
             if end_point in self.end_points:
                 x = self._modules[end_point](x)
         return self.avg_pool(x)
+
+    def extract_features_before(self, x):
+        for end_point in self.VALID_ENDPOINTS[:-2]:
+            if end_point in self.end_points:
+                x = self._modules[end_point](x)
+        return self.avg_pool(x)
