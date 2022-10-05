@@ -137,8 +137,8 @@ def run(cfg_path, mode='rgb'):
     specific_glosses = ["GAAN_NAAR-A", "NU-A"]
 
     # get glosses from the class encodings
-    cngt_vocab = load_gzip("D:/Thesis/datasets/cngt_vocab.gzip")
-    sb_vocab = load_gzip("D:/Thesis/datasets/signbank_vocab.gzip")
+    cngt_vocab = load_gzip(cngt_vocab_path)
+    sb_vocab = load_gzip(sb_vocab_path)
     # join cngt and sb vocabularies (gloss to id dictionary)
     sb_vocab.update(cngt_vocab)
     gloss_to_id = sb_vocab['gloss_to_id']
