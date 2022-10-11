@@ -199,7 +199,7 @@ def main(params):
 
     all_files = os.listdir(dataset_root)
 
-    multiprocessing bit based on https://github.com/tqdm/tqdm/issues/484
+    # multiprocessing bit based on https://github.com/tqdm/tqdm/issues/484
     pool = Pool()
     pbar = tqdm(total=len(all_files))
 

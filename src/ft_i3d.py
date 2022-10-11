@@ -135,12 +135,9 @@ def run(cfg_path, mode='rgb'):
 
     num_top_glosses = None  # should be None if no filtering wanted
     specific_glosses = ["PT-1hand", "PO"]
-
+    
     # get glosses from the class encodings
-    cngt_vocab = load_gzip(cngt_vocab_path)
     sb_vocab = load_gzip(sb_vocab_path)
-    # join cngt and sb vocabularies (gloss to id dictionary)
-    sb_vocab.update(cngt_vocab)
     gloss_to_id = sb_vocab['gloss_to_id']
 
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]

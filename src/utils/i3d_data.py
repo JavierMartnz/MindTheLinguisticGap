@@ -493,12 +493,9 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
     cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
     sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
 
-    # use the vocabs from cngt and signbank to be able to get the glosses from their ID
-    cngt_vocab = load_gzip(cngt_vocab_path)
+    # use signbank vocab to be able to get the glosses from their IDs
     sb_vocab = load_gzip(sb_vocab_path)
-    # join cngt and sb vocabularies (gloss to id dictionary)
-    sb_vocab.update(cngt_vocab)
-    gloss_to_id = sb_vocab['gloss_to_id']
+    id_to_gloss = sb_vocab['id_to_gloss']
 
     random.seed(42)
     random.shuffle(cngt_video_paths)
@@ -538,7 +535,7 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
 
         label = np.zeros((num_classes, window_size), np.float32)
         label_idx = class_encodings[gloss_id]
-        gloss = list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)]
+        gloss = id_to_gloss[gloss_id]
 
         if gloss not in label_dict.keys():
             label_dict[gloss] = 0
