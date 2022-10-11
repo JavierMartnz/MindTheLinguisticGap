@@ -171,7 +171,7 @@ def build_stratified_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, s
         cngt_extracted_root = cngt_zip[:-4]
 
     if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(cngt_zip)
+        sb_extracted_root = extract_zip(sb_zip)
     else:
         sb_extracted_root = sb_zip[:-4]
 
@@ -343,7 +343,7 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_
         # print(f"{cngt_extracted_root} already exists, no need to extract")
 
     if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(cngt_zip)
+        sb_extracted_root = extract_zip(sb_zip)
     else:
         sb_extracted_root = sb_zip[:-4]
         # print(f"{sb_extracted_root} already exists, no need to extract")
@@ -475,14 +475,13 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
 
     # process zip files first
     if not os.path.isdir(cngt_zip[:-4]):
-        print("HERE HELP")
         cngt_extracted_root = extract_zip(cngt_zip)
     else:
         cngt_extracted_root = cngt_zip[:-4]
         # print(f"{cngt_extracted_root} already exists, no need to extract")
 
     if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(cngt_zip)
+        sb_extracted_root = extract_zip(sb_zip)
     else:
         sb_extracted_root = sb_zip[:-4]
         # print(f"{sb_extracted_root} already exists, no need to extract")
@@ -568,15 +567,15 @@ def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, cngt_vocab_path
 
 
 def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_gloss_ids=[]):
-    print("HELP HERE")
     # process zip files first
-    if os.path.isdir(cngt_zip[:-4]):
-        cngt_extracted_root = cngt_zip[:-4]
-    else:
+    if not os.path.isdir(cngt_zip[:-4]):
         cngt_extracted_root = extract_zip(cngt_zip)
+    else:
+        cngt_extracted_root = cngt_zip[:-4]
+        # print(f"{cngt_extracted_root} already exists, no need to extract")
 
     if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(cngt_zip)
+        sb_extracted_root = extract_zip(sb_zip)
     else:
         sb_extracted_root = sb_zip[:-4]
         # print(f"{sb_extracted_root} already exists, no need to extract")
