@@ -570,11 +570,10 @@ def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, cngt_vocab_path
 def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_gloss_ids=[]):
     print("HELP HERE")
     # process zip files first
-    if not os.path.isdir(cngt_zip[:-4]):
-        cngt_extracted_root = extract_zip(cngt_zip)
-    else:
+    if os.path.isdir(cngt_zip[:-4]):
         cngt_extracted_root = cngt_zip[:-4]
-        # print(f"{cngt_extracted_root} already exists, no need to extract")
+    else:
+        cngt_extracted_root = extract_zip(cngt_zip)
 
     if not os.path.isdir(sb_zip[:-4]):
         sb_extracted_root = extract_zip(cngt_zip)
