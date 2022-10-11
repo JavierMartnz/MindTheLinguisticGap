@@ -1,6 +1,6 @@
 data:
 
-  cngt_clips_path: "D:/Thesis/datasets/cngt_train_clips.zip"
+  cngt_clips_path: "D:/Thesis/datasets/cngt_single_signs.zip"
   signbank_path: "D:/Thesis/datasets/NGT_Signbank_resized.zip"
   cngt_vocab_path: "D:/Thesis/datasets/cngt_vocab.gzip"
   sb_vocab_path: "D:/Thesis/datasets/signbank_vocab.gzip"
@@ -11,7 +11,7 @@ test:
   model_dir: "D:Thesis/models/i3d"
   pred_dir: "D:Thesis/predictions/i3d"
   fold: "test"
-  run_name: "random_full"
+  run_name: "random_al_zo"
   use_cuda: True
   random_seed: 42
   run_batch_size: 128

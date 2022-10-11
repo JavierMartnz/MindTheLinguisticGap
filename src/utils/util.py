@@ -22,15 +22,6 @@ def make_dir(directory: str) -> str:
         os.makedirs(directory)
     return directory
 
-
-def save_vocab(gloss_to_id_dict, vocab_path):
-    save_data = {'glosses': list(gloss_to_id_dict.keys()), 'gloss_to_id': gloss_to_id_dict}
-    vocab_dir = os.path.dirname(vocab_path)
-    if not os.path.exists(vocab_dir):
-        os.makedirs(vocab_dir)
-    save_gzip(save_data, vocab_path)
-    print(f'Vocab saved at {vocab_path}')
-
 def count_video_frames(video_path):
     """
     Counts the number of frames in a video by iterating through the video itself. Arcaic but reliable.

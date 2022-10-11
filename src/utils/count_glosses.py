@@ -8,6 +8,7 @@ import math
 
 from parse_cngt_glosses import parse_cngt_gloss
 from util import load_gzip, save_gzip
+import plotly.graph_objects as go
 
 
 def get_gloss_occurrences(glosses_lefth, glosses_righth, signbank_vocab, num_video_frames, cngt=True):
@@ -26,7 +27,7 @@ def get_gloss_occurrences(glosses_lefth, glosses_righth, signbank_vocab, num_vid
 
             gloss = ann[2]
             if cngt:
-                parsed_gloss = parse_cngt_gloss(gloss, signbank_vocab['glosses'])
+                parsed_gloss = parse_cngt_gloss(gloss)
             else:
                 parsed_gloss = gloss
             start_frame = math.ceil(25.0 * (start_ms / 1000.0))
@@ -55,7 +56,7 @@ def get_gloss_occurrences(glosses_lefth, glosses_righth, signbank_vocab, num_vid
             start_ms, stop_ms = ann[0], ann[1]
             gloss = ann[2]
             if cngt:
-                parsed_gloss = parse_cngt_gloss(gloss, signbank_vocab['glosses'])
+                parsed_gloss = parse_cngt_gloss(gloss)
             else:
                 parsed_gloss = gloss
             start_frame = math.ceil(25.0 * (start_ms / 1000.0))
@@ -108,7 +109,7 @@ def get_gloss_occurrences(glosses_lefth, glosses_righth, signbank_vocab, num_vid
 def main():
 
     # cngt_root = "D:/Thesis/datasets/CNGT"
-    cngt_root = "D:/Thesis/datasets/CNGT_final/train"
+    cngt_root = "D:/Thesis/datasets/CNGT_final"
     signbank_vocab_path = "D:/Thesis/datasets/signbank_vocab.gzip"
     original_ann_files = [file for file in os.listdir(cngt_root) if file.endswith(".mpg")]
 
@@ -248,6 +249,20 @@ def main():
             #     s2_empty += 1
 
     print(f"The CNGT contains {sum(gloss_dict.values())} glosses, {len(list(gloss_dict.keys()))} unique")
+
+    min_gloss_cnt = 50
+
+    ordered_gloss_freq = {k: v for k, v in sorted(gloss_dict.items(), key=lambda item: item[1], reverse=True)}
+    filtered_gloss_freq = {k: v for k, v in ordered_gloss_freq.items() if v > min_gloss_cnt}
+
+    fig = go.Figure(go.Bar(
+        x=list(filtered_gloss_freq.values()),
+        y=list(filtered_gloss_freq.keys()),
+        orientation='h'))
+
+    fig.show()
+
+
     # print(f"The Corpus NGT contains {len(gloss_occ)} frames with glosses, from which {len(set(gloss_occ))} are unique instances.")
     # print(f"There are {s1_empty + s2_empty} empty signers so the dataset should split in {len(gloss_occ) - (s1_empty + s2_empty)} videos.")
 

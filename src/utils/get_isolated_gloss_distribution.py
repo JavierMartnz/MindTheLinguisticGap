@@ -33,9 +33,6 @@ def main():
     ordered_gloss_freq = {k: v for k, v in sorted(gloss_freq.items(), key=lambda item: item[1], reverse=True)}
     ordered_id_freq = {k: v for k, v in sorted(id_freq.items(), key=lambda item: item[1], reverse=True)}
 
-    # print(ordered_id_freq)
-    # print(ordered_gloss_freq)
-
     min_gloss_cnt = 50
 
     filtered_gloss_freq = {k: v for k, v in ordered_gloss_freq.items() if v > min_gloss_cnt}
@@ -51,32 +48,28 @@ def main():
             mp_dict = {mp_id: ordered_id_freq[mp_id] if mp_id in id_list else 0 for mp_id in minimal_pairs_id}
             minimal_pairs_dict[gloss_id] = {k: v for k, v in sorted(mp_dict.items(), key=lambda item: item[1], reverse=True)}
 
-    print(minimal_pairs_dict)
-
     for gloss_id in minimal_pairs_dict.keys():
-        print(f"{gloss_list[id_list.index(gloss_id)]} with {ordered_id_freq[gloss_id]} occurrences has as minimal pairs:")
-        print("\t", end="")
+        mps = ""
         for gloss_id_mp in minimal_pairs_dict[gloss_id].keys():
             if gloss_id_mp in id_list and minimal_pairs_dict[gloss_id][gloss_id_mp] > min_gloss_cnt:
-                print(f"{gloss_list[id_list.index(gloss_id_mp)]}: {minimal_pairs_dict[gloss_id][gloss_id_mp]}", end="; ")
-            # else:
-            #     print(f"{gloss_id_mp}: {minimal_pairs_dict[gloss_id][gloss_id_mp]}", end="; ")
-        print("\n")
+                mps += f"{gloss_list[id_list.index(gloss_id_mp)]}: {minimal_pairs_dict[gloss_id][gloss_id_mp]}; "
+
+        if len(mps) > 0:
+            print(f"{gloss_list[id_list.index(gloss_id)]} with {ordered_id_freq[gloss_id]} occurrences has as minimal pairs:")
+            print(f"\t{mps}", end="")
+            print("\n")
 
     # for key in minimal_pairs.keys():
     #     minimal_pair_dict = {v: ordered_gloss_freq.get(v, 0) for v in minimal_pairs[key]}
     #     ordered_min_pairs = {k: v for k, v in sorted(minimal_pair_dict.items(), key=lambda item: item[1], reverse=True)}
     #     print(f"Minimal pairs for {key}:\t{ordered_min_pairs}")
 
-    # plt.bar(list(ordered_gloss_freq.values())[:50], list(ordered_gloss_freq.keys())[:50])
-    # plt.show()
+    fig = go.Figure(go.Bar(
+        x=list(filtered_gloss_freq.values()),
+        y=list(filtered_gloss_freq.keys()),
+        orientation='h'))
 
-    # fig = go.Figure(go.Bar(
-    #     x=list(filtered_gloss_freq.values()),
-    #     y=list(filtered_gloss_freq.keys()),
-    #     orientation='h'))
-    #
-    # fig.show()
+    fig.show()
 
 
 if __name__ == "__main__":

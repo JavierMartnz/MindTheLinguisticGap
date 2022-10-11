@@ -100,11 +100,21 @@ def test(cfg_path, log_filename, mode="rgb"):
     make_dir(os.path.join(pred_path, "FP"))
     make_dir(os.path.join(pred_path, "FN"))
 
-    num_top_glosses = 2
+    num_top_glosses = None
+    specific_glosses = ["AL", "ZO"]
+
+    # get glosses from the class encodings
+    cngt_vocab = load_gzip(cngt_vocab_path)
+    sb_vocab = load_gzip(sb_vocab_path)
+    # join cngt and sb vocabularies (gloss to id dictionary)
+    sb_vocab.update(cngt_vocab)
+    gloss_to_id = sb_vocab['gloss_to_id']
+
+    specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
     print(f"Loading {fold} split...")
     dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
-                        filter_num=num_top_glosses)
+                        filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     # get glosses from the class encodings
@@ -173,8 +183,12 @@ def test(cfg_path, log_filename, mode="rgb"):
                 images = inputs.permute([0, 2, 1, 3, 4])
 
                 for batch in range(images.size(0)):
-                    pred = y_pred[batch]
-                    label = y_true[batch]
+                    if y_pred.size > 1:
+                        pred = y_pred[batch]
+                        label = y_true[batch]
+                    else:
+                        pred = y_pred
+                        label = y_true
 
                     filename = f"{img_cnt}.avi"
                     if label == pred and label == 0:  # TP

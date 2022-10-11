@@ -16,11 +16,13 @@ from zipfile import ZipFile
 import random
 
 
-def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, gloss, cls, output_root,
-              trim_format="%.3f"):
-    status = False
+def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, gloss, cls, output_root, trim_format="%.3f"):
+
     start_time /= 1000
     end_time /= 1000
+
+    # windows forbids filanames with semicolon, so we need to change how those files are stored
+    gloss = gloss.replace(":", ";")
 
     filename = "%s_%s_%s_%s_%s_%s_%s.mpg" % (
         Path(input_filename).stem,
@@ -34,15 +36,15 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
 
     output_filename = os.path.join(output_root, filename)
 
+    # if the video already exists, there's no point in processing the video
     if os.path.exists(output_filename):
-        return
+        return None
 
     if os.path.exists(input_filename):
+        if not os.path.isdir(output_root):
+            make_dir(output_root)
 
-        make_dir(output_root)
-        output_filename = os.path.join(output_root, filename)
         # Construct command to trim the videos (ffmpeg required).
-
         command = [
             "ffmpeg",
             '-hide_banner',
@@ -64,10 +66,10 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
 
         # Check if the video was successfully saved.
         status = os.path.exists(output_filename)
-        # if status:
-        #     print(output_filename + ' downloaded')
         if not status:
             print(output_filename + ' not downloaded')
+            return None
+
     return output_filename
 
 
@@ -90,6 +92,7 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
             return
 
         signbank_vocab = load_gzip(signbank_vocab_path)
+        sb_glosses = list(signbank_vocab['gloss_to_id'].keys())
 
         ann_file = pympi.Elan.Eaf(ann_path)
 
@@ -103,7 +106,9 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
             for ann in glosses_righth:
                 start_ms, stop_ms = ann[0], ann[1]
                 gloss = ann[2]
-                parsed_gloss = parse_cngt_gloss(gloss, signbank_vocab['glosses'])
+
+                parsed_gloss = parse_cngt_gloss(gloss, sb_glosses)
+
                 start_frame = math.ceil(25.0 * (start_ms / 1000.0))
                 stop_frame = math.floor(25.0 * (stop_ms / 1000.0)) + 1
 
@@ -124,7 +129,7 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
             for ann in glosses_lefth:
                 start_ms, stop_ms = ann[0], ann[1]
                 gloss = ann[2]
-                parsed_gloss = parse_cngt_gloss(gloss, signbank_vocab['glosses'])
+                parsed_gloss = parse_cngt_gloss(gloss, sb_glosses)
                 start_frame = math.ceil(25.0 * (start_ms / 1000.0))
                 stop_frame = math.floor(25.0 * (stop_ms / 1000.0)) + 1
 
@@ -173,15 +178,16 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
                                          interval_obj.begin, interval_obj.end, interval_obj.data['parsed_gloss'],
                                          signbank_vocab['gloss_to_id'][interval_obj.data['parsed_gloss']], output_root)
 
-            # since opencv's number of frames is unreliable, we count the frames ourselves
-            num_trimmed_frames = count_video_frames(trimmed_filename)
-            # we create metadata that will be helpful for the loading
-            metadata = {"num_frames": num_trimmed_frames, "start_frames": []}
-            num_clips = math.ceil(num_trimmed_frames / window_size)
-            for j in range(num_clips):
-                metadata["start_frames"].append(j * window_size)
+            if not trimmed_filename is None:
+                # since opencv's number of frames is unreliable, we count the frames ourselves
+                num_trimmed_frames = count_video_frames(trimmed_filename)
+                # we create metadata that will be helpful for the loading
+                metadata = {"num_frames": num_trimmed_frames, "start_frames": []}
+                num_clips = math.ceil(num_trimmed_frames / window_size)
+                for j in range(num_clips):
+                    metadata["start_frames"].append(j * window_size)
 
-            save_gzip(metadata, trimmed_filename[:-3] + 'gzip')
+                save_gzip(metadata, trimmed_filename[:-3] + 'gzip')
 
 def main(params):
     dataset_root = params.dataset_root
@@ -193,7 +199,7 @@ def main(params):
 
     all_files = os.listdir(dataset_root)
 
-    # multiprocessing bit based on https://github.com/tqdm/tqdm/issues/484
+    multiprocessing bit based on https://github.com/tqdm/tqdm/issues/484
     pool = Pool()
     pbar = tqdm(total=len(all_files))
 
@@ -207,6 +213,19 @@ def main(params):
 
     pool.close()
     pool.join()
+
+    # zip the resulting folder
+    print(f"Zipping the files in {output_root}")
+    zip_basedir = Path(output_root).parent
+    zip_filename = os.path.basename(output_root) + '.zip'
+
+    with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
+        for filename in tqdm(os.listdir(output_root), position=0, leave=True):
+            zipfile.write(os.path.join(output_root, filename), filename)
+
+    # just delete the previous directory is the zip file was created
+    if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
+        print("Zipfile was successfully created")
 
     # once the files are in output folder, we are going to create the splits
     # datapoints = [file[:-4] for file in os.listdir(output_root) if file.endswith('.mpg')]
@@ -260,7 +279,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset_root",
         type=str,
-        default="D:/Thesis/datasets/CNGT_final/train"
+        default="D:/Thesis/datasets/CNGT_final"
     )
 
     parser.add_argument(

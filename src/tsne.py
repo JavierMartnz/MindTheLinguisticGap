@@ -93,11 +93,21 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
     ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}_{ckpt_step}.pt"
 
-    num_top_glosses = 2
+    num_top_glosses = None
+    specific_glosses = ["AL", "ZO"]
+
+    # get glosses from the class encodings
+    cngt_vocab = load_gzip(cngt_vocab_path)
+    sb_vocab = load_gzip(sb_vocab_path)
+    # join cngt and sb vocabularies (gloss to id dictionary)
+    sb_vocab.update(cngt_vocab)
+    gloss_to_id = sb_vocab['gloss_to_id']
+
+    specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
     print(f"Loading {fold} split...")
     dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
-                        filter_num=num_top_glosses)
+                        filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     # # get glosses from the class encodings
@@ -152,7 +162,10 @@ def tsne(cfg_path, log_filename, mode="rgb"):
                     X = features.squeeze()
                     Y = y_true
                 else:
-                    X = torch.cat((X, features.squeeze()), dim=0)
+                    if len(features.squeeze().size()) == 1:
+                        X = torch.cat((X, torch.unsqueeze(features.squeeze(), 0)), dim=0)
+                    else:
+                        X = torch.cat((X, features.squeeze()), dim=0)
                     Y = np.append(Y, y_true)
 
     print("Running TSNE...")
