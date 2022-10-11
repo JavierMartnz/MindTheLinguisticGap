@@ -135,7 +135,7 @@ def run(cfg_path, mode='rgb'):
 
     num_top_glosses = None  # should be None if no filtering wanted
     specific_glosses = ["PT-1hand", "PO"]
-    
+
     # get glosses from the class encodings
     sb_vocab = load_gzip(sb_vocab_path)
     gloss_to_id = sb_vocab['gloss_to_id']
