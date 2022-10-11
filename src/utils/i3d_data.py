@@ -568,8 +568,6 @@ def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, cngt_vocab_path
 
 def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_gloss_ids=[]):
 
-    print(cngt_zip[:-4], os.path.isdir(cngt_zip[:-4]))
-    return
     # process zip files first
     if not os.path.isdir(cngt_zip[:-4]):
         cngt_extracted_root = extract_zip(cngt_zip)
