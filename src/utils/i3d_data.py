@@ -512,9 +512,12 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
                   'test': cngt_video_paths[cngt_val_test_idx:]}
 
     print(len(cngt_folds['train']))
+    print(len(discard_list))
     for discard_video in discard_list:
-        print(cngt_folds['train'][0], os.path.join(cngt_extracted_root, discard_video))
-        cngt_folds['train'].remove(os.path.join(cngt_extracted_root, discard_video))
+        try:
+            cngt_folds['train'].remove(os.path.join(cngt_extracted_root, discard_video))
+        except:
+            print(f"{discard_video} not in training fold")
     print(len(cngt_folds['train']))
 
     sb_train_val_idx = int(len(sb_video_paths) * (4 / 6))
