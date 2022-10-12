@@ -147,7 +147,7 @@ def run(cfg_path, mode='rgb'):
     print("Loading training split...")
     train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train', window_size,
                               transforms=train_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
-                              diagonal_videos_path=diagonal_videos_path)
+                              diagonal_videos_path=None)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Loading val split...")
