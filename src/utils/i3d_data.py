@@ -466,7 +466,7 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_
 
 
 def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict,
-                         window_size: int, split: str, discard_list_path:str) -> list:
+                         window_size: int, split: str, discard_list_path: str) -> list:
     assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
 
     num_classes = len(class_encodings)
@@ -512,7 +512,7 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
                   'val': cngt_video_paths[cngt_train_val_idx:cngt_val_test_idx],
                   'test': cngt_video_paths[cngt_val_test_idx:]}
 
-    if discard_list_path
+    if discard_list_path:
         for discard_video in discard_list:
             try:
                 cngt_folds['train'].remove(os.path.join(cngt_extracted_root, discard_video))
