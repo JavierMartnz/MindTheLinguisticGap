@@ -121,7 +121,8 @@ def run(cfg_path, mode='rgb'):
     sb_vocab_path = data_cfg.get("sb_vocab_path")
     window_size = data_cfg.get("window_size")
     loading_mode = data_cfg.get("data_loading")
-    diagonal_videos_path = data_cfg.get("diagonal_videos_path")
+    use_diag_videos = data_cfg.get("use_diag_videos")
+    diagonal_videos_path = data_cfg.get("diagonal_videos_path") if use_diag_videos else None
 
     print(f"Using window size of {window_size} frames")
 
