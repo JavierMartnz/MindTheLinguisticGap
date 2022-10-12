@@ -157,8 +157,6 @@ def run(cfg_path, mode='rgb'):
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
 
-    return
-
     print("Setting up the model...")
     if mode == 'flow':
         i3d = InceptionI3d(400, in_channels=2)
