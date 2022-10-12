@@ -576,6 +576,7 @@ def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, clas
     id_to_gloss = sb_vocab['id_to_gloss']
 
     diagonal_videos = load_gzip(diagonal_videos_path)
+    print(len(diagonal_videos))
     all_video_paths = []
 
     for video in diagonal_videos:
@@ -617,7 +618,6 @@ def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, clas
 
 def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str,
                   class_encodings: dict, window_size: int, split: str, diagonal_videos_path: str) -> list:
-    print(bool(diagonal_videos_path))
     if diagonal_videos_path:
         dataset = build_dataset_from_gzip(cngt_zip, sb_zip, sb_vocab_path, class_encodings, window_size, diagonal_videos_path)
     else:
