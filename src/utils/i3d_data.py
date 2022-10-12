@@ -513,6 +513,7 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
 
     print(len(cngt_folds['train']))
     for discard_video in discard_list:
+        print(cngt_folds['train'][0], os.path.join(cngt_extracted_root, discard_video))
         cngt_folds['train'].remove(os.path.join(cngt_extracted_root, discard_video))
     print(len(cngt_folds['train']))
 
