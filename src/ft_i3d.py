@@ -245,7 +245,7 @@ def run(cfg_path, mode='rgb'):
                     optimizer.zero_grad()
 
                     # get the inputs
-                    inputs, labels = data
+                    inputs, labels, _ = data
                     inputs = Variable(inputs.cuda())
                     labels = Variable(labels.cuda())
 
