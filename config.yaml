@@ -6,7 +6,7 @@ data:
   sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
   window_size: 16
   data_loading: "random"
-  discard_list_path: "/vol/tensusers5/jmartinez/datasets/discard_list.gzip"
+  diagonal_videos_path: "/vol/tensusers5/jmartinez/datasets/diagonal_videos.gzip"
 
 training:
   specific_glosses: ["GEBAREN-A", "JA-A"]
@@ -15,7 +15,7 @@ training:
   epochs: 50
   random_seed: 42
   batch_size: 128
-  init_lr: 0.01
+  init_lr: 0.1
   momentum: 0.9
   weight_decay: 0.0000001
   model_dir: "/vol/tensusers5/jmartinez/models/i3d"

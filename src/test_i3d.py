@@ -136,6 +136,7 @@ def test(cfg_path, log_filename, mode="rgb"):
     total_pred = []
     total_true = []
     discard_videos = []
+    diagonal_videos = []
     img_cnt = 0
 
     print(f"Predicting on {fold} set...")
@@ -184,8 +185,10 @@ def test(cfg_path, log_filename, mode="rgb"):
                     filename = os.path.basename(video_paths[batch])
                     if label == pred and label == 0:  # TP
                         video_path = os.path.join(pred_path, "TP", filename)
+                        diagonal_videos.append(filename)
                     elif label == pred and label == 1:  # TN
                         video_path = os.path.join(pred_path, "TN", filename)
+                        diagonal_videos.append(filename)
                     elif label != pred and label == 0:  # FN
                         video_path = os.path.join(pred_path, "FN", filename)
                         discard_videos.append(filename)
@@ -199,6 +202,7 @@ def test(cfg_path, log_filename, mode="rgb"):
                     img_cnt += 1
 
     save_gzip(discard_videos, os.path.join(pred_path, "discard_list.gzip"))
+    save_gzip(diagonal_videos, os.path.join(pred_path, "diagonal_videos.gzip"))
 
     f1 = f1_score(total_true, total_pred, average='macro')
     acc = accuracy_score(total_true, total_pred)
