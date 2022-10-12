@@ -106,6 +106,7 @@ def run(cfg_path, mode='rgb'):
     data_cfg = cfg.get("data")
 
     # training configs
+    specific_glosses = training_cfg.get("specific_glosses")
     run_name = training_cfg.get("run_name")
     epochs = training_cfg.get("epochs")
     init_lr = training_cfg.get("init_lr")
@@ -120,7 +121,6 @@ def run(cfg_path, mode='rgb'):
     sb_vocab_path = data_cfg.get("sb_vocab_path")
     window_size = data_cfg.get("window_size")
     loading_mode = data_cfg.get("data_loading")
-    specific_glosses = data_cfg.get("specific_glosses")
     discard_list_path = data_cfg.get("discard_list_path")
 
     print(f"Using window size of {window_size} frames")
