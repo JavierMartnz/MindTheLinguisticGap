@@ -511,10 +511,10 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
                   'val': cngt_video_paths[cngt_train_val_idx:cngt_val_test_idx],
                   'test': cngt_video_paths[cngt_val_test_idx:]}
 
-    print(len(cngt_video_paths['train']))
+    print(len(cngt_folds['train']))
     for discard_video in discard_list:
-        cngt_video_paths['train'].remove(discard_video)
-    print(len(cngt_video_paths['train']))
+        cngt_folds['train'].remove(discard_video)
+    print(len(cngt_folds['train']))
 
     sb_train_val_idx = int(len(sb_video_paths) * (4 / 6))
     sb_val_test_idx = int(len(sb_video_paths) * (5 / 6))
