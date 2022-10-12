@@ -6,8 +6,10 @@ data:
   sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
   window_size: 16
   data_loading: "random"
+  discard_list_path: "/vol/tensusers5/jmartinez/datasets/discard_list.gzip"
 
 training:
+  specific_glosses: ["GEBAREN-A", "JA-A"]
   run_name: ""
   use_cuda: True
   epochs: 50

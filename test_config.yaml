@@ -10,8 +10,8 @@ data:
 test:
   model_dir: "D:Thesis/models/i3d"
   pred_dir: "D:Thesis/predictions/i3d"
-  fold: "test"
-  run_name: "random_al_zo"
+  fold: "train"
+  run_name: "random_gebaren_ja"
   use_cuda: True
   random_seed: 42
   run_batch_size: 128

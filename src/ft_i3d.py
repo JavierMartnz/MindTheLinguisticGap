@@ -120,6 +120,8 @@ def run(cfg_path, mode='rgb'):
     sb_vocab_path = data_cfg.get("sb_vocab_path")
     window_size = data_cfg.get("window_size")
     loading_mode = data_cfg.get("data_loading")
+    specific_glosses = data_cfg.get("specific_glosses")
+    discard_list_path = data_cfg.get("discard_list_path")
 
     print(f"Using window size of {window_size} frames")
 
@@ -134,7 +136,6 @@ def run(cfg_path, mode='rgb'):
     val_transforms = transforms.Compose([transforms.CenterCrop(224)])
 
     num_top_glosses = None  # should be None if no filtering wanted
-    specific_glosses = ["JA-A", "GEBAREN-A"]
 
     # get glosses from the class encodings
     sb_vocab = load_gzip(sb_vocab_path)
@@ -144,7 +145,8 @@ def run(cfg_path, mode='rgb'):
 
     print("Loading training split...")
     train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train', window_size,
-                              transforms=train_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
+                              transforms=train_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
+                              discard_list_path=discard_list_path)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Loading val split...")

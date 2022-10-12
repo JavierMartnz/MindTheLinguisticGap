@@ -466,7 +466,7 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_
 
 
 def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict,
-                         window_size: int, split: str) -> list:
+                         window_size: int, split: str, discard_list_path:str) -> list:
     assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
 
     num_classes = len(class_encodings)
@@ -485,6 +485,8 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
     else:
         sb_extracted_root = sb_zip[:-4]
         # print(f"{sb_extracted_root} already exists, no need to extract")
+
+    discard_list = load_gzip(discard_list_path)
 
     cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
     sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
@@ -508,6 +510,11 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
     cngt_folds = {'train': cngt_video_paths[:cngt_train_val_idx],
                   'val': cngt_video_paths[cngt_train_val_idx:cngt_val_test_idx],
                   'test': cngt_video_paths[cngt_val_test_idx:]}
+
+    print(len(cngt_video_paths['train']))
+    for discard_video in discard_list:
+        cngt_video_paths['train'].remove(discard_video)
+    print(len(cngt_video_paths['train']))
 
     sb_train_val_idx = int(len(sb_video_paths) * (4 / 6))
     sb_val_test_idx = int(len(sb_video_paths) * (5 / 6))
@@ -555,13 +562,13 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
 
 
 def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str,
-                  class_encodings: dict, window_size: int, split: str) -> list:
+                  class_encodings: dict, window_size: int, split: str, discard_list_path: str) -> list:
     if loading_mode == "random":
-        dataset = build_random_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split)
+        dataset = build_random_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split, discard_list_path)
     elif loading_mode == "balanced":
-        dataset = build_balanced_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split)
+        dataset = build_balanced_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split, discard_list_path)
     elif loading_mode == "stratified":
-        dataset = build_stratified_dataset(cngt_zip, sb_zip,  cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split)
+        dataset = build_stratified_dataset(cngt_zip, sb_zip,  cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split, discard_list_path)
 
     return dataset
 
@@ -612,7 +619,7 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_glo
 class I3Dataset(data_utl.Dataset):
 
     def __init__(self, loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, split, window_size=64, transforms=None,
-                 filter_num=None, specific_gloss_ids=None):
+                 filter_num=None, specific_gloss_ids=None, discard_list_path=None):
         assert loading_mode in {'random', 'balanced',
                                 'stratified'}, "The 'loading_mode' argument must have values 'random', 'balanced', 'stratified'"
         assert mode in {'rgb', 'flow'}, "The 'mode' argument must have values 'rgb' or 'flow'"
@@ -620,7 +627,8 @@ class I3Dataset(data_utl.Dataset):
         self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num, specific_gloss_ids)
         self.window_size = window_size
         self.transforms = transforms
-        self.data = build_dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, self.class_encodings, window_size, split)
+        self.data = build_dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, self.class_encodings, window_size,
+                                  split, discard_list_path)
 
     def __getitem__(self, index):
         """
@@ -642,7 +650,7 @@ class I3Dataset(data_utl.Dataset):
         if self.transforms:
             imgs = self.transforms(imgs)
 
-        return imgs, torch.from_numpy(label)
+        return imgs, torch.from_numpy(label), video_path
 
     def __len__(self):
         return len(self.data)

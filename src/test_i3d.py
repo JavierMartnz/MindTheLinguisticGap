@@ -21,7 +21,7 @@ from torchvision.io import write_video
 from src.utils.i3d_data import I3Dataset
 from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
-from src.utils.util import load_gzip
+from src.utils.util import load_gzip, save_gzip
 from torchsummary import summary
 
 
@@ -101,14 +101,12 @@ def test(cfg_path, log_filename, mode="rgb"):
     make_dir(os.path.join(pred_path, "FN"))
 
     num_top_glosses = None
-    specific_glosses = ["AL", "ZO"]
+    specific_glosses = ["GEBAREN-A", "JA-A"]
 
     # get glosses from the class encodings
-    cngt_vocab = load_gzip(cngt_vocab_path)
     sb_vocab = load_gzip(sb_vocab_path)
-    # join cngt and sb vocabularies (gloss to id dictionary)
-    sb_vocab.update(cngt_vocab)
     gloss_to_id = sb_vocab['gloss_to_id']
+    id_to_gloss = sb_vocab['id_to_gloss']
 
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
@@ -117,17 +115,10 @@ def test(cfg_path, log_filename, mode="rgb"):
                         filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
-    # get glosses from the class encodings
-    cngt_vocab = load_gzip("D:/Thesis/datasets/cngt_vocab.gzip")
-    sb_vocab = load_gzip("D:/Thesis/datasets/signbank_vocab.gzip")
-    # join cngt and sb vocabularies (gloss to id dictionary)
-    sb_vocab.update(cngt_vocab)
-    gloss_to_id = sb_vocab['gloss_to_id']
-
     glosses = []
 
     for gloss_id in dataset.class_encodings.keys():
-        glosses.append(list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)])
+        glosses.append(id_to_gloss[gloss_id])
 
     print(f"Predicting for glosses {glosses} mapped as classes {list(dataset.class_encodings.values())}")
 
@@ -144,7 +135,7 @@ def test(cfg_path, log_filename, mode="rgb"):
 
     total_pred = []
     total_true = []
-
+    discard_videos = []
     img_cnt = 0
 
     print(f"Predicting on {fold} set...")
@@ -152,7 +143,7 @@ def test(cfg_path, log_filename, mode="rgb"):
         with tqdm(dataloader, unit="batch") as tepoch:
             for data in tepoch:
                 # get the inputs
-                inputs, labels = data
+                inputs, labels, video_paths = data
                 if use_cuda:
                     inputs = Variable(inputs.cuda())
                     labels = Variable(labels.cuda())
@@ -190,21 +181,24 @@ def test(cfg_path, log_filename, mode="rgb"):
                         pred = y_pred
                         label = y_true
 
-                    filename = f"{img_cnt}.avi"
+                    filename = os.path.basename(video_paths[batch])
                     if label == pred and label == 0:  # TP
                         video_path = os.path.join(pred_path, "TP", filename)
                     elif label == pred and label == 1:  # TN
                         video_path = os.path.join(pred_path, "TN", filename)
                     elif label != pred and label == 0:  # FN
                         video_path = os.path.join(pred_path, "FN", filename)
+                        discard_videos.append(filename)
                     elif label != pred and label == 1:  # FP
                         video_path = os.path.join(pred_path, "FP", filename)
+                        discard_videos.append(filename)
 
                     # change video from [T, C, H, W] to [T, H, W, C] and denormalize
                     video = images[batch].permute([0, 2, 3, 1]).detach().cpu() * 255.
                     write_video(video_path, video, fps=25)
                     img_cnt += 1
 
+    save_gzip(discard_videos, os.path.join(pred_path, "discard_list.gzip"))
 
     f1 = f1_score(total_true, total_pred, average='macro')
     acc = accuracy_score(total_true, total_pred)
