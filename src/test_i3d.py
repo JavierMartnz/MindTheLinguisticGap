@@ -201,7 +201,7 @@ def test(cfg_path, log_filename, mode="rgb"):
                     write_video(video_path, video, fps=25)
                     img_cnt += 1
 
-    save_gzip(discard_videos, os.path.join(pred_path, "discard_list.gzip"))
+    # save_gzip(discard_videos, os.path.join(pred_path, "discard_list.gzip"))
     save_gzip(diagonal_videos, os.path.join(pred_path, "diagonal_videos.gzip"))
 
     f1 = f1_score(total_true, total_pred, average='macro')

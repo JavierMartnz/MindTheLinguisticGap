@@ -579,6 +579,7 @@ def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, clas
     all_video_paths = []
 
     print(len(diagonal_videos))
+    print(len(set(diagonal_videos)))
 
     for video in diagonal_videos:
         if video.endswith(".mpg"):  # cngt video
