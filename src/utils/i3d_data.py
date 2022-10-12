@@ -486,7 +486,8 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
         sb_extracted_root = sb_zip[:-4]
         # print(f"{sb_extracted_root} already exists, no need to extract")
 
-    discard_list = load_gzip(discard_list_path)
+    if discard_list_path:
+        discard_list = load_gzip(discard_list_path)
 
     cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
     sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
@@ -511,14 +512,12 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
                   'val': cngt_video_paths[cngt_train_val_idx:cngt_val_test_idx],
                   'test': cngt_video_paths[cngt_val_test_idx:]}
 
-    print(len(cngt_folds['train']))
-    print(len(discard_list))
-    for discard_video in discard_list:
-        try:
-            cngt_folds['train'].remove(os.path.join(cngt_extracted_root, discard_video))
-        except:
-            print(f"{discard_video} not in training fold")
-    print(len(cngt_folds['train']))
+    if discard_list_path
+        for discard_video in discard_list:
+            try:
+                cngt_folds['train'].remove(os.path.join(cngt_extracted_root, discard_video))
+            except:
+                print(f"{discard_video} not in training fold")
 
     sb_train_val_idx = int(len(sb_video_paths) * (4 / 6))
     sb_val_test_idx = int(len(sb_video_paths) * (5 / 6))
