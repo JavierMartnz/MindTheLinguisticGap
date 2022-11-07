@@ -8,20 +8,19 @@ data:
   data_loading: "random"
   diagonal_videos_path: "D:/Thesis/predictions/diagonal_videos.gzip"
   use_diag_videos: False
-  save_predictions: True
 
 test:
   specific_glosses: ["GEBAREN-A", "JA-A"]
   model_dir: "D:Thesis/models/i3d"
-  pred_dir: "D:Thesis/predictions/i3d"
+  pred_dir: "D:Thesis/tsne/"
   fold: "train"
-  run_name: "diag_gebaren_ja"
   use_cuda: True
-  random_seed: 42
+  run_name: "random_gebaren_ja"
   run_batch_size: 128
+  random_seed: 42
   optimizer: "SGD"
   lr: 0.1
   epochs: 50
   ckpt_epoch: 49
-  ckpt_step: 1
+  ckpt_step: 2
   batch_size: 16

@@ -617,7 +617,7 @@ def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, clas
 
 def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str,
                   class_encodings: dict, window_size: int, split: str, diagonal_videos_path: str) -> list:
-    if diagonal_videos_path:
+    if diagonal_videos_path and split == 'train':
         dataset = build_dataset_from_gzip(cngt_zip, sb_zip, sb_vocab_path, class_encodings, window_size, diagonal_videos_path)
     else:
         if loading_mode == "random":

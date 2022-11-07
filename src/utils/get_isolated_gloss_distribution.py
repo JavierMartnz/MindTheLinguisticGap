@@ -52,17 +52,13 @@ def main():
         mps = ""
         for gloss_id_mp in minimal_pairs_dict[gloss_id].keys():
             if gloss_id_mp in id_list and minimal_pairs_dict[gloss_id][gloss_id_mp] > min_gloss_cnt:
-                mps += f"{gloss_list[id_list.index(gloss_id_mp)]}: {minimal_pairs_dict[gloss_id][gloss_id_mp]}; "
+                if 0.45 <= ordered_id_freq[gloss_id]/(ordered_id_freq[gloss_id] + minimal_pairs_dict[gloss_id][gloss_id_mp]) <= 0.55:
+                    mps += f"{gloss_list[id_list.index(gloss_id_mp)]}: {minimal_pairs_dict[gloss_id][gloss_id_mp]}; "
 
         if len(mps) > 0:
             print(f"{gloss_list[id_list.index(gloss_id)]} with {ordered_id_freq[gloss_id]} occurrences has as minimal pairs:")
             print(f"\t{mps}", end="")
             print("\n")
-
-    # for key in minimal_pairs.keys():
-    #     minimal_pair_dict = {v: ordered_gloss_freq.get(v, 0) for v in minimal_pairs[key]}
-    #     ordered_min_pairs = {k: v for k, v in sorted(minimal_pair_dict.items(), key=lambda item: item[1], reverse=True)}
-    #     print(f"Minimal pairs for {key}:\t{ordered_min_pairs}")
 
     fig = go.Figure(go.Bar(
         x=list(filtered_gloss_freq.values()),

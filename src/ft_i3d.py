@@ -26,6 +26,7 @@ from torch.optim import lr_scheduler
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
+from torchsummary import summary
 
 import numpy as np
 
@@ -34,70 +35,18 @@ from tqdm import tqdm
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 
 from src.utils.pytorch_i3d import InceptionI3d
+from src.utils.i3d_dimensions_exp import InceptionI3d as InceptionDims
 from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
 
-
-def get_prediction_measures(labels, frame_logits):
-    labels = labels.detach().cpu().numpy()
-    frame_logits = frame_logits.detach().cpu().numpy()
-    FP = 0
-    FN = 0
-    TP = 0
-    TN = 0
-
-    for batch in range(np.shape(labels)[0]):
-        y_pred = np.argmax(frame_logits[batch], axis=0)
-        y_true = np.argmax(labels[batch], axis=0)
-
-        conf_matrix = confusion_matrix(y_true, y_pred)
-        FP += np.sum(conf_matrix.sum(axis=0) - np.diag(conf_matrix))
-        FN += np.sum(conf_matrix.sum(axis=1) - np.diag(conf_matrix))
-        TP += np.sum(np.diag(conf_matrix))
-        TN += conf_matrix.sum() - (FP + FN + TP)
-
-        # for frame in range(np.shape(labels)[2]):
-        #     confusion_matrix(labels[batch, :, frame], frame_logits[batch, :, frame])
-        #     f_FP = confusion_matrix.sum(axis=0) - np.diag(confusion_matrix)
-        #     f_FN = confusion_matrix.sum(axis=1) - np.diag(confusion_matrix)
-        #     f_TP = np.diag(confusion_matrix)
-        #     f_TN = confusion_matrix.sum() - (f_FP + f_FN + f_TP)
-        #
-        #     FP += f_FP
-        #     FN += f_FN
-        #     TP += f_TP
-        #     TN += f_TN
-
-    # preds = np.argmax(frame_logits.detach().cpu().numpy(), axis=1)
-    # gts = np.argmax(labels.detach().cpu().numpy(), axis=1)
-    #
-    #
-    # TP = (preds & gts).sum()
-    # TN = ((~preds) & (~gts)).sum()
-    # FP = (preds & (~gts)).sum()
-    # FN = ((~preds) & gts).sum()
-
-    # batch_f1 = []
-    # window_f1 = []
-    # for batch in range(labels.size(0)):  # batch
-    #     for frame in range(labels.size(2)):
-    #         one_hot = torch.zeros(labels[batch, :, frame].shape)
-    #         one_hot[torch.topk(frame_logits[batch, :, frame], 1).indices] = 1
-    #         window_f1.append(f1_loss(labels[batch, :, frame], one_hot.cuda()))
-    #     batch_f1.append(window_f1)
-
-    return TP, TN, FP, FN
-
-
-def get_class_encodings(cngt_gloss_ids, sb_gloss_ids):
-    classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
-
-    class_to_idx = {}
-    for i in range(len(classes)):
-        class_to_idx[classes[i]] = i
-
-    return class_to_idx
-
+# def get_class_encodings(cngt_gloss_ids, sb_gloss_ids):
+#     classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
+#
+#     class_to_idx = {}
+#     for i in range(len(classes)):
+#         class_to_idx[classes[i]] = i
+#
+#     return class_to_idx
 
 def run(cfg_path, mode='rgb'):
     print("Configuring model and parameters...")
@@ -164,20 +113,15 @@ def run(cfg_path, mode='rgb'):
     else:
         # i3d = InceptionI3d(400, in_channels=3)
         # i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
-        i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
+        # i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
+
+        i3d = InceptionDims(157, in_channels=3, window_size=16, input_size=224, final_pooling_size=1024)
+
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
 
-        # THIS LINE IS ADDED TO TRAIN FROM SCRATCH
-        # i3d = InceptionI3d(2, in_channels=3, window_size=window_size, input_size=224)
+    i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=1024)
 
-    i3d.replace_logits(len(train_dataset.class_encodings))
-
-    print(f"The model has {len(train_dataset.class_encodings)} classes")
-
-    # model = r2plus1d_18(pretrained=True, progress=True)
-
-    # prints number of parameters
-    # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+    print(f"\tThe model has {len(train_dataset.class_encodings)} classes")
 
     n_layers = 0
     # freeze all layers for fine-tuning
@@ -192,9 +136,18 @@ def run(cfg_path, mode='rgb'):
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
-    print(f"The last {len(unfreeze_layers) + 1} out of 17 blocks are unfrozen.")
+    print(f"\tThe last {len(unfreeze_layers) + 1} out of 17 blocks are unfrozen.")
+
+    # prints number of parameters
+    trainable_params = sum(p.numel() for p in i3d.parameters() if p.requires_grad)
+    total_params = sum(p.numel() for p in i3d.parameters())
+    print(f"\tThe network has {trainable_params} trainable parameters out of {total_params}")
 
     i3d.cuda()
+
+    # print summary of the network, similar to keras
+    # summary(i3d, (3, 16, 224, 224))
+
     i3d = nn.DataParallel(i3d)
 
     lr = init_lr

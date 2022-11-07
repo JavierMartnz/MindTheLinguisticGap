@@ -6,12 +6,12 @@ data:
   sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
   window_size: 16
   data_loading: "random"
-  diagonal_videos_path: "/vol/tensusers5/jmartinez/datasets/diagonal_videos.gzip"
+  diagonal_videos_path: None #"/vol/tensusers5/jmartinez/datasets/diagonal_videos.gzip"
   use_diag_videos: True
 
 training:
-  specific_glosses: ["GEBAREN-A", "JA-A"]
-  run_name: ""
+  specific_glosses: ["PT-1hand", "PO"]
+  run_name: "exp1d"
   use_cuda: True
   epochs: 50
   random_seed: 42

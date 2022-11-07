@@ -80,6 +80,7 @@ def test(cfg_path, log_filename, mode="rgb"):
     ckpt_step = test_cfg.get("ckpt_step")
     batch_size = test_cfg.get("batch_size")
     use_cuda = test_cfg.get("use_cuda")
+    specific_glosses = test_cfg.get("specific_glosses")
 
     # data configs
     cngt_zip = data_cfg.get("cngt_clips_path")
@@ -88,20 +89,30 @@ def test(cfg_path, log_filename, mode="rgb"):
     cngt_vocab_path = data_cfg.get("cngt_vocab_path")
     sb_vocab_path = data_cfg.get("sb_vocab_path")
     loading_mode = data_cfg.get("data_loading")
+    use_diag_videos = data_cfg.get("use_diag_videos")
+    if use_diag_videos:
+        diag_videos_path = data_cfg.get("diagonal_videos_path")
+    else:
+        diag_videos_path = None
+    save_predictions = data_cfg.get("save_predictions")
 
     # get directory and filename for the checkpoints
     run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
     ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}_{ckpt_step}.pt"
+    ckpt_folder = ckpt_filename.split('.')[0]
 
-    pred_path = os.path.join(pred_dir, run_dir, fold, ckpt_filename.split('.')[0])
+    if use_diag_videos:
+        fold += "_diag"
+
+    pred_path = os.path.join(pred_dir, run_dir, ckpt_folder, fold)
     make_dir(pred_path)
-    make_dir(os.path.join(pred_path, "TP"))
-    make_dir(os.path.join(pred_path, "TN"))
-    make_dir(os.path.join(pred_path, "FP"))
-    make_dir(os.path.join(pred_path, "FN"))
+    if save_predictions:
+        make_dir(os.path.join(pred_path, "TP"))
+        make_dir(os.path.join(pred_path, "TN"))
+        make_dir(os.path.join(pred_path, "FP"))
+        make_dir(os.path.join(pred_path, "FN"))
 
     num_top_glosses = None
-    specific_glosses = ["GEBAREN-A", "JA-A"]
 
     # get glosses from the class encodings
     sb_vocab = load_gzip(sb_vocab_path)
@@ -112,7 +123,7 @@ def test(cfg_path, log_filename, mode="rgb"):
 
     print(f"Loading {fold} split...")
     dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
-                        filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
+                        filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids, diagonal_videos_path=diag_videos_path)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     glosses = []
@@ -197,8 +208,9 @@ def test(cfg_path, log_filename, mode="rgb"):
                         discard_videos.append(filename)
 
                     # change video from [T, C, H, W] to [T, H, W, C] and denormalize
-                    video = images[batch].permute([0, 2, 3, 1]).detach().cpu() * 255.
-                    write_video(video_path, video, fps=25)
+                    if save_predictions:
+                        video = images[batch].permute([0, 2, 3, 1]).detach().cpu() * 255.
+                        write_video(video_path, video, fps=25)
                     img_cnt += 1
 
     # save_gzip(discard_videos, os.path.join(pred_path, "discard_list.gzip"))
