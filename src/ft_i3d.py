@@ -115,11 +115,11 @@ def run(cfg_path, mode='rgb'):
         # i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
         # i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
 
-        i3d = InceptionDims(157, in_channels=3, window_size=16, input_size=224, final_pooling_size=1024)
+        i3d = InceptionDims(157, in_channels=3, window_size=16, input_size=224, final_pooling_size=512)
 
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
 
-    i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=1024)
+    i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=512)
 
     print(f"\tThe model has {len(train_dataset.class_encodings)} classes")
 
