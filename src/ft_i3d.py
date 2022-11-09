@@ -72,6 +72,7 @@ def run(cfg_path, mode='rgb'):
     loading_mode = data_cfg.get("data_loading")
     use_diag_videos = data_cfg.get("use_diag_videos")
     diagonal_videos_path = data_cfg.get("diagonal_videos_path") if use_diag_videos else None
+    final_pooling_size = data_cfg.get("final_pooling_size")
 
     print(f"Using window size of {window_size} frames")
 
@@ -115,11 +116,11 @@ def run(cfg_path, mode='rgb'):
         # i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
         # i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
 
-        i3d = InceptionDims(157, in_channels=3, window_size=16, input_size=224, final_pooling_size=512)
+        i3d = InceptionDims(157, in_channels=3, window_size=16, input_size=224, final_pooling_size=final_pooling_size)
 
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
 
-    i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=512)
+    i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=final_pooling_size)
 
     print(f"\tThe model has {len(train_dataset.class_encodings)} classes")
 

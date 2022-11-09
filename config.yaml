@@ -8,6 +8,7 @@ data:
   data_loading: "random"
   diagonal_videos_path: None #"/vol/tensusers5/jmartinez/datasets/diagonal_videos.gzip"
   use_diag_videos: True
+  final_pooling_size: 256
 
 training:
   specific_glosses: ["PT-1hand", "PO"]
