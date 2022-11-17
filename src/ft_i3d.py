@@ -236,11 +236,10 @@ def run(cfg_path, mode='rgb'):
                     # y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
                     # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
-                    y_pred = np.argmax(sign_logits.detach().cpu().numpy())
-                    y_true = np.argmax(labels.detach().cpu().numpy())
+                    y_pred = np.argmax(sign_logits.detach().cpu().numpy(), axis=1)
+                    y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                     acc_list.append(accuracy_score(y_true.flatten(), y_pred.flatten()))
-                    print(f1_list)
                     f1_list.append(f1_score(y_true.flatten(), y_pred.flatten()))
 
                     # this if clause allows gradient accumulation. It also saves losses and metrics to
