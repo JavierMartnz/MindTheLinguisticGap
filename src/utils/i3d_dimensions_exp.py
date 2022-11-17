@@ -350,10 +350,10 @@ class InceptionI3d(nn.Module):
         for end_point in self.VALID_ENDPOINTS:
             if end_point in self.end_points:
                 x = self._modules[end_point](x)
-        return self.final_pooling(self.avg_pool(x))
+        return self.self.final_pooling(x.permute(0, 4, 2, 3, 1), ).permute(0, 4, 2, 3, 1)
 
-    def extract_features_before(self, x):
-        for end_point in self.VALID_ENDPOINTS[:-2]:
-            if end_point in self.end_points:
-                x = self._modules[end_point](x)
-        return self.avg_pool(x)
+    # def extract_features_before(self, x):
+    #     for end_point in self.VALID_ENDPOINTS[:-2]:
+    #         if end_point in self.end_points:
+    #             x = self._modules[end_point](x)
+    #     return self.avg_pool(x)

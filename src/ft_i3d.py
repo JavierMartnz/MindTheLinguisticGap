@@ -39,6 +39,7 @@ from src.utils.i3d_dimensions_exp import InceptionI3d as InceptionDims
 from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
 
+
 # def get_class_encodings(cngt_gloss_ids, sb_gloss_ids):
 #     classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
 #
@@ -77,11 +78,11 @@ def run(cfg_path, mode='rgb'):
     print(f"Using window size of {window_size} frames")
 
     train_transforms = transforms.Compose([
-                            transforms.RandomPerspective(),
-                            transforms.RandomAffine(degrees=10),
-                            transforms.RandomHorizontalFlip(),
-                            spatial_transforms.ColorJitter(num_in_frames=window_size),
-                            transforms.RandomCrop(224)])
+        transforms.RandomPerspective(),
+        transforms.RandomAffine(degrees=10),
+        transforms.RandomHorizontalFlip(),
+        spatial_transforms.ColorJitter(num_in_frames=window_size),
+        transforms.RandomCrop(224)])
 
     # validation transforms should never contain any randomness
     val_transforms = transforms.Compose([transforms.CenterCrop(224)])
@@ -161,7 +162,7 @@ def run(cfg_path, mode='rgb'):
     writer = SummaryWriter()
 
     # before starting the training loop, make sure the directory where the model will be stored is created/exists
-    new_save_dir = f'b{batch_size}_{str(optimizer).split("(")[0].strip()}_lr{lr}_ep{epochs}_{run_name}'
+    new_save_dir = f"{run_name}_{epochs}_{batch_size}_{lr}_{str(optimizer).split('(')[0].strip()}"
     save_model_dir = os.path.join(save_model_root, new_save_dir)
     make_dir(save_model_dir)
 
@@ -205,31 +206,41 @@ def run(cfg_path, mode='rgb'):
                     labels = Variable(labels.cuda())
 
                     # forward pass of the inputs through the network
-                    per_frame_logits = i3d(inputs)
+                    sign_logits = i3d(inputs)
+                    print(sign_logits.size())
+                    sign_logits = torch.squeeze(sign_logits, -1)
 
                     # upsample output to input size
-                    per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
+                    # per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
 
                     # compute localization loss
-                    loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
-                    tot_loc_loss += loc_loss.item()
+                    # loc_loss = F.binary_cross_entropy_with_logits(sign_logits, labels)
+                    # tot_loc_loss += loc_loss.item()
 
                     # compute classification loss (with max-pooling along time B x C x T)
-                    cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0], torch.max(labels, dim=2)[0])
-                    tot_cls_loss += cls_loss.item()
+                    # cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0], torch.max(labels, dim=2)[0])
+                    # tot_cls_loss += cls_loss.item()
 
                     # compute total loss by calculating the mean of previous losses
-                    loss = (0.5 * loc_loss + 0.5 * cls_loss)
-                    tot_loss += loss.item()
+                    # loss = (0.5 * loc_loss + 0.5 * cls_loss)
+                    # tot_loss += loss.item()
                     # backpropagate the loss
-                    loss.backward()
+                    # loss.backward()
+
+                    tot_loss = F.binary_cross_entropy_with_logits(sign_logits, labels)
+                    tot_loss.backward()
+
+                    tot_loss = tot_loss.item()
 
                     # get batch accuracy and f1 and append it
-                    y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
-                    y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
+                    # y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
+                    # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
+
+                    y_pred = np.argmax(sign_logits.detach().cpu().numpy())
+                    y_true = np.argmax(labels.detach().cpu().numpy())
 
                     acc_list.append(accuracy_score(y_true.flatten(), y_pred.flatten()))
-                    f1_list.append(f1_score(y_true.flatten(), y_pred.flatten(), average='macro'))
+                    f1_list.append(f1_score(y_true.flatten(), y_pred.flatten()))
 
                     # this if clause allows gradient accumulation. It also saves losses and metrics to
                     # tensorboard and saves the model weights if the loss improves
@@ -238,16 +249,20 @@ def run(cfg_path, mode='rgb'):
                         steps += 1
 
                         if steps % print_freq == 0:
+                            # tepoch.set_postfix(loss=round(tot_loss / num_acc_loss, 4),
+                            #                    loc_loss=round(tot_loc_loss / num_acc_loss, 4),
+                            #                    cls_loss=round(tot_cls_loss / num_acc_loss, 4),
+                            #                    total_acc=round(np.mean(acc_list), 4),
+                            #                    total_f1=round(np.mean(f1_list), 4))
+
                             tepoch.set_postfix(loss=round(tot_loss / num_acc_loss, 4),
-                                               loc_loss=round(tot_loc_loss / num_acc_loss, 4),
-                                               cls_loss=round(tot_cls_loss / num_acc_loss, 4),
                                                total_acc=round(np.mean(acc_list), 4),
                                                total_f1=round(np.mean(f1_list), 4))
 
                         # add values to tensorboard
                         writer.add_scalar("train/loss", tot_loss / num_acc_loss, steps)
-                        writer.add_scalar("train/loss_loc", tot_loc_loss / num_acc_loss, steps)
-                        writer.add_scalar("train/loss_cls", tot_cls_loss / num_acc_loss, steps)
+                        # writer.add_scalar("train/loss_loc", tot_loc_loss / num_acc_loss, steps)
+                        # writer.add_scalar("train/loss_cls", tot_cls_loss / num_acc_loss, steps)
                         writer.add_scalar("train/acc", np.mean(acc_list), steps)
                         writer.add_scalar("train/f1", np.mean(f1_list), steps)
 
@@ -257,7 +272,7 @@ def run(cfg_path, mode='rgb'):
                             # save model
                             torch.save(i3d.module.state_dict(),
                                        save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
-                                        num_iter) + '.pt')
+                                           num_iter) + '.pt')
                             # reset losses and counter
                             num_acc_loss = 0
                             tot_loss = tot_loc_loss = tot_cls_loss = 0.0
@@ -267,16 +282,16 @@ def run(cfg_path, mode='rgb'):
                     lr_sched.step(tot_loss)
 
                     writer.add_scalar("val/loss", tot_loss / num_iter, epoch)
-                    writer.add_scalar("val/loss_loc", tot_loc_loss / num_iter, epoch)
-                    writer.add_scalar("val/loss_cls", tot_cls_loss / num_iter, epoch)
+                    # writer.add_scalar("val/loss_loc", tot_loc_loss / num_iter, epoch)
+                    # writer.add_scalar("val/loss_cls", tot_cls_loss / num_iter, epoch)
                     writer.add_scalar("val/acc", np.mean(acc_list), epoch)
                     writer.add_scalar("val/f1", np.mean(f1_list), epoch)
 
                     print('-------------------------\n'
                           f'Epoch {epoch + 1} validation phase:\n'
                           f'Tot Loss: {tot_loss / num_iter:.4f}\t'
-                          f'Loc Loss: {tot_loc_loss / num_iter:.4f}\t'
-                          f'Cls Loss: {tot_cls_loss / num_iter:.4f}\t'
+                          # f'Loc Loss: {tot_loc_loss / num_iter:.4f}\t'
+                          # f'Cls Loss: {tot_cls_loss / num_iter:.4f}\t'
                           f'Acc: {np.mean(acc_list):.4f}\t'
                           f'F1: {np.mean(f1_list):.4f}\n'
                           '-------------------------\n')

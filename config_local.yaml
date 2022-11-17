@@ -8,14 +8,15 @@ data:
   data_loading: "random"
   diagonal_videos_path: "/vol/tensusers5/jmartinez/datasets/diagonal_videos.gzip"
   use_diag_videos: False
+  final_pooling_size: 512
 
 training:
   specific_glosses: ["ZIEN-B", "EIGEN-A"] #["PT-1hand", "PO"]
-  run_name: "exp1d"
+  run_name: "test"
   use_cuda: True
   epochs: 50
   random_seed: 42
-  batch_size: 128
+  batch_size: 16
   init_lr: 0.1
   momentum: 0.9
   weight_decay: 0.0000001

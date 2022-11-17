@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from tqdm import tqdm
 import numpy as np
-from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
+from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, precision_score, recall_score
 from sklearn.metrics import matthews_corrcoef as MCC
 import matplotlib.pyplot as plt
 import itertools
@@ -21,8 +21,10 @@ from torchvision.io import write_video
 from src.utils.i3d_data import I3Dataset
 from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
+from src.utils.i3d_dimensions_exp import InceptionI3d as InceptionDims
 from src.utils.util import load_gzip, save_gzip
 from torchsummary import summary
+from torchvision import transforms
 
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
@@ -95,6 +97,7 @@ def test(cfg_path, log_filename, mode="rgb"):
     else:
         diag_videos_path = None
     save_predictions = data_cfg.get("save_predictions")
+    final_pooling_size = data_cfg.get("final_pooling_size")
 
     # get directory and filename for the checkpoints
     run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
@@ -121,8 +124,10 @@ def test(cfg_path, log_filename, mode="rgb"):
 
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
+    test_transforms = transforms.Compose([transforms.CenterCrop(224)])
+
     print(f"Loading {fold} split...")
-    dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
+    dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=test_transforms,
                         filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids, diagonal_videos_path=diag_videos_path)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
@@ -134,7 +139,10 @@ def test(cfg_path, log_filename, mode="rgb"):
     print(f"Predicting for glosses {glosses} mapped as classes {list(dataset.class_encodings.values())}")
 
     # load model and specified checkpoint
-    i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
+    # i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
+    i3d = InceptionDims(157, in_channels=3, window_size=16, input_size=224, final_pooling_size=final_pooling_size)
+    i3d.replace_logits(num_classes=len(dataset.class_encodings), final_pooling_size=final_pooling_size)
+
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
     else:
@@ -143,6 +151,8 @@ def test(cfg_path, log_filename, mode="rgb"):
     if use_cuda:
         i3d.cuda()
     i3d.train(False)  # Set model to evaluate mode
+
+    # summary(i3d, (3, 16, 224, 224))
 
     total_pred = []
     total_true = []
@@ -161,11 +171,12 @@ def test(cfg_path, log_filename, mode="rgb"):
                     labels = Variable(labels.cuda())
 
                 # forward pass of the inputs through the network
-                per_frame_logits = i3d(inputs)
+                sign_logits = i3d(inputs)
+                sign_logits = torch.squeeze(sign_logits, -1)
 
                 # use these for whole sign prediction
-                y_pred = np.squeeze(np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1))
-                y_true = np.max(np.argmax(labels.detach().cpu().numpy(), axis=1), axis=1)
+                y_pred = np.argmax(sign_logits.detach().cpu().numpy(), axis=1)
+                y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                 # upsample output to input size
                 # per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
@@ -214,14 +225,18 @@ def test(cfg_path, log_filename, mode="rgb"):
                     img_cnt += 1
 
     # save_gzip(discard_videos, os.path.join(pred_path, "discard_list.gzip"))
-    save_gzip(diagonal_videos, os.path.join(pred_path, "diagonal_videos.gzip"))
+    save_gzip(diagonal_videos, os.path.join(pred_path, f"{run_name}_{fold}_diagonal_videos.gzip"))
 
-    f1 = f1_score(total_true, total_pred, average='macro')
     acc = accuracy_score(total_true, total_pred)
+    p = precision_score(total_true, total_pred)
+    r = recall_score(total_true, total_pred)
+    f1 = f1_score(total_true, total_pred)
     mcc = MCC(total_true, total_pred)
     cm = confusion_matrix(total_true, total_pred)
 
-    print(f"F1 = {f1:.4f}\tAcc = {acc:.4f}\tMCC = {mcc:.4f}")
+    metrics_string = f"Acc = {acc:.4f}\nP = {p:.4f}\nR = {r:.4f}\nF1 = {f1:.4f}\nMCC = {mcc:.4f}"
+
+    print(metrics_string)
     print(cm)
 
     logfile_path = os.path.join(pred_path, log_filename)
@@ -230,7 +245,7 @@ def test(cfg_path, log_filename, mode="rgb"):
         os.remove(logfile_path)
     with open(logfile_path, 'w') as f:
         print(f"Predicting for glosses {glosses} mapped as {list(dataset.class_encodings.values())}", file=f)
-        print(f"F1 = {f1:.4f}\nAcc = {acc:.4f}\nMCC = {mcc:.4f}", file=f)
+        print(metrics_string, file=f)
 
     plot_confusion_matrix(cm, glosses, root_path=pred_path)
 

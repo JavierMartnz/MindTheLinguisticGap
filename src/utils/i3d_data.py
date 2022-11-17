@@ -306,15 +306,14 @@ def build_stratified_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, s
         if mode == 'flow':
             num_frames = num_frames // 2
 
-        label = np.zeros((num_classes, window_size), np.float32)
+        label = np.zeros(num_classes, np.float32)
         label_idx = class_encodings[gloss_id]
         gloss = list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)]
 
         if gloss not in label_dict.keys():
             label_dict[gloss] = 0
 
-        for frame in range(window_size):
-            label[label_idx, frame] = 1
+        label[label_idx] = 1
 
         num_windows = math.ceil(num_frames / window_size)
 
@@ -444,15 +443,14 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_
         if mode == 'flow':
             num_frames = num_frames // 2
 
-        label = np.zeros((num_classes, window_size), np.float32)
+        label = np.zeros(num_classes, np.float32)
         label_idx = class_encodings[gloss_id]
         gloss = list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)]
 
         if gloss not in label_dict.keys():
             label_dict[gloss] = 0
 
-        for frame in range(window_size):
-            label[label_idx, frame] = 1
+        label[label_idx] = 1
 
         num_windows = math.ceil(num_frames / window_size)
 
@@ -533,15 +531,16 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
         if mode == 'flow':
             num_frames = num_frames // 2
 
-        label = np.zeros((num_classes, window_size), np.float32)
+        label = np.zeros(num_classes, np.float32)
         label_idx = class_encodings[gloss_id]
         gloss = id_to_gloss[gloss_id]
 
         if gloss not in label_dict.keys():
             label_dict[gloss] = 0
 
-        for frame in range(window_size):
-            label[label_idx, frame] = 1
+        label[label_idx] = 1
+        # for frame in range(window_size):
+        #     label[label_idx, frame] = 1
 
         num_windows = math.ceil(num_frames / window_size)
 
@@ -594,15 +593,14 @@ def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, clas
         else:
             gloss_id = int(video_path.split("-")[-1][:-4])
 
-        label = np.zeros((num_classes, window_size), np.float32)
+        label = np.zeros(num_classes, np.float32)
         label_idx = class_encodings[gloss_id]
         gloss = id_to_gloss[gloss_id]
 
         if gloss not in label_dict.keys():
             label_dict[gloss] = 0
 
-        for frame in range(window_size):
-            label[label_idx, frame] = 1
+        label[label_idx] = 1
 
         num_windows = math.ceil(num_frames / window_size)
 
