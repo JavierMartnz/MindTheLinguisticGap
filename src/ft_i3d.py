@@ -208,7 +208,6 @@ def run(cfg_path, mode='rgb'):
 
                     # forward pass of the inputs through the network
                     sign_logits = i3d(inputs)
-                    print(sign_logits.size())
                     sign_logits = torch.squeeze(sign_logits, -1)
 
                     # upsample output to input size
@@ -241,6 +240,7 @@ def run(cfg_path, mode='rgb'):
                     y_true = np.argmax(labels.detach().cpu().numpy())
 
                     acc_list.append(accuracy_score(y_true.flatten(), y_pred.flatten()))
+                    print(f1_list)
                     f1_list.append(f1_score(y_true.flatten(), y_pred.flatten()))
 
                     # this if clause allows gradient accumulation. It also saves losses and metrics to
