@@ -162,7 +162,8 @@ def run(cfg_path, mode='rgb'):
     writer = SummaryWriter()
 
     # before starting the training loop, make sure the directory where the model will be stored is created/exists
-    new_save_dir = f"{run_name}_{epochs}_{batch_size}_{lr}_{str(optimizer).split('(')[0].strip()}"
+    glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
+    new_save_dir = f"{run_name}_{glosses_string}_{epochs}_{batch_size}_{lr}_{str(optimizer).split('(')[0].strip()}"
     save_model_dir = os.path.join(save_model_root, new_save_dir)
     make_dir(save_model_dir)
 
