@@ -125,3 +125,4 @@ config_local.yaml
 *.iml
 *.xml
 *.iml
+test_config.yaml

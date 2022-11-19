@@ -9,15 +9,15 @@ data:
   diagonal_videos_path: "D:/Thesis/predictions/diagonal_videos.gzip"
   use_diag_videos: False
   save_predictions: True
-  final_pooling_size: 256
+  final_pooling_size: 32
 
 
 test:
-  specific_glosses: ["PT-1hand", "PO"]
+  specific_glosses: ["JA-A", "GEBAREN-A"]
   model_dir: "D:Thesis/models/i3d"
   pred_dir: "D:Thesis/predictions/i3d"
   fold: "test"
-  run_name: "exp4d"
+  run_name: "exp32d"
   use_cuda: True
   random_seed: 42
   run_batch_size: 128
@@ -25,5 +25,5 @@ test:
   lr: 0.1
   epochs: 50
   ckpt_epoch: 49
-  ckpt_step: 2
+  ckpt_step: 5
   batch_size: 16

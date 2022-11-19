@@ -100,7 +100,9 @@ def test(cfg_path, log_filename, mode="rgb"):
     final_pooling_size = data_cfg.get("final_pooling_size")
 
     # get directory and filename for the checkpoints
-    run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
+    glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
+    run_dir = f"{run_name}_{glosses_string}_{num_epochs}_{run_batch_size}_{learning_rate}_{optimizer}"
+    # run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
     ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}_{ckpt_step}.pt"
     ckpt_folder = ckpt_filename.split('.')[0]
 
