@@ -349,6 +349,7 @@ class InceptionI3d(nn.Module):
                 x = self._modules[end_point](x)  # use _modules to work with dataparallel
 
         x = self.avg_pool(x)
+        x = self.dims_conv(x)
         x = self.dropout(x)
         x = self.logits(x)
 
@@ -361,4 +362,4 @@ class InceptionI3d(nn.Module):
         for end_point in self.VALID_ENDPOINTS:
             if end_point in self.end_points:
                 x = self._modules[end_point](x)
-        return x
+        return self.dims_conv(x)
