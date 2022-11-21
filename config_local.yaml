@@ -1,14 +1,14 @@
 data:
 
-  cngt_clips_path: "D:/Thesis/datasets/cngt_single_signs.zip"
-  signbank_path: "D:/Thesis/datasets/NGT_Signbank_resized.zip"
-  cngt_vocab_path: "D:/Thesis/datasets/cngt_vocab.gzip"
-  sb_vocab_path: "D:/Thesis/datasets/signbank_vocab.gzip"
+  cngt_clips_path: "C:/Thesis/datasets/cngt_single_signs.zip"
+  signbank_path: "C:/Thesis/datasets/NGT_Signbank_resized.zip"
+  cngt_vocab_path: "C:/Thesis/datasets/cngt_vocab.gzip"
+  sb_vocab_path: "C:/Thesis/datasets/signbank_vocab.gzip"
   window_size: 16
   data_loading: "random"
   diagonal_videos_path: "/vol/tensusers5/jmartinez/datasets/diagonal_videos.gzip"
   use_diag_videos: False
-  final_pooling_size: 512
+  final_pooling_size: 2
 
 training:
   specific_glosses: ["ZIEN-B", "EIGEN-A"] #["PT-1hand", "PO"]
@@ -20,5 +20,5 @@ training:
   init_lr: 0.1
   momentum: 0.9
   weight_decay: 0.0000001
-  model_dir: "D:/Thesis/models"
-  weights_dir: "D:/Thesis/models"
+  model_dir: "C:/Thesis/models"
+  weights_dir: "C:/Thesis/models"

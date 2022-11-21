@@ -36,6 +36,7 @@ from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_exp import InceptionI3d as InceptionDims
+from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
 
@@ -117,11 +118,13 @@ def run(cfg_path, mode='rgb'):
         # i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
         # i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
 
-        i3d = InceptionDims(157, in_channels=3, window_size=16, input_size=224, final_pooling_size=final_pooling_size)
+        i3d = InceptionDims(157, in_channels=3, window_size=16, input_size=224, conv_output_dims=final_pooling_size)
 
         i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
 
-    i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=final_pooling_size)
+    i3d.add_dim_conv()
+    i3d.replace_logits(num_classes=len(train_dataset.class_encodings))
+    # i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=final_pooling_size)
 
     print(f"\tThe model has {len(train_dataset.class_encodings)} classes")
 
