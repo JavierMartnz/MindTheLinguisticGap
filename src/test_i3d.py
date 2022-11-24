@@ -22,6 +22,7 @@ from src.utils.i3d_data import I3Dataset
 from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_exp import InceptionI3d as InceptionDims
+from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip, save_gzip
 from torchsummary import summary
 from torchvision import transforms
@@ -142,8 +143,9 @@ def test(cfg_path, log_filename, mode="rgb"):
 
     # load model and specified checkpoint
     # i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
-    i3d = InceptionDims(157, in_channels=3, window_size=16, input_size=224, final_pooling_size=final_pooling_size)
-    i3d.replace_logits(num_classes=len(dataset.class_encodings), final_pooling_size=final_pooling_size)
+    i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224, conv_output_dims=final_pooling_size)
+    i3d.add_dim_conv()
+    i3d.replace_logits(num_classes=len(dataset.class_encodings))
 
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))

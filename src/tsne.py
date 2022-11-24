@@ -19,13 +19,14 @@ from torchvision.utils import save_image
 from src.utils.i3d_data import I3Dataset
 from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
+from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip
 # from sklearn.manifold import TSNE
 from MulticoreTSNE import MulticoreTSNE as TSNE
 from sklearn.decomposition import PCA
 from umap import UMAP
 import plotly.express as px
-
+import seaborn as sns
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
     """
@@ -96,10 +97,14 @@ def tsne(cfg_path, log_filename, mode="rgb"):
         diag_videos_path = data_cfg.get("diagonal_videos_path")
     else:
         diag_videos_path = None
+    final_pooling_size = data_cfg.get("final_pooling_size")
 
     # get directory and filename for the checkpoints
-    run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
+    glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
+    run_dir = f"{run_name}_{glosses_string}_{num_epochs}_{run_batch_size}_{learning_rate}_{optimizer}"
+    # run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
     ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}_{ckpt_step}.pt"
+    ckpt_folder = ckpt_filename.split('.')[0]
 
     num_top_glosses = None
 
@@ -118,7 +123,11 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     # load model and specified checkpoint
-    i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
+    # i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
+    i3d = InceptionDimsConv(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16, conv_output_dims=final_pooling_size)
+    i3d.add_dim_conv()
+    i3d.replace_logits(num_classes=len(dataset.class_encodings))
+
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
     else:
@@ -128,13 +137,22 @@ def tsne(cfg_path, log_filename, mode="rgb"):
         i3d.cuda()
     i3d.train(False)  # Set model to evaluate mode
 
+    w = torch.squeeze(i3d.logits.conv3d.weight).detach().cpu().numpy()
+
+    for dim in range(np.shape(w)[0]):
+        # plt.figure(figsize=(4, 10))
+        heat_map = sns.heatmap(np.expand_dims(w[dim], axis=0), linewidth=1, annot=True)
+        plt.show()
+
+    return
+
     # create folder to save tsne results
     ckpt_folder = ckpt_filename.split('.')[0]
     pred_path = os.path.join(pred_dir, run_dir, ckpt_folder, fold)
     make_dir(pred_path)
 
-    X = torch.zeros((16, 1024))
-    Y = np.zeros(16)
+    X = torch.zeros((1, 1024))
+    Y = np.zeros(1)
 
     print(f"Running datapoints through model...")
     with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
@@ -146,11 +164,11 @@ def tsne(cfg_path, log_filename, mode="rgb"):
                     inputs = Variable(inputs.cuda())
                     labels = Variable(labels.cuda())
 
-                y_true = np.max(np.argmax(labels.detach().cpu().numpy(), axis=1), axis=1)
-
                 # get the features of the penultimate layer
                 features = i3d.extract_features(inputs)
-                # features = i3d.extract_features_before(inputs)
+                features = torch.squeeze(features, -1)
+
+                y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                 # if X is empty
                 if X.sum() == 0:
@@ -202,7 +220,7 @@ def tsne(cfg_path, log_filename, mode="rgb"):
             ax.scatter3D(X_embeds[i][GLOSS2, 0], X_embeds[i][GLOSS2, 1], X_embeds[i][GLOSS2, 2], c='blue', label=specific_glosses[1])
             plt.legend()
 
-            # don't save the figure since some manual rotation is neeeded before saving
+            # don't save the figure since some manual rotation is needed before saving
             plt.show()
 
     if n_components == 2:
@@ -216,6 +234,7 @@ def tsne(cfg_path, log_filename, mode="rgb"):
 
             fig_filename = f"tsne_{n_components}d_perp{perplexities[i]}"
             plt.savefig(os.path.join(pred_path, fig_filename))
+            plt.show()
 
 
 def main(params):

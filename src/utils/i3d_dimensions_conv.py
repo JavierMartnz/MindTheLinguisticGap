@@ -187,7 +187,7 @@ class InceptionI3d(nn.Module):
     )
 
     def __init__(self, num_classes=400, spatial_squeeze=True, final_endpoint='Logits', name='inception_i3d',
-                     in_channels=3, dropout_keep_prob=0.5, window_size=64, input_size=256, conv_output_dims=1024):
+                 in_channels=3, dropout_keep_prob=0.5, window_size=64, input_size=256, conv_output_dims=1024):
         """Initializes I3D model instance.
         Args:
           num_classes: The number of outputs in the logit layer (default 400, which
@@ -362,4 +362,7 @@ class InceptionI3d(nn.Module):
         for end_point in self.VALID_ENDPOINTS:
             if end_point in self.end_points:
                 x = self._modules[end_point](x)
-        return self.dims_conv(x)
+
+        x = self.avg_pool(x)
+        x = self.dims_conv(x)
+        return x
