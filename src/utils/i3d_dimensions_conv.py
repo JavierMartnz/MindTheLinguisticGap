@@ -366,3 +366,12 @@ class InceptionI3d(nn.Module):
         x = self.avg_pool(x)
         x = self.dims_conv(x)
         return x
+
+    def extract_logits(self, x):
+        for end_point in self.VALID_ENDPOINTS:
+            if end_point in self.end_points:
+                x = self._modules[end_point](x)
+
+        x = self.avg_pool(x)
+
+        return x

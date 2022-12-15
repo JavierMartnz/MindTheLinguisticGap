@@ -22,11 +22,15 @@ from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip
 # from sklearn.manifold import TSNE
-from MulticoreTSNE import MulticoreTSNE as TSNE
+from MulticoreTSNE import MulticoreTSNE as MCTSNE
+# from fastTSNE import TSNE
 from sklearn.decomposition import PCA
-from umap import UMAP
+from sklearn.manifold import MDS
+# from umap import UMAP
 import plotly.express as px
 import seaborn as sns
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from scipy.spatial import distance
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
     """
@@ -63,6 +67,12 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
         plt.savefig(os.path.join(root_path, "confusion_matrix"))
     # plt.show()
 
+def stress(X_pred, X):
+    # distance of every point (row) to the rest of points in matrix
+    orig_dist = distance.pdist(X, 'euclidean')
+    pred_dist = distance.pdist(X_pred, 'euclidean')
+    # stress formula from http://analytictech.com/networks/mds.htm
+    return np.sqrt(sum((pred_dist - orig_dist)**2)/sum(orig_dist**2))
 
 def tsne(cfg_path, log_filename, mode="rgb"):
     cfg = load_config(cfg_path)
@@ -73,7 +83,8 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     model_dir = test_cfg.get("model_dir")
     pred_dir = test_cfg.get("pred_dir")
     fold = test_cfg.get("fold")
-    assert fold in {"train", "test", "val"}, f"Please, make sure the parameter 'fold' in {cfg_path} is either 'train' 'val' or 'test'"
+    assert fold in {"train", "test",
+                    "val"}, f"Please, make sure the parameter 'fold' in {cfg_path} is either 'train' 'val' or 'test'"
     run_name = test_cfg.get("run_name")
     run_batch_size = test_cfg.get("run_batch_size")
     optimizer = test_cfg.get("optimizer").upper()
@@ -118,33 +129,38 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
     print(f"Loading {fold} split...")
-    dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=None,
-                        filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids, diagonal_videos_path=diag_videos_path)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size,
+                        transforms=None,
+                        filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
+                        diagonal_videos_path=diag_videos_path)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0,
+                                             pin_memory=True)
 
     # load model and specified checkpoint
     # i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
-    i3d = InceptionDimsConv(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16, conv_output_dims=final_pooling_size)
+    i3d = InceptionDimsConv(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16,
+                            conv_output_dims=final_pooling_size)
     i3d.add_dim_conv()
     i3d.replace_logits(num_classes=len(dataset.class_encodings))
 
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
     else:
-        i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename), map_location=torch.device('cpu')))
+        i3d.load_state_dict(
+            torch.load(os.path.join(model_dir, run_dir, ckpt_filename), map_location=torch.device('cpu')))
 
     if use_cuda:
         i3d.cuda()
     i3d.train(False)  # Set model to evaluate mode
 
-    w = torch.squeeze(i3d.logits.conv3d.weight).detach().cpu().numpy()
-
-    for dim in range(np.shape(w)[0]):
-        # plt.figure(figsize=(4, 10))
-        heat_map = sns.heatmap(np.expand_dims(w[dim], axis=0), linewidth=1, annot=True)
-        plt.show()
-
-    return
+    # w = torch.squeeze(i3d.logits.conv3d.weight).detach().cpu().numpy()
+    #
+    # for dim in range(np.shape(w)[0]):
+    #     # plt.figure(figsize=(4, 10))
+    #     heat_map = sns.heatmap(np.expand_dims(w[dim], axis=0), linewidth=1, annot=True)
+    #     plt.show()
+    #
+    # return
 
     # create folder to save tsne results
     ckpt_folder = ckpt_filename.split('.')[0]
@@ -165,28 +181,87 @@ def tsne(cfg_path, log_filename, mode="rgb"):
                     labels = Variable(labels.cuda())
 
                 # get the features of the penultimate layer
+                logits = i3d.extract_logits(inputs)
                 features = i3d.extract_features(inputs)
+
+                logits = torch.squeeze(logits, -1)
                 features = torch.squeeze(features, -1)
 
+                logits_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
                 y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                 # if X is empty
                 if X.sum() == 0:
+                    X_logits = logits.squeeze()
+                    Y_logits = logits_true
                     X = features.squeeze()
                     Y = y_true
                 else:
                     # if the last batch has only 1 video, the squeeze function removes an extra dimension and cannot be concatenated
                     if len(features.squeeze().size()) == 1:
                         X = torch.cat((X, torch.unsqueeze(features.squeeze(), 0)), dim=0)
+                        X_logits = torch.cat((X_logits, torch.unsqueeze(logits.squeeze(), 0)), dim=0)
                     else:
+                        X_logits = torch.cat((X_logits, logits.squeeze()), dim=0)
                         X = torch.cat((X, features.squeeze()), dim=0)
+
                     Y = np.append(Y, y_true)
+                    Y_logits = np.append(Y_logits, logits_true)
 
     print("Running TSNE...")
     GLOSS1 = Y == 0
     GLOSS2 = Y == 1
 
     X = X.detach().cpu()
+    X_logits = X_logits.detach().cpu()
+
+    print(round(stress(X, X_logits), 4))
+
+
+    # n_components = [16, 32, 64, 128, 256, 512, 1024]
+    #
+    # for n_c in tqdm(n_components):
+    #     X_tsne = MCTSNE(n_components=n_c, perplexity=500, verbose=1, n_jobs=-1).fit_transform(X)
+    #     print(round(stress(X_tsne, X), 4))
+        # X_tsne = TSNE(n_components=n_c, perplexity=500, n_jobs=-1).fit_transform(X)
+        # print(round(stress(X_tsne, X), 4))
+
+    # X_lda = LDA().fit(X, Y).transform(X)
+    # X_tsne = TSNE(n_components=2, perplexity=200).fit_transform(X)
+    # X_pca = PCA(n_components=2).fit_transform(X)
+    # X_mds = MDS(n_components=2).fit_transform(X)
+
+
+
+    # lda_stress = stress(X_lda, X)
+    # tsne_stress = stress(X_tsne, X)
+    # pca_stress = stress(X_pca, X)
+    # mds_stress = stress(X_mds, X)
+
+    # print(round(lda_stress, 4))
+    # print(round(tsne_stress, 4))
+    # print(round(pca_stress, 4))
+    # print(round(mds_stress, 4))
+
+    #
+    # print(np.linalg.norm((np.asarray(X)-np.asarray(X))[:, None], axis=-1))
+    # print(np.linalg.norm((np.asarray(X_lda) - np.asarray(X_lda))[:, None], axis=-1))
+    # print(np.linalg.norm((np.asarray(X_tsne) - np.asarray(X_tsne))[:, None], axis=-1))
+
+    # dist_orig  = np.square(dist(X, X)).flatten()
+    # dist_tsne = np.square(dist(X_tsne, X_tsne)).flatten()
+    # dist_lda = np.square(dist(X_lda, X_lda)).flatten()
+    #
+    # print(f"Original: {dist_orig}, TSNE: {dist_tsne}, LDA: {dist_tsne}")
+
+    # plt.figure(figsize=(12, 4))
+    # plt.scatter(X_embed[GLOSS1, 0], np.zeros(len(X_embed[GLOSS1, 0])), c='orange', label=specific_glosses[0])
+    # plt.scatter(X_embed[GLOSS2, 0], np.ones(len(X_embed[GLOSS2, 0])), c='blue', label=specific_glosses[1])
+    # plt.legend()
+    #
+    # plt.show()
+
+    return
 
     perplexities = [200]
     n_components = 3
@@ -216,8 +291,10 @@ def tsne(cfg_path, log_filename, mode="rgb"):
         for i in range(len(X_embeds)):
             fig = plt.figure(figsize=(32, 16))
             ax = plt.axes(projection="3d")
-            ax.scatter3D(X_embeds[i][GLOSS1, 0], X_embeds[i][GLOSS1, 1], X_embeds[i][GLOSS1, 2], c='orange', label=specific_glosses[0])
-            ax.scatter3D(X_embeds[i][GLOSS2, 0], X_embeds[i][GLOSS2, 1], X_embeds[i][GLOSS2, 2], c='blue', label=specific_glosses[1])
+            ax.scatter3D(X_embeds[i][GLOSS1, 0], X_embeds[i][GLOSS1, 1], X_embeds[i][GLOSS1, 2], c='orange',
+                         label=specific_glosses[0])
+            ax.scatter3D(X_embeds[i][GLOSS2, 0], X_embeds[i][GLOSS2, 1], X_embeds[i][GLOSS2, 2], c='blue',
+                         label=specific_glosses[1])
             plt.legend()
 
             # don't save the figure since some manual rotation is needed before saving

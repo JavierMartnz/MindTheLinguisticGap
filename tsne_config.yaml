@@ -14,7 +14,7 @@ test:
   specific_glosses: ["JA-A", "GEBAREN-A"]
   model_dir: "D:Thesis/models/i3d"
   pred_dir: "D:Thesis/tsne/"
-  fold: "test"
+  fold: "train"
   use_cuda: True
   run_name: "exp2d_conv"
   run_batch_size: 128
