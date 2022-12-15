@@ -57,6 +57,8 @@ def run(cfg_path, mode='rgb'):
     data_cfg = cfg.get("data")
 
     # training configs
+    extra_conv = training_cfg.get("extra_conv")
+    model_weights = training_cfg.get("model_weights")
     specific_glosses = training_cfg.get("specific_glosses")
     run_name = training_cfg.get("run_name")
     epochs = training_cfg.get("epochs")
@@ -75,6 +77,11 @@ def run(cfg_path, mode='rgb'):
     use_diag_videos = data_cfg.get("use_diag_videos")
     diagonal_videos_path = data_cfg.get("diagonal_videos_path") if use_diag_videos else None
     final_pooling_size = data_cfg.get("final_pooling_size")
+
+    if extra_conv:
+        assert model_weights is not None, "Please provide the pre-trained model checkpoint in 'model_weights'"
+        assert os.path.exists(os.path.join(weights_dir, model_weights)), \
+            f"The provided model weights {os.path.join(weights_dir, model_weights)} does not exist"
 
     print(f"Using window size of {window_size} frames")
 
@@ -97,15 +104,20 @@ def run(cfg_path, mode='rgb'):
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
     print("Loading training split...")
-    train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train', window_size,
-                              transforms=train_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
+    train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train',
+                              window_size,
+                              transforms=train_transforms, filter_num=num_top_glosses,
+                              specific_gloss_ids=specific_gloss_ids,
                               diagonal_videos_path=diagonal_videos_path)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
+                                                   pin_memory=True)
 
     print("Loading val split...")
     val_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'val', window_size,
-                            transforms=val_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+                            transforms=val_transforms, filter_num=num_top_glosses,
+                            specific_gloss_ids=specific_gloss_ids)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
+                                                 pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
 
@@ -114,17 +126,26 @@ def run(cfg_path, mode='rgb'):
         i3d = InceptionI3d(400, in_channels=2)
         i3d.load_state_dict(torch.load(weights_dir + '/flow_imagenet.pt'))
     else:
-        # i3d = InceptionI3d(400, in_channels=3)
-        # i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
-        # i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
 
-        i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224, conv_output_dims=final_pooling_size)
+        if extra_conv:
+            # THIS NETWORK HERE ALLOWS ADDING A CONV LAYER BEFORE THE LAST LAYER
+            i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224,
+                                    conv_output_dims=final_pooling_size)
+            i3d.load_state_dict(torch.load(os.path.join(weights_dir, model_weights)))
+        else:
+            # THIS IS THE STANDARD ORIGINAL I3D
+            i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
 
-        i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
+            i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
+            # i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
 
-    i3d.add_dim_conv()
+    # changes the last layer in order to accommodate the new number of classes (after loading weights)
     i3d.replace_logits(num_classes=len(train_dataset.class_encodings))
     # i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=final_pooling_size)
+
+    # this only applies to the network with the extra conv layer
+    if extra_conv:
+        i3d.add_dim_conv()
 
     print(f"\tThe model has {len(train_dataset.class_encodings)} classes")
 
@@ -134,15 +155,21 @@ def run(cfg_path, mode='rgb'):
         param.requires_grad = False
         n_layers += 1
 
-    # unfreeze the ones we want
-    i3d.logits.requires_grad_(True)
-    i3d.dims_conv.requires_grad_(True)
+    # unfreeze the layers that we want to train
+    if extra_conv:
+        i3d.dims_conv.requires_grad_(True)
+    else:
+        i3d.logits.requires_grad_(True)
+
     # layers are ['Mixed_5c', 'Mixed_5b', 'MaxPool3d_5a_2x2', 'Mixed_4f', 'Mixed_4e', 'Mixed_4d', 'Mixed_4c', 'Mixed_4b']
     unfreeze_layers = []
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
-    print(f"\tThe last {len(unfreeze_layers) + 1} out of 17 blocks are unfrozen.")
+    if extra_conv:
+        print(f"\tThe last {len(unfreeze_layers) + 1} out of 18 blocks are unfrozen.")
+    else:
+        print(f"\tThe last {len(unfreeze_layers) + 1} out of 17 blocks are unfrozen.")
 
     # prints number of parameters
     trainable_params = sum(p.numel() for p in i3d.parameters() if p.requires_grad)
@@ -157,9 +184,7 @@ def run(cfg_path, mode='rgb'):
     i3d = nn.DataParallel(i3d)
 
     lr = init_lr
-    # optimizer = optim.Adam(i3d.parameters(), lr=lr, weight_decay=0.0000001)
     optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
-    # lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
     lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
 
     # create a new tensorboard log
