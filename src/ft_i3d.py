@@ -80,8 +80,8 @@ def run(cfg_path, mode='rgb'):
 
     if extra_conv:
         assert model_weights is not None, "Please provide the pre-trained model checkpoint in 'model_weights'"
-        assert os.path.exists(os.path.join(weights_dir, model_weights)), \
-            f"The provided model weights {os.path.join(weights_dir, model_weights)} does not exist"
+        assert os.path.exists(os.path.join(save_model_root, model_weights)), \
+            f"The provided model weights {os.path.join(save_model_root, model_weights)} does not exist"
 
     print(f"Using window size of {window_size} frames")
 
@@ -131,7 +131,7 @@ def run(cfg_path, mode='rgb'):
             # THIS NETWORK HERE ALLOWS ADDING A CONV LAYER BEFORE THE LAST LAYER
             i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224,
                                     conv_output_dims=final_pooling_size)
-            i3d.load_state_dict(torch.load(os.path.join(weights_dir, model_weights)))
+            i3d.load_state_dict(torch.load(os.path.join(save_model_root, model_weights)))
         else:
             # THIS IS THE STANDARD ORIGINAL I3D
             # i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)

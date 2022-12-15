@@ -11,8 +11,8 @@ data:
   final_pooling_size: 1024
 
 training:
-  extra_conv: False
-  model_weights: "/i3d/whatever.pt"
+  extra_conv: True
+  model_weights: "baseline_imagenet_JA-A_GEBAREN-A_50_128_0.1_SGD/i3d_49_8.pt"
   specific_glosses: ["JA-A", "GEBAREN-A"]
   run_name: "baseline"
   use_cuda: True

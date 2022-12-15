@@ -6,18 +6,18 @@ data:
   sb_vocab_path: "D:/Thesis/datasets/signbank_vocab.gzip"
   window_size: 16
   data_loading: "random"
-  diagonal_videos_path: "D:/Thesis/predictions/diagonal_videos.gzip"
+  diagonal_videos_path: None #"D:/Thesis/predictions/diagonal_videos.gzip"
   use_diag_videos: False
   save_predictions: True
-  final_pooling_size: 2
-
+  final_pooling_size: 1024
 
 test:
+  extra_conv: False
   specific_glosses: ["JA-A", "GEBAREN-A"]
   model_dir: "D:Thesis/models/i3d"
   pred_dir: "D:Thesis/predictions/i3d"
   fold: "test"
-  run_name: "exp2d_conv"
+  run_name: "baseline_imagenet"
   use_cuda: True
   random_seed: 42
   run_batch_size: 128
@@ -25,5 +25,5 @@ test:
   lr: 0.1
   epochs: 50
   ckpt_epoch: 49
-  ckpt_step: 2
+  ckpt_step: 8
   batch_size: 16

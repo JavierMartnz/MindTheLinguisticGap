@@ -84,6 +84,7 @@ def test(cfg_path, log_filename, mode="rgb"):
     batch_size = test_cfg.get("batch_size")
     use_cuda = test_cfg.get("use_cuda")
     specific_glosses = test_cfg.get("specific_glosses")
+    extra_conv = test_cfg.get("extra_conv")
 
     # data configs
     cngt_zip = data_cfg.get("cngt_clips_path")
@@ -142,18 +143,20 @@ def test(cfg_path, log_filename, mode="rgb"):
     print(f"Predicting for glosses {glosses} mapped as classes {list(dataset.class_encodings.values())}")
 
     # load model and specified checkpoint
-    # i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
-    i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224, conv_output_dims=final_pooling_size)
-    i3d.add_dim_conv()
+    if extra_conv:
+        i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224, conv_output_dims=final_pooling_size)
+        i3d.add_dim_conv()
+    else:
+        i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16, input_size=224)
+
     i3d.replace_logits(num_classes=len(dataset.class_encodings))
 
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
+        i3d.cuda()
     else:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename), map_location=torch.device('cpu')))
 
-    if use_cuda:
-        i3d.cuda()
     i3d.train(False)  # Set model to evaluate mode
 
     # summary(i3d, (3, 16, 224, 224))
