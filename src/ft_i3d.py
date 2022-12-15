@@ -129,7 +129,7 @@ def run(cfg_path, mode='rgb'):
 
         if extra_conv:
             # THIS NETWORK HERE ALLOWS ADDING A CONV LAYER BEFORE THE LAST LAYER
-            i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224,
+            i3d = InceptionDimsConv(2, in_channels=3, window_size=16, input_size=224,
                                     conv_output_dims=final_pooling_size)
             i3d.load_state_dict(torch.load(os.path.join(save_model_root, model_weights)))
         else:
