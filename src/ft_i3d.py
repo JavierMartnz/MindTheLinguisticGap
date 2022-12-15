@@ -129,7 +129,7 @@ def run(cfg_path, mode='rgb'):
 
         if extra_conv:
             # THIS NETWORK HERE ALLOWS ADDING A CONV LAYER BEFORE THE LAST LAYER
-            i3d = InceptionDimsConv(2, in_channels=3, window_size=16, input_size=224,
+            i3d = InceptionDimsConv(len(train_dataset.class_encodings), in_channels=3, window_size=16, input_size=224,
                                     conv_output_dims=final_pooling_size)
             i3d.load_state_dict(torch.load(os.path.join(save_model_root, model_weights)))
         else:
@@ -139,14 +139,15 @@ def run(cfg_path, mode='rgb'):
 
             i3d = InceptionI3d(400, in_channels=3, window_size=16, input_size=224)
             i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
+            # changes the last layer in order to accommodate the new number of classes (after loading weights)
 
-    # changes the last layer in order to accommodate the new number of classes (after loading weights)
-    i3d.replace_logits(num_classes=len(train_dataset.class_encodings))
     # i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=final_pooling_size)
 
-    # this only applies to the network with the extra conv layer
+    # add or replace the new layers
     if extra_conv:
         i3d.add_dim_conv()
+    else:
+        i3d.replace_logits(num_classes=len(train_dataset.class_encodings))
 
     print(f"\tThe model has {len(train_dataset.class_encodings)} classes")
 
