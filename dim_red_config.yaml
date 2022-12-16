@@ -14,7 +14,7 @@ test:
   extra_conv: False
   specific_glosses: ["JA-A", "GEBAREN-A"]
   model_dir: "/vol/tensusers5/jmartinez/models/i3d"
-  weights_dir: "/vol/tensusers5/jmartinez/models"
+  pred_dir: "D:Thesis/predictions/i3d"
   fold: "train"
   use_cuda: True
   run_name: "baseline_imagenet"
