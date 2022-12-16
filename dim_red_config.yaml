@@ -25,4 +25,4 @@ test:
   epochs: 50
   ckpt_epoch: 49
   ckpt_step: 8
-  batch_size: 16
+  batch_size: 128
