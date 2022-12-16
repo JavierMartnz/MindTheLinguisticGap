@@ -17,7 +17,7 @@ from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip
 from scipy.spatial import distance
-from cuml.manifold import TSNE
+from MulticoreTSNE import MulticoreTSNE as TSNE
 
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
