@@ -192,7 +192,7 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     GLOSS1 = Y == 0
     GLOSS2 = Y == 1
 
-    X = X.detach.cpu()
+    X = X.detach().cpu()
     X_features = X_features.detach().cpu()
 
     n_components = 16
