@@ -79,9 +79,7 @@ def run(cfg_path, mode='rgb'):
     final_pooling_size = data_cfg.get("final_pooling_size")
 
     if extra_conv:
-        assert model_weights is not None, "Please provide the pre-trained model checkpoint in 'model_weights'"
-        assert os.path.exists(os.path.join(save_model_root, model_weights)), \
-            f"The provided model weights {os.path.join(save_model_root, model_weights)} does not exist"
+        assert model_weights
 
     print(f"Using window size of {window_size} frames")
 
@@ -104,20 +102,15 @@ def run(cfg_path, mode='rgb'):
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
     print("Loading training split...")
-    train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train',
-                              window_size,
-                              transforms=train_transforms, filter_num=num_top_glosses,
-                              specific_gloss_ids=specific_gloss_ids,
+    train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train', window_size,
+                              transforms=train_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
                               diagonal_videos_path=diagonal_videos_path)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
-                                                   pin_memory=True)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Loading val split...")
     val_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'val', window_size,
-                            transforms=val_transforms, filter_num=num_top_glosses,
-                            specific_gloss_ids=specific_gloss_ids)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0,
-                                                 pin_memory=True)
+                            transforms=val_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
 
@@ -129,25 +122,21 @@ def run(cfg_path, mode='rgb'):
 
         if extra_conv:
             # THIS NETWORK HERE ALLOWS ADDING A CONV LAYER BEFORE THE LAST LAYER
-            i3d = InceptionDimsConv(len(train_dataset.class_encodings), in_channels=3, window_size=16, input_size=224,
-                                    conv_output_dims=final_pooling_size)
-            i3d.load_state_dict(torch.load(os.path.join(save_model_root, model_weights)))
+            i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224, conv_output_dims=final_pooling_size)
+            i3d.load_state_dict(torch.load(os.path.join(weights_dir, model_weights)))
         else:
             # THIS IS THE STANDARD ORIGINAL I3D
-            # i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
+            i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
+
             # i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
-
-            i3d = InceptionI3d(400, in_channels=3, window_size=16, input_size=224)
             i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
-            # changes the last layer in order to accommodate the new number of classes (after loading weights)
 
-    # i3d.replace_logits(num_classes=len(train_dataset.class_encodings), final_pooling_size=final_pooling_size)
+    # changes the last layer in order to accommodate the new number of classes (after loading weights)
+    i3d.replace_logits(num_classes=len(train_dataset.class_encodings))
 
-    # add or replace the new layers
+    # this only applies to the network with the extra conv layer
     if extra_conv:
         i3d.add_dim_conv()
-    else:
-        i3d.replace_logits(num_classes=len(train_dataset.class_encodings))
 
     print(f"\tThe model has {len(train_dataset.class_encodings)} classes")
 
@@ -160,8 +149,8 @@ def run(cfg_path, mode='rgb'):
     # unfreeze the layers that we want to train
     if extra_conv:
         i3d.dims_conv.requires_grad_(True)
-    else:
-        i3d.logits.requires_grad_(True)
+
+    i3d.logits.requires_grad_(True)
 
     # layers are ['Mixed_5c', 'Mixed_5b', 'MaxPool3d_5a_2x2', 'Mixed_4f', 'Mixed_4e', 'Mixed_4d', 'Mixed_4c', 'Mixed_4b']
     unfreeze_layers = []
@@ -169,7 +158,7 @@ def run(cfg_path, mode='rgb'):
         i3d.end_points[layer].requires_grad_(True)
 
     if extra_conv:
-        print(f"\tThe last {len(unfreeze_layers) + 1} out of 18 blocks are unfrozen.")
+        print(f"\tThe last {len(unfreeze_layers) + 2} out of 18 blocks are unfrozen.")
     else:
         print(f"\tThe last {len(unfreeze_layers) + 1} out of 17 blocks are unfrozen.")
 

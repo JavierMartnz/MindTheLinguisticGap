@@ -8,11 +8,11 @@ data:
   data_loading: "random"
   diagonal_videos_path: None #"/vol/tensusers5/jmartinez/datasets/diagonal_videos.gzip"
   use_diag_videos: False
-  final_pooling_size: 1024
+  final_pooling_size: 512
 
 training:
-  extra_conv: False
-  model_weights: "/i3d/whatever.pt"
+  extra_conv: True
+  model_weights: "baseline_imagenet_JA-A_GEBAREN-A_50_128_0.1_SGD/i3d_49_8.pt"
   specific_glosses: [ "JA-A", "GEBAREN-A" ]
   run_name: "test"
   use_cuda: True
@@ -22,5 +22,5 @@ training:
   init_lr: 0.1
   momentum: 0.9
   weight_decay: 0.0000001
-  model_dir: "D:/Thesis/models"
+  model_dir: "D:/Thesis/models/i3d"
   weights_dir: "D:/Thesis/models"

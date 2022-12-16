@@ -1,4 +1,3 @@
-import math
 import os
 import sys
 
@@ -6,31 +5,20 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 import argparse
 import torch
-import torch.nn.functional as F
 from torch.autograd import Variable
 from tqdm import tqdm
 import numpy as np
-from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
-from sklearn.metrics import matthews_corrcoef as MCC
 import matplotlib.pyplot as plt
 import itertools
-from torchvision.utils import save_image
 
 from src.utils.i3d_data import I3Dataset
 from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip
-# from sklearn.manifold import TSNE
-from MulticoreTSNE import MulticoreTSNE as MCTSNE
-# from fastTSNE import TSNE
-from sklearn.decomposition import PCA
-from sklearn.manifold import MDS
-# from umap import UMAP
-import plotly.express as px
-import seaborn as sns
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from scipy.spatial import distance
+from cuml.manifold import TSNE
+
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
     """
@@ -157,16 +145,6 @@ def tsne(cfg_path, log_filename, mode="rgb"):
         i3d.cuda()
     i3d.train(False)  # Set model to evaluate mode
 
-    # w = torch.squeeze(i3d.logits.conv3d.weight).detach().cpu().numpy()
-    #
-    # for dim in range(np.shape(w)[0]):
-    #     # plt.figure(figsize=(4, 10))
-    #     heat_map = sns.heatmap(np.expand_dims(w[dim], axis=0), linewidth=1, annot=True)
-    #     plt.show()
-    #
-    # return
-
-    # create folder to save tsne results
     ckpt_folder = ckpt_filename.split('.')[0]
     pred_path = os.path.join(pred_dir, run_dir, ckpt_folder, fold)
     make_dir(pred_path)
@@ -186,11 +164,9 @@ def tsne(cfg_path, log_filename, mode="rgb"):
                     labels = Variable(labels.cuda())
 
                 # get the features of the penultimate layer
-                prev2last_features = i3d.extract_prev2last_features(inputs)
-                features = i3d.extract_last_features(inputs)
+                features = i3d.extract_features(inputs)
                 preds = i3d(inputs)
 
-                prev2last_features = torch.squeeze(prev2last_features, -1)
                 features = torch.squeeze(features, -1)
                 preds = torch.squeeze(preds, -1)
 
@@ -198,18 +174,15 @@ def tsne(cfg_path, log_filename, mode="rgb"):
 
                 # if X is empty
                 if X_features.sum() == 0:
-                    X_prev2last = prev2last_features.squeeze()
                     X_features = features.squeeze()
                     X = preds.squeeze()
                     Y = y_true
                 else:
                     # if the last batch has only 1 video, the squeeze function removes an extra dimension and cannot be concatenated
                     if len(features.squeeze().size()) == 1:
-                        X_prev2last = torch.cat((X_prev2last, torch.unsqueeze(prev2last_features.squeeze(), 0)), dim=0)
                         X_features = torch.cat((X_features, torch.unsqueeze(features.squeeze(), 0)), dim=0)
                         X = torch.cat((X, torch.unsqueeze(preds.squeeze(), 0)), dim=0)
                     else:
-                        X_prev2last = torch.cat((X_prev2last, prev2last_features.squeeze()), dim=0)
                         X_features = torch.cat((X_features, features.squeeze()), dim=0)
                         X = torch.cat((X, preds.squeeze()), dim=0)
 
@@ -219,121 +192,14 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     GLOSS1 = Y == 0
     GLOSS2 = Y == 1
 
+    X = X.detach.cpu()
     X_features = X_features.detach().cpu()
-    X_prev2last = X_prev2last.detach().cpu()
-    X = X.detach().cpu()
 
-    print(f"The stress between 1024d and {final_pooling_size}d is {round(stress(X_features, X_prev2last), 4)}")
-    # print(f"The stress between {final_pooling_size}d and 2d is {round(stress(X, X_features), 4)}")
-    # print(f"The stress between 1024d and 2d is {round(stress(X, X_prev2last), 4)}")
+    n_components = 16
 
-    X_features = X_features.numpy()
-    X_prev2last = X_prev2last.numpy()
+    X_tsne = TSNE(n_components=n_components, perplexity=200).fit_transform(X)
 
-    pred_dist = [sum(distance.cdist([X_features[i]], X_features)[0]) for i in range(np.shape(X_features)[0])]
-    orig_dist = [sum(distance.cdist([X_prev2last[i]], X_prev2last)[0]) for i in range(np.shape(X_prev2last)[0])]
-
-    plt.figure(figsize=(16, 8))
-    plt.scatter(orig_dist, pred_dist)
-    plt.show()
-
-    # X_lda = LDA().fit(X_features, Y).transform(X_features)
-
-    # n_components = [16, 32, 64, 128, 256, 512, 1024]
-    #
-    # for n_c in tqdm(n_components):
-    #     X_tsne = MCTSNE(n_components=n_c, perplexity=500, verbose=1, n_jobs=-1).fit_transform(X)
-    #     print(round(stress(X_tsne, X), 4))
-        # X_tsne = TSNE(n_components=n_c, perplexity=500, n_jobs=-1).fit_transform(X)
-        # print(round(stress(X_tsne, X), 4))
-
-    # X_lda = LDA().fit(X, Y).transform(X)
-    # X_tsne = TSNE(n_components=2, perplexity=200).fit_transform(X)
-    # X_pca = PCA(n_components=2).fit_transform(X)
-    # X_mds = MDS(n_components=2).fit_transform(X)
-
-
-
-    # lda_stress = stress(X_lda, X)
-    # tsne_stress = stress(X_tsne, X)
-    # pca_stress = stress(X_pca, X)
-    # mds_stress = stress(X_mds, X)
-
-    # print(round(lda_stress, 4))
-    # print(round(tsne_stress, 4))
-    # print(round(pca_stress, 4))
-    # print(round(mds_stress, 4))
-
-    #
-    # print(np.linalg.norm((np.asarray(X)-np.asarray(X))[:, None], axis=-1))
-    # print(np.linalg.norm((np.asarray(X_lda) - np.asarray(X_lda))[:, None], axis=-1))
-    # print(np.linalg.norm((np.asarray(X_tsne) - np.asarray(X_tsne))[:, None], axis=-1))
-
-    # dist_orig  = np.square(dist(X, X)).flatten()
-    # dist_tsne = np.square(dist(X_tsne, X_tsne)).flatten()
-    # dist_lda = np.square(dist(X_lda, X_lda)).flatten()
-    #
-    # print(f"Original: {dist_orig}, TSNE: {dist_tsne}, LDA: {dist_tsne}")
-
-    # plt.figure(figsize=(12, 4))
-    # plt.scatter(X_embed[GLOSS1, 0], np.zeros(len(X_embed[GLOSS1, 0])), c='orange', label=specific_glosses[0])
-    # plt.scatter(X_embed[GLOSS2, 0], np.ones(len(X_embed[GLOSS2, 0])), c='blue', label=specific_glosses[1])
-    # plt.legend()
-    #
-    # plt.show()
-
-    return
-
-    perplexities = [200]
-    n_components = 3
-    X_embeds = []
-
-    for perp in perplexities:
-        X_embeds.append(TSNE(n_components=n_components, perplexity=perp).fit_transform(X))
-
-    # X_tsne = TSNE(n_components=2, perplexity=50, learning_rate=10, n_iter=10000, n_jobs=-1).fit_transform(X)
-    # X_pca = PCA(n_components=2).fit_transform(X)
-    # X_umap = UMAP(n_components=2, n_neighbors=30).fit_transform(X)
-
-    # X_embeds = [X_tsne, X_pca, X_umap]
-    # names = [f"Perplexity = {perp}" for perp in perplexities]
-    #
-    # fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(6, 18))
-    # fig.suptitle(f"{fold} {run_name} {ckpt_filename}")
-    #
-    # for i in range(len(X_embeds)):
-    #     axs[i].scatter(X_embeds[i][GLOSS1, 0], X_embeds[i][GLOSS1, 1], c='orange', label=specific_glosses[0])
-    #     axs[i].scatter(X_embeds[i][GLOSS2, 0], X_embeds[i][GLOSS2, 1], c='blue', label=specific_glosses[1])
-    #     axs[i].set_title(names[i])
-    #     axs[i].legend()
-
-    if n_components == 3:
-
-        for i in range(len(X_embeds)):
-            fig = plt.figure(figsize=(32, 16))
-            ax = plt.axes(projection="3d")
-            ax.scatter3D(X_embeds[i][GLOSS1, 0], X_embeds[i][GLOSS1, 1], X_embeds[i][GLOSS1, 2], c='orange',
-                         label=specific_glosses[0])
-            ax.scatter3D(X_embeds[i][GLOSS2, 0], X_embeds[i][GLOSS2, 1], X_embeds[i][GLOSS2, 2], c='blue',
-                         label=specific_glosses[1])
-            plt.legend()
-
-            # don't save the figure since some manual rotation is needed before saving
-            plt.show()
-
-    if n_components == 2:
-
-        for i in range(len(X_embeds)):
-            plt.figure(figsize=(16, 8))
-            plt.scatter(X_embeds[i][GLOSS1, 0], X_embeds[i][GLOSS1, 1], c='orange', label=specific_glosses[0])
-            plt.scatter(X_embeds[i][GLOSS2, 0], X_embeds[i][GLOSS2, 1], c='blue', label=specific_glosses[1])
-            plt.title(f"{fold}, {run_name}, {ckpt_filename}, perplexity={perplexities[i]}")
-            plt.legend()
-
-            fig_filename = f"tsne_{n_components}d_perp{perplexities[i]}"
-            plt.savefig(os.path.join(pred_path, fig_filename))
-            plt.show()
-
+    print(f"The stress for {n_components} dimensions is {round(stress(X_tsne, X_features), 4)}")
 
 def main(params):
     config_path = params.config_path

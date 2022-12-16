@@ -358,7 +358,7 @@ class InceptionI3d(nn.Module):
         # logits is batch X time X classes, which is what we want to work with
         return logits
 
-    def extract_features(self, x):
+    def extract_last_features(self, x):
         for end_point in self.VALID_ENDPOINTS:
             if end_point in self.end_points:
                 x = self._modules[end_point](x)
@@ -367,7 +367,7 @@ class InceptionI3d(nn.Module):
         x = self.dims_conv(x)
         return x
 
-    def extract_logits(self, x):
+    def extract_prev2last_features(self, x):
         for end_point in self.VALID_ENDPOINTS:
             if end_point in self.end_points:
                 x = self._modules[end_point](x)
