@@ -197,7 +197,7 @@ def tsne(cfg_path, log_filename, mode="rgb"):
 
     n_components = 16
 
-    X_tsne = TSNE(n_components=n_components, perplexity=200).fit_transform(X)
+    X_tsne = TSNE(n_components=n_components, perplexity=200, n_jobs=-1).fit_transform(X)
 
     print(f"The stress for {n_components} dimensions is {round(stress(X_tsne, X_features), 4)}")
 
