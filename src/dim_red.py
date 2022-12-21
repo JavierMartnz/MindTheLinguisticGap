@@ -15,9 +15,11 @@ from src.utils.i3d_data import I3Dataset
 from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
-from src.utils.util import load_gzip
+from src.utils.util import load_gzip, save_gzip
 from scipy.spatial import distance
 from MulticoreTSNE import MulticoreTSNE as TSNE
+from sklearn.decomposition import PCA
+from sklearn.manifold import MDS
 
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
@@ -175,31 +177,45 @@ def tsne(cfg_path, log_filename, mode="rgb"):
                 # if X is empty
                 if X_features.sum() == 0:
                     X_features = features.squeeze()
-                    X = preds.squeeze()
+                    X_pred = preds.squeeze()
                     Y = y_true
                 else:
                     # if the last batch has only 1 video, the squeeze function removes an extra dimension and cannot be concatenated
                     if len(features.squeeze().size()) == 1:
                         X_features = torch.cat((X_features, torch.unsqueeze(features.squeeze(), 0)), dim=0)
-                        X = torch.cat((X, torch.unsqueeze(preds.squeeze(), 0)), dim=0)
+                        X_pred = torch.cat((X_pred, torch.unsqueeze(preds.squeeze(), 0)), dim=0)
                     else:
                         X_features = torch.cat((X_features, features.squeeze()), dim=0)
-                        X = torch.cat((X, preds.squeeze()), dim=0)
+                        X_pred = torch.cat((X_pred, preds.squeeze()), dim=0)
 
                     Y = np.append(Y, y_true)
 
-    print("Running TSNE...")
     GLOSS1 = Y == 0
     GLOSS2 = Y == 1
 
-    X = X.detach().cpu()
+    X_pred = X.detach().cpu()
     X_features = X_features.detach().cpu()
 
-    n_components = 16
+    # here I save the feature vectors of the training datapoints.
 
-    X_tsne = TSNE(n_components=n_components, perplexity=200, n_jobs=-1).fit_transform(X)
+    save_gzip(X_features, "D:/Thesis/datasets/i3d_features.gzip")
 
-    print(f"The stress for {n_components} dimensions is {round(stress(X_tsne, X_features), 4)}")
+    return
+
+    n_components = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+
+    print("Running PCA...")
+    for nc in n_components:
+        try:
+            X_pca = PCA(n_components=nc).fit_transform(X_features)
+            print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
+        except Exception as e:
+            print(e)
+
+    print("Running MCS...")
+    for nc in n_components:
+        X_mds = MDS(n_components=nc).fit_transform(X_features)
+        print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_mds, X_features), 4)}")
 
 def main(params):
     config_path = params.config_path
