@@ -126,7 +126,7 @@ def run(cfg_path, mode='rgb'):
             i3d.load_state_dict(torch.load(os.path.join(weights_dir, model_weights)))
         else:
             # THIS IS THE STANDARD ORIGINAL I3D
-            i3d = InceptionI3d(157, in_channels=3, window_size=16, input_size=224)
+            i3d = InceptionI3d(400, in_channels=3, window_size=16, input_size=224)
 
             # i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
             i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
