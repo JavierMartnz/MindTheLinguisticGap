@@ -212,10 +212,10 @@ def tsne(cfg_path, log_filename, mode="rgb"):
         except Exception as e:
             print(e)
 
-    print("Running MCS...")
-    for nc in n_components:
-        X_mds = MDS(n_components=nc).fit_transform(X_features)
-        print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_mds, X_features), 4)}")
+    # print("Running MCS...")
+    # for nc in n_components:
+    #     X_mds = MDS(n_components=nc).fit_transform(X_features)
+    #     print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_mds, X_features), 4)}")
 
 def main(params):
     config_path = params.config_path
