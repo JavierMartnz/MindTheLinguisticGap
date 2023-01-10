@@ -198,9 +198,9 @@ def tsne(cfg_path, log_filename, mode="rgb"):
 
     # here I save the feature vectors of the training datapoints.
 
-    save_gzip(X_features, "D:/Thesis/datasets/i3d_features.gzip")
-
-    return
+    # save_gzip(X_features, "D:/Thesis/datasets/i3d_features.gzip")
+    #
+    # return
 
     n_components = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 
