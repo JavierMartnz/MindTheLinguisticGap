@@ -19,7 +19,7 @@ def get_signers_dict(ann_object):
     return signers
 
 
-def split_annotations_and_resize_videos(dataset_root, ann_filename, output_root):
+def split_annotations_and_resize_videos(dataset_root, ann_filename, output_root, video_size):
     eaf_file = pympi.Elan.Eaf(os.path.join(dataset_root, ann_filename))
     # get the left/right signer and participant mappings
     signers_dict = get_signers_dict(eaf_file)
@@ -91,7 +91,7 @@ def split_annotations_and_resize_videos(dataset_root, ann_filename, output_root)
         video_path = os.path.join(dataset_root, ann_filename[:-4] + '_' + signers_dict[signer] + '_b' + video_format)
 
         # resize the video and convert to steady framerate
-        cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale=256:256" -r 25 -b:v 1000k {os.path.join(output_root, new_video_filename)}'
+        cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r 25 -b:v 1000k {os.path.join(output_root, new_video_filename)}'
 
         os.system(cmd)
 
@@ -99,6 +99,7 @@ def split_annotations_and_resize_videos(dataset_root, ann_filename, output_root)
 def main(params):
     dataset_root = params.dataset_root
     output_root = params.output_root
+    video_size = params.video_size
 
     anns_in_dir = [file for file in os.listdir(dataset_root) if file.endswith('.eaf')]
     os.makedirs(output_root, exist_ok=True)
@@ -111,7 +112,7 @@ def main(params):
         pbar.update()
 
     for i in range(pbar.total):
-        pool.apply_async(split_annotations_and_resize_videos, args=(dataset_root, anns_in_dir[i], output_root),
+        pool.apply_async(split_annotations_and_resize_videos, args=(dataset_root, anns_in_dir[i], output_root, video_size),
                          callback=update)
 
     pool.close()
@@ -130,7 +131,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_root",
         type=str,
-        default="D:/Thesis/datasets/CNGT_isolated_signers"
+        default="D:/Thesis/datasets/CNGT_isolated_signers_512res"
+    )
+
+    parser.add_argument(
+        "--video_size",
+        type=str,
+        default="512"
     )
 
     params, _ = parser.parse_known_args()

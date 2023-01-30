@@ -47,6 +47,7 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
         # Construct command to trim the videos (ffmpeg required).
         command = [
             "ffmpeg",
+            "-hwaccel cuda"
             '-hide_banner',
             "-loglevel",
             "panic",
@@ -85,6 +86,10 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
             return
 
         vcap = cv2.VideoCapture(file_path)
+
+        print(vcap.read())
+        return
+
         num_video_frames = vcap.get(cv2.CAP_PROP_FRAME_COUNT)
 
         if num_video_frames <= 0:
@@ -279,7 +284,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset_root",
         type=str,
-        default="D:/Thesis/datasets/CNGT_final"
+        default="D:/Thesis/datasets/CNGT_final_512res"
     )
 
     parser.add_argument(
@@ -291,7 +296,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_root",
         type=str,
-        default="D:/Thesis/datasets/cngt_single_signs"
+        default="D:/Thesis/datasets/cngt_single_signs_512"
     )
 
     parser.add_argument(

@@ -250,7 +250,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset_root",
         type=str,
-        default="D:/Thesis/datasets/CNGT_isolated_signers"
+        default="D:/Thesis/datasets/CNGT_isolated_signers_512res"
     )
 
     parser.add_argument(
@@ -274,7 +274,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cngt_output_root",
         type=str,
-        default="D:/Thesis/datasets/CNGT_final"
+        default="D:/Thesis/datasets/CNGT_final_512res"
     )
 
     parser.add_argument(
