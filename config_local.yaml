@@ -9,10 +9,10 @@ data:
   diagonal_videos_path: None #"/vol/tensusers5/jmartinez/datasets/diagonal_videos.gzip"
   use_diag_videos: False
   final_pooling_size: 512
+  input_size: 256
 
 training:
-  extra_conv: True
-  model_weights: "baseline_imagenet_JA-A_GEBAREN-A_50_128_0.1_SGD/i3d_49_8.pt"
+  extra_conv: False
   specific_glosses: [ "JA-A", "GEBAREN-A" ]
   run_name: "test"
   use_cuda: True

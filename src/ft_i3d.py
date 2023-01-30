@@ -41,15 +41,6 @@ from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
 
 
-# def get_class_encodings(cngt_gloss_ids, sb_gloss_ids):
-#     classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
-#
-#     class_to_idx = {}
-#     for i in range(len(classes)):
-#         class_to_idx[classes[i]] = i
-#
-#     return class_to_idx
-
 def run(cfg_path, mode='rgb'):
     print("Configuring model and parameters...")
     cfg = load_config(cfg_path)
@@ -77,21 +68,25 @@ def run(cfg_path, mode='rgb'):
     use_diag_videos = data_cfg.get("use_diag_videos")
     diagonal_videos_path = data_cfg.get("diagonal_videos_path") if use_diag_videos else None
     final_pooling_size = data_cfg.get("final_pooling_size")
+    input_size = data_cfg.get("input_size")
 
     if extra_conv:
         assert model_weights
 
     print(f"Using window size of {window_size} frames")
+    print(f"Input size is {input_size}")
+
+    cropped_input_size = input_size * 0.875
 
     train_transforms = transforms.Compose([
         transforms.RandomPerspective(),
         transforms.RandomAffine(degrees=10),
         transforms.RandomHorizontalFlip(),
         spatial_transforms.ColorJitter(num_in_frames=window_size),
-        transforms.RandomCrop(224)])
+        transforms.RandomCrop(cropped_input_size)])
 
     # validation transforms should never contain any randomness
-    val_transforms = transforms.Compose([transforms.CenterCrop(224)])
+    val_transforms = transforms.Compose([transforms.CenterCrop(cropped_input_size)])
 
     num_top_glosses = None  # should be None if no filtering wanted
 
@@ -104,12 +99,12 @@ def run(cfg_path, mode='rgb'):
     print("Loading training split...")
     train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'train', window_size,
                               transforms=train_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
-                              diagonal_videos_path=diagonal_videos_path)
+                              diagonal_videos_path=diagonal_videos_path, input_size=input_size)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Loading val split...")
     val_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, 'val', window_size,
-                            transforms=val_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
+                            transforms=val_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids, input_size=input_size)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
@@ -122,11 +117,11 @@ def run(cfg_path, mode='rgb'):
 
         if extra_conv:
             # THIS NETWORK HERE ALLOWS ADDING A CONV LAYER BEFORE THE LAST LAYER
-            i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224, conv_output_dims=final_pooling_size)
+            i3d = InceptionDimsConv(157, in_channels=3, window_size=window_size, input_size=cropped_input_size, conv_output_dims=final_pooling_size)
             i3d.load_state_dict(torch.load(os.path.join(weights_dir, model_weights)))
         else:
             # THIS IS THE STANDARD ORIGINAL I3D
-            i3d = InceptionI3d(400, in_channels=3, window_size=16, input_size=224)
+            i3d = InceptionI3d(400, in_channels=3, window_size=window_size, input_size=cropped_input_size)
 
             # i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
             i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
