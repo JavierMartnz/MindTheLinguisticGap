@@ -22,7 +22,7 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
     start_time /= 1000
     end_time /= 1000
 
-    # windows forbids filanames with semicolon, so we need to change how those files are stored
+    # windows forbids filenames with semicolon, so we need to change how those files are stored, comment if using linux
     # gloss = gloss.replace(":", ";")
 
     filename = "%s_%s_%s_%s_%s_%s_%s.mpg" % (
