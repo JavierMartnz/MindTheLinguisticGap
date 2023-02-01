@@ -206,9 +206,6 @@ def main(params):
 
     if os.path.exists(dataset_zip):
         extract_zip(dataset_zip)
-    else:
-        print("wtf")
-        return
 
     make_dir(output_path)
 
