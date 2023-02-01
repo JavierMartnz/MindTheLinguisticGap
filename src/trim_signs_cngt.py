@@ -23,7 +23,7 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
     end_time /= 1000
 
     # windows forbids filanames with semicolon, so we need to change how those files are stored
-    gloss = gloss.replace(":", ";")
+    # gloss = gloss.replace(":", ";")
 
     filename = "%s_%s_%s_%s_%s_%s_%s.mpg" % (
         Path(input_filename).stem,
@@ -57,7 +57,6 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
             trim_format % start_time,
             "-t",
             trim_format % (end_time - start_time),
-            "-preset ultrafast",
             '%s' % output_filename,
         ]
 
@@ -180,7 +179,7 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
                                          interval_obj.begin, interval_obj.end, interval_obj.data['parsed_gloss'],
                                          signbank_vocab['gloss_to_id'][interval_obj.data['parsed_gloss']], output_root)
 
-            if not trimmed_filename is None:
+            if trimmed_filename is not None:
                 # since opencv's number of frames is unreliable, we count the frames ourselves
                 num_trimmed_frames = count_video_frames(trimmed_filename)
                 # we create metadata that will be helpful for the loading
