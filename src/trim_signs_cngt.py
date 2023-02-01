@@ -1,6 +1,6 @@
 import os
 import cv2
-from src.utils.util import load_gzip, make_dir, save_gzip, count_video_frames
+from utils.util import load_gzip, make_dir, save_gzip, count_video_frames
 from utils.parse_cngt_glosses import parse_cngt_gloss
 import pympi
 from intervaltree import Interval, IntervalTree
