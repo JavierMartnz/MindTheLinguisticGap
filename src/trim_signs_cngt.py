@@ -204,7 +204,7 @@ def main(params):
 
     dataset_zip = dataset_path + ".zip"
 
-    if os.path.exists(dataset_zip):
+    if os.path.exists(dataset_zip) and not os.path.exists(dataset_path):
         extract_zip(dataset_zip)
 
     make_dir(output_path)
