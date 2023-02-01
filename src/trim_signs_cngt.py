@@ -192,7 +192,7 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
                 save_gzip(metadata, trimmed_filename[:-3] + 'gzip')
 
 def main(params):
-    root = params.root()
+    root = params.root
     dataset_root = params.dataset_root
     signbank_vocab_file = params.signbank_vocab_path
     output_root = params.output_root
