@@ -102,7 +102,6 @@ def main(params):
     dataset_root = params.dataset_root
     output_root = params.output_root
     video_size = params.video_size
-    zip_output = bool(params.zip_output)
 
     anns_in_dir = [file for file in os.listdir(dataset_root) if file.endswith('.eaf')]
     os.makedirs(output_root, exist_ok=True)
@@ -121,20 +120,6 @@ def main(params):
     pool.close()
     pool.join()
 
-    if zip_output:
-        print("Zipping files")
-
-        zip_basedir = Path(output_root).parent
-        zip_filename = os.path.basename(output_root) + '.zip'
-
-        with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
-            for subdir, _, filenames in os.walk(output_root):
-                for filename in tqdm(filenames):
-                        zipfile.write(os.path.join(subdir, filename), os.path.join(os.path.basename(subdir), filename))
-
-        if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
-            # maybe remove in a future
-            print("Zipfile saved succesfully")
 
 
 if __name__ == "__main__":
@@ -156,12 +141,6 @@ if __name__ == "__main__":
         "--video_size",
         type=str,
         default="512"
-    )
-
-    parser.add_argument(
-        "--zip_output",
-        type=str,
-        default="True"
     )
 
     params, _ = parser.parse_known_args()

@@ -21,6 +21,7 @@ def main(params):
     cngt_vocab_path = params.cngt_vocab_path
     log_filename = params.log_filename
     cngt_output_root = params.cngt_output_root
+    zip_output = bool(params.zip_output)
 
     cngt_gloss_to_id = {}
     cngt_id_to_gloss = {}
@@ -168,6 +169,21 @@ def main(params):
         shutil.copy(os.path.join(dataset_root, video), os.path.join(cngt_output_root, video))
         shutil.copy(os.path.join(dataset_root, ann), os.path.join(cngt_output_root, ann))
 
+    if zip_output:
+        print("Zipping files")
+
+        zip_basedir = Path(cngt_output_root).parent
+        zip_filename = os.path.basename(cngt_output_root) + '.zip'
+
+        with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
+            for subdir, _, filenames in os.walk(cngt_output_root):
+                for filename in tqdm(filenames):
+                        zipfile.write(os.path.join(subdir, filename), os.path.join(os.path.basename(subdir), filename))
+
+        if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
+            # maybe remove in a future
+            print("Zipfile saved succesfully")
+
     # SPLITS NOT NEEDED FOR NOW
 
     # # now create the train/val/test splits
@@ -281,6 +297,12 @@ if __name__ == "__main__":
         "--log_filename",
         type=str,
         default="gloss_extraction_summary.txt"
+    )
+
+    parser.add_argument(
+        "--zip_output",
+        type=str,
+        default="True"
     )
 
     params, _ = parser.parse_known_args()
