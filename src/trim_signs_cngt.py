@@ -14,6 +14,7 @@ from tqdm import tqdm
 # import subprocess 
 from zipfile import ZipFile
 import random
+from utils.util import extract_zip
 
 
 def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, gloss, cls, output_root, trim_format="%.3f"):
@@ -47,17 +48,16 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
         # Construct command to trim the videos (ffmpeg required).
         command = [
             "ffmpeg",
-            "-hwaccel cuda"
-            '-hide_banner',
-            "-loglevel",
-            "panic",
+            "-hide_banner",
+            "-loglevel panic",
             '-y',
             "-i",
-            "%s" % input_filename,
+            input_filename,
             "-ss",
             trim_format % start_time,
             "-t",
             trim_format % (end_time - start_time),
+            "-preset ultrafast",
             '%s' % output_filename,
         ]
 
@@ -86,9 +86,6 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
             return
 
         vcap = cv2.VideoCapture(file_path)
-
-        print(vcap.read())
-        return
 
         num_video_frames = vcap.get(cv2.CAP_PROP_FRAME_COUNT)
 
@@ -195,14 +192,24 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
                 save_gzip(metadata, trimmed_filename[:-3] + 'gzip')
 
 def main(params):
+    root = params.root()
     dataset_root = params.dataset_root
-    signbank_vocab_path = params.signbank_vocab_path
+    signbank_vocab_file = params.signbank_vocab_path
     output_root = params.output_root
     window_size = params.window_size
 
-    make_dir(output_root)
+    dataset_path = os.path.join(root, dataset_root)
+    signbank_vocab_path = os.path.join(root, signbank_vocab_file)
+    output_path = os.path.join(root, output_root)
 
-    all_files = os.listdir(dataset_root)
+    dataset_zip = dataset_path + ".zip"
+
+    if os.path.isfile(dataset_zip):
+        extract_zip(dataset_zip)
+
+    make_dir(output_path)
+
+    all_files = os.listdir(dataset_path)
 
     # multiprocessing bit based on https://github.com/tqdm/tqdm/issues/484
     pool = Pool()
@@ -213,20 +220,20 @@ def main(params):
 
     for i in range(pbar.total):
         pool.apply_async(process_file_for_trimming,
-                         args=(all_files[i], dataset_root, signbank_vocab_path, output_root, int(window_size)),
+                         args=(all_files[i], dataset_path, signbank_vocab_path, output_path, int(window_size)),
                          callback=update)
 
     pool.close()
     pool.join()
 
     # zip the resulting folder
-    print(f"Zipping the files in {output_root}")
-    zip_basedir = Path(output_root).parent
-    zip_filename = os.path.basename(output_root) + '.zip'
+    print(f"Zipping the files in {output_path}")
+    zip_basedir = Path(output_path).parent
+    zip_filename = os.path.basename(output_path) + '.zip'
 
     with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
-        for filename in tqdm(os.listdir(output_root), position=0, leave=True):
-            zipfile.write(os.path.join(output_root, filename), filename)
+        for filename in tqdm(os.listdir(output_path), position=0, leave=True):
+            zipfile.write(os.path.join(output_path, filename), filename)
 
     # just delete the previous directory is the zip file was created
     if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
@@ -282,21 +289,27 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--dataset_root",
+        "--root",
         type=str,
-        default="D:/Thesis/datasets/CNGT_final_512res"
+        default="D:/Thesis/datasets"
     )
 
     parser.add_argument(
-        "--signbank_vocab_path",
+        "--dataset_root",
         type=str,
-        default="D:/Thesis/datasets/signbank_vocab.gzip"
+        default="CNGT_final_512res"
+    )
+
+    parser.add_argument(
+        "--signbank_vocab_file",
+        type=str,
+        default="signbank_vocab.gzip"
     )
 
     parser.add_argument(
         "--output_root",
         type=str,
-        default="D:/Thesis/datasets/cngt_single_signs_512"
+        default="cngt_single_signs_512"
     )
 
     parser.add_argument(
