@@ -194,7 +194,7 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
 def main(params):
     root = params.root
     dataset_root = params.dataset_root
-    signbank_vocab_file = params.signbank_vocab_path
+    signbank_vocab_file = params.signbank_vocab_file
     output_root = params.output_root
     window_size = params.window_size
 
