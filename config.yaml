@@ -6,13 +6,9 @@ data:
   sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
   window_size: 16
   data_loading: "random"
-  diagonal_videos_path: None #"/vol/tensusers5/jmartinez/datasets/diagonal_videos.gzip"
-  use_diag_videos: False
-  final_pooling_size: 1024
+  input_size: 512
 
 training:
-  extra_conv: True
-  model_weights: "baseline_imagenet_JA-A_GEBAREN-A_50_128_0.1_SGD/i3d_49_8.pt"
   specific_glosses: ["JA-A", "GEBAREN-A"]
   run_name: "baseline"
   use_cuda: True
