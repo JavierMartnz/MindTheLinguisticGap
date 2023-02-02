@@ -25,7 +25,7 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
     # windows forbids filenames with semicolon, so we need to change how those files are stored, comment if using linux
     # gloss = gloss.replace(":", ";")
 
-    filename = "%s_%s_%s_%s_%s_%s_%s.mpg" % (
+    filename = "%s_%s_%s_%s_%s.mpg" % (
         Path(input_filename).stem,
         trim_format % start_time,
         trim_format % end_time,
@@ -235,7 +235,7 @@ def main(params):
     # just delete the previous directory is the zip file was created
     if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
         print("Zipfile was successfully created")
-        
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
