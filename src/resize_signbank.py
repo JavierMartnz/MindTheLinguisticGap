@@ -8,10 +8,10 @@ import math
 
 from src.utils.util import save_gzip, count_video_frames
 
-def resize_video(video_path, output_root, window_size):
+def resize_video(video_path, output_root, window_size, video_size, framerate):
     filename = os.path.basename(video_path)
     output_filename = os.path.join(output_root, filename)
-    cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale=256:256" -r 25 {output_filename}'
+    cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} {output_filename}'
     os.system(cmd)
 
     # save the metadata for data loading
@@ -27,6 +27,8 @@ def main(params):
     dataset_root = params.dataset_root
     output_root = params.output_root
     window_size = params.window_size
+    video_size = params.video_size
+    framerate = params.framerate
 
     os.makedirs(output_root, exist_ok=True)
 
@@ -38,7 +40,7 @@ def main(params):
         for file in files:
             if file.endswith(".mp4"):
                 video_path = os.path.join(subdir, file)
-                pool.apply_async(resize_video, args=(video_path, output_root, int(window_size)))
+                pool.apply_async(resize_video, args=(video_path, output_root, int(window_size), video_size, framerate))
 
     pool.close()
     pool.join()
@@ -70,13 +72,25 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_root",
         type=str,
-        default="D:/Thesis/datasets/NGT_Signbank_resized"
+        default="D:/Thesis/datasets/NGT_Signbank_resized_512"
     )
 
     parser.add_argument(
         "--window_size",
-        type=str,
+        type=int,
         default="64"
+    )
+
+    parser.add_argument(
+        "--video_size",
+        type=int,
+        default="512"
+    )
+
+    parser.add_argument(
+        "--framerate",
+        type=int,
+        default="25"
     )
 
     params, _ = parser.parse_known_args()

@@ -1,3 +1,21 @@
+### PRE-PROCESSING ###
+
+1. get_signbank_vocab_from_csv.py
+
+    This script creates the vocabulary file that contains the mapping between English and Dutch gloss to their ID in
+    Signbank and in the CNGT. As a parameter, the "dictionary-export.csv" file obtained from Signbank is needed.
+
+2 split_and_resize.py
+
+    CNGT videos come in pairs, so this scripts split the ones that need splitting into two videos. Both videos from
+    SignBank and CNGT will be adjusted to the pixel resolution and framerate specified by the user.
+
+3. trim_signs_cngt.py
+    To train the I3D network, videos of isolated signs are needed. Trim these clips by checking first their presence
+    in the Signbank vocabulary. Done only for training fold of the CNGT data. Metadata files are created
+
+
+
 ####### PRE-PROCESSING ################
 
 It is important to keep this order, since files from the Corpus NGT pre-processing are needed for the second step.

@@ -5,7 +5,7 @@ from utils.parse_cngt_glosses import parse_cngt_gloss
 import pympi
 from intervaltree import Interval, IntervalTree
 import math
-# import numpy as np
+import numpy as np
 import argparse
 from pathlib import Path
 import shutil
@@ -17,7 +17,7 @@ import random
 from utils.util import extract_zip
 
 
-def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, gloss, cls, output_root, trim_format="%.3f"):
+def trim_clip(input_filename, start_time, end_time, gloss, cls, output_root, trim_format="%.3f"):
 
     start_time /= 1000
     end_time /= 1000
@@ -71,10 +71,10 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
     return output_filename
 
 
-def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_root, window_size):
+def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_path, window_size):
     if file.endswith('.mpg'):
 
-        file_path = os.path.join(dataset_root, file)
+        file_path = os.path.join(cngt_root, file)
         ann_path = file_path[:-3] + 'eaf'
 
         # check if the associated annotation file exists
@@ -90,9 +90,7 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
             print('Early return: video has zero frames')
             return
 
-        signbank_vocab = load_gzip(signbank_vocab_path)
-        sb_glosses = list(signbank_vocab['gloss_to_id'].keys())
-
+        sb_vocab = load_gzip(signbank_vocab_path)
         ann_file = pympi.Elan.Eaf(ann_path)
 
         glosses_lefth = ann_file.get_annotation_data_for_tier(list(ann_file.tiers.keys())[0])
@@ -106,7 +104,8 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
                 start_ms, stop_ms = ann[0], ann[1]
                 gloss = ann[2]
 
-                parsed_gloss = parse_cngt_gloss(gloss, sb_glosses)
+                # this line unifies glosses to Dutch
+                parsed_gloss = parse_cngt_gloss(gloss, sb_vocab)
 
                 start_frame = math.ceil(25.0 * (start_ms / 1000.0))
                 stop_frame = math.floor(25.0 * (stop_ms / 1000.0)) + 1
@@ -118,7 +117,7 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
 
                 interval = Interval(begin=start_ms, end=stop_ms, data=data)
 
-                if parsed_gloss in signbank_vocab['gloss_to_id']:
+                if parsed_gloss in sb_vocab['gloss_to_id']:
                     right_intervalTree.add(interval)
 
         merged_intervalTree = right_intervalTree.copy()
@@ -128,7 +127,7 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
             for ann in glosses_lefth:
                 start_ms, stop_ms = ann[0], ann[1]
                 gloss = ann[2]
-                parsed_gloss = parse_cngt_gloss(gloss, sb_glosses)
+                parsed_gloss = parse_cngt_gloss(gloss, sb_vocab)
                 start_frame = math.ceil(25.0 * (start_ms / 1000.0))
                 stop_frame = math.floor(25.0 * (stop_ms / 1000.0)) + 1
 
@@ -153,7 +152,7 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
                     if overlap_exceeded:
                         return
 
-                if parsed_gloss in signbank_vocab['gloss_to_id']:
+                if parsed_gloss in sb_vocab['gloss_to_id']:
                     for interval in right_intervalTree:
 
                         data = {'parsed_gloss': parsed_gloss}
@@ -173,9 +172,12 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
                             merged_intervalTree.add(merged_interval)
 
         for interval_obj in merged_intervalTree:
-            trimmed_filename = trim_clip(file_path, interval_obj.data['start_ms'], interval_obj.data['stop_ms'],
-                                         interval_obj.begin, interval_obj.end, interval_obj.data['parsed_gloss'],
-                                         signbank_vocab['gloss_to_id'][interval_obj.data['parsed_gloss']], output_root)
+            trimmed_filename = trim_clip(file_path,
+                                         interval_obj.data['start_ms'],
+                                         interval_obj.data['stop_ms'],
+                                         interval_obj.data['parsed_gloss'],
+                                         sb_vocab['gloss_to_id'][interval_obj.data['parsed_gloss']],
+                                         cngt_output_root)
 
             if trimmed_filename is not None:
                 # since opencv's number of frames is unreliable, we count the frames ourselves
@@ -190,23 +192,19 @@ def process_file_for_trimming(file, dataset_root, signbank_vocab_path, output_ro
 
 def main(params):
     root = params.root
-    dataset_root = params.dataset_root
+    cngt_folder = params.cngt_folder
+    cngt_output_folder = params.cngt_output_folder
     signbank_vocab_file = params.signbank_vocab_file
-    output_root = params.output_root
     window_size = params.window_size
 
-    dataset_path = os.path.join(root, dataset_root)
+    cngt_root = os.path.join(root, cngt_folder)
+    cngt_output_root = os.path.join(root, cngt_output_folder)
     signbank_vocab_path = os.path.join(root, signbank_vocab_file)
-    output_path = os.path.join(root, output_root)
 
-    dataset_zip = dataset_path + ".zip"
+    os.makedirs(cngt_output_root, exist_ok=True)
+    all_files = os.listdir(cngt_root)
 
-    if os.path.exists(dataset_zip) and not os.path.exists(dataset_path):
-        extract_zip(dataset_zip)
-
-    make_dir(output_path)
-
-    all_files = os.listdir(dataset_path)
+    print(f"Trimming clips in {cngt_root}\nand saving them in\n{cngt_output_root}")
 
     # multiprocessing bit based on https://github.com/tqdm/tqdm/issues/484
     pool = Pool()
@@ -217,20 +215,24 @@ def main(params):
 
     for i in range(pbar.total):
         pool.apply_async(process_file_for_trimming,
-                         args=(all_files[i], dataset_path, signbank_vocab_path, output_path, int(window_size)),
+                         args=(all_files[i],
+                               cngt_root,
+                               cngt_output_root,
+                               signbank_vocab_path,
+                               int(window_size)),
                          callback=update)
 
     pool.close()
     pool.join()
 
     # zip the resulting folder
-    print(f"Zipping the files in {output_path}")
-    zip_basedir = Path(output_path).parent
-    zip_filename = os.path.basename(output_path) + '.zip'
+    print(f"Zipping the files in {cngt_output_root}")
+    zip_basedir = Path(cngt_output_root).parent
+    zip_filename = os.path.basename(cngt_output_root) + '.zip'
 
     with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
-        for filename in tqdm(os.listdir(output_path), position=0, leave=True):
-            zipfile.write(os.path.join(output_path, filename), filename)
+        for filename in tqdm(os.listdir(cngt_output_root), position=0, leave=True):
+            zipfile.write(os.path.join(cngt_output_root, filename), filename)
 
     # just delete the previous directory is the zip file was created
     if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
@@ -247,9 +249,15 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--dataset_root",
+        "--cngt_folder",
         type=str,
         default="CNGT_final_512res"
+    )
+
+    parser.add_argument(
+        "--cngt_output_folder",
+        type=str,
+        default="cngt_single_signs_512"
     )
 
     parser.add_argument(
@@ -259,14 +267,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--output_root",
-        type=str,
-        default="cngt_single_signs_512"
-    )
-
-    parser.add_argument(
         "--window_size",
-        type=str,
+        type=int,
         default="16"
     )
 

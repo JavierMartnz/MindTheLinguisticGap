@@ -16,12 +16,6 @@ def load_gzip(filepath):
         f.close()
         return loaded_object
 
-
-def make_dir(directory: str) -> str:
-    if not os.path.isdir(directory):
-        os.makedirs(directory)
-    return directory
-
 def count_video_frames(video_path):
     """
     Counts the number of frames in a video by iterating through the video itself. Arcaic but reliable.

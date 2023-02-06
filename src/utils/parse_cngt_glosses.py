@@ -2,22 +2,16 @@ import re
 from typing import Set, Union
 
 
-def parse_cngt_gloss(gloss: str, canonical_vocab=None) -> Union[str, None]:
-    '''
-    Parse Corpus NGT glosses with similar criteria that Looking for The Signs paper
-    '''
+def parse_cngt_gloss(gloss: str, sb_vocab: None) -> Union[str, None]:
 
     if gloss is None:
         return None
 
+    # before any parsing, we must unify the gloss to Dutch
+    if gloss not in sb_vocab["gloss_to_id"].keys():
+        gloss = sb_vocab["english_to_dutch"][gloss]
+
     gloss = gloss.strip()
-
-    # only apply a vocabulary filter when a non-empty vocabulary set is passed
-    apply_vocab_filter = bool(canonical_vocab)
-
-    # convert our existing vocabulary to upper cases to treat each word as a gloss
-    if apply_vocab_filter:
-        upper_vocab = set([word.upper() for word in canonical_vocab])
 
     # gloss candidates separated by /
     gloss_candidates = gloss.split("/")
@@ -102,16 +96,11 @@ def parse_cngt_gloss(gloss: str, canonical_vocab=None) -> Union[str, None]:
     # if match:
     #     gloss = gloss[:gloss.index('-')]
 
-    # keep signs with pointing, and don't modify the gloss since it's included
-    # with the pointing token in the SignBank
+    # keep signs with pointing, and don't modify the gloss since it's included with the pointing token in the SignBank
     # if gloss.startswith('1:'):
     #     gloss = gloss[2:]
     # if gloss.endswith(':1'):
     #     gloss = gloss[:-2]
 
-    # if we specify a vocab filter and the gloss is not in the vocab, discard it
-    if apply_vocab_filter:
-        if gloss.upper() not in upper_vocab:  # we need to make the gloss upper in order to match the vocab
-            return None
 
     return gloss
