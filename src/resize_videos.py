@@ -27,7 +27,7 @@ def resize_cngt(video_path, output_root, video_size, framerate):
 def resize_sb(video_path, output_root, window_size, video_size, framerate):
     filename = os.path.basename(video_path)
     output_filename = os.path.join(output_root, filename)
-    cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
+    cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
     os.system(cmd)
 
     # save the metadata for data loading
@@ -84,7 +84,7 @@ def main(params):
 
     for i in range(pbar.total):
         pool.apply_async(resize_cngt,
-                         args=(cngt_videos[i],
+                         args=(os.path.join(cngt_root, cngt_videos[i]),
                                cngt_output_root,
                                video_size,
                                framerate),
