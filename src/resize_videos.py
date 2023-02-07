@@ -102,9 +102,9 @@ def main(params):
                 pool.apply_async(resize_video,
                                  args=(os.path.join(subdir, file),
                                        sb_output_root,
-                                       window_size,
                                        video_size,
                                        framerate,
+                                       window_size,
                                        True))
 
     pool.close()
