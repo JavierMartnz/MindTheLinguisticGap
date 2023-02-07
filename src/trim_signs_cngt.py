@@ -40,8 +40,7 @@ def trim_clip(input_filename, start_time, end_time, gloss, cls, output_root, tri
         return None
 
     if os.path.exists(input_filename):
-        if not os.path.isdir(output_root):
-            make_dir(output_root)
+        os.makedirs(output_root, exist_ok=True)
 
         # Construct command to trim the videos (ffmpeg required).
         command = [

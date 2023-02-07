@@ -6,6 +6,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from zipfile import ZipFile
 import math
+import shutil
 
 from src.utils.util import save_gzip, count_video_frames
 
@@ -24,9 +25,9 @@ def get_signers_dict(ann_object):
     return signers
 
 
-def split_and_resize_cngt(dataset_root, ann_filename, output_root, video_size, framerate):
+def split_cngt(cngt_root, ann_filename, output_root):
 
-    eaf_file = pympi.Elan.Eaf(os.path.join(dataset_root, ann_filename))
+    eaf_file = pympi.Elan.Eaf(os.path.join(cngt_root, ann_filename))
     # get the left/right signer and participant mappings
     signers_dict = get_signers_dict(eaf_file)
     signer_eaf_obj = {}
@@ -94,30 +95,10 @@ def split_and_resize_cngt(dataset_root, ann_filename, output_root, video_size, f
         pympi.Elan.to_eaf(new_filepath, signer_eaf_obj[signer], pretty=True)
 
         # load the video that corresponds to the signer
-        video_path = os.path.join(dataset_root, ann_filename[:-4] + '_' + signers_dict[signer] + '_b' + video_format)
+        video_path = os.path.join(cngt_root, ann_filename[:-4] + '_' + signers_dict[signer] + '_b' + video_format)
+        new_video_path = os.path.join(output_root, new_video_filename)
 
-        # resize the video and convert to steady framerate
-        cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {os.path.join(output_root, new_video_filename)}'
-
-        os.system(cmd)
-
-
-def resize_sb(video_path, output_root, window_size, video_size, framerate):
-
-    filename = os.path.basename(video_path)
-    output_filename = os.path.join(output_root, filename)
-    cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} {output_filename}'
-    os.system(cmd)
-
-    # save the metadata for data loading
-    num_frames = count_video_frames(output_filename)
-    metadata = {"num_frames": num_frames, "start_frames": []}
-    num_clips = math.ceil(num_frames / window_size)
-    for j in range(num_clips):
-        metadata["start_frames"].append(j * window_size)
-
-    save_gzip(metadata, output_filename[:-3] + 'gzip')
-
+        shutil.copy(video_path, new_video_path)
 
 def main(params):
 
@@ -125,78 +106,43 @@ def main(params):
     root = params.root
     cngt_folder = params.cngt_folder
     cngt_output_folder = params.cngt_output_folder
-    sb_folder = params.sb_folder
-    sb_output_folder = params.sb_output_folder
-    video_size = params.video_size
-    framerate = params.framerate
-    window_size = params.window_size
 
     # build the entire paths for the datasets
     cngt_root = os.path.join(root, cngt_folder)
     cngt_output_root = os.path.join(root, cngt_output_folder)
-    sb_root = os.path.join(root, sb_folder)
-    sb_output_root = os.path.join(root, sb_output_folder)
 
-    anns_in_dir = [file for file in os.listdir(cngt_root) if file.endswith('.eaf')]
+    ann_filenames = [file for file in os.listdir(cngt_root) if file.endswith('.eaf')]
     os.makedirs(cngt_output_root, exist_ok=True)
 
-    print(f"The specified video resolution is {video_size}x{video_size} px at {framerate} fps.")
-
-    print(f"Splitting and resizing videos from \n{cngt_root}\nto\n{cngt_output_root}")
+    print(f"Splitting videos from \n{cngt_root}\nto\n{cngt_output_root}")
 
     # multiprocessing bit based on https://github.com/tqdm/tqdm/issues/484
     pool = Pool()
-    pbar = tqdm(total=len(anns_in_dir))
+    pbar = tqdm(total=len(ann_filenames))
 
     def update(*a):
         pbar.update()
 
     for i in range(pbar.total):
-        pool.apply_async(split_and_resize_cngt,
+        pool.apply_async(split_cngt,
                          args=(cngt_root,
-                               anns_in_dir[i],
-                               cngt_output_root,
-                               video_size,
-                               framerate),
+                               ann_filenames[i],
+                               cngt_output_root),
                          callback=update)
 
     pool.close()
     pool.join()
 
-    print(f"Resizing SignBank videos from \n{sb_root}\nto\n{sb_output_root}")
+    print("Zipping the split CNGT videos")
 
-    os.makedirs(sb_output_root, exist_ok=True)
+    zip_path = os.path.join(Path(cngt_root).parent, os.path.basename(cngt_root) + '.zip')
 
-    pool = Pool()
+    with ZipFile(zip_path, 'w') as zipfile:
+        for filename in tqdm(os.listdir(cngt_root), position=0, leave=True):
+            zipfile.write(os.path.join(cngt_root, filename), filename)
 
-    for subdir, _, files in os.walk(sb_root):
-        for file in files:
-            if file.endswith(".mp4"):
-                sb_video_path = os.path.join(subdir, file)
-                pool.apply_async(resize_sb,
-                                 args=(sb_video_path,
-                                       sb_output_root,
-                                       int(window_size),
-                                       video_size,
-                                       framerate))
-
-    pool.close()
-    pool.join()
-
-    # We zip the SignBank videos since there isn't any further pre-processing
-    print("Zipping SignBank resized videos")
-
-    zip_basedir = Path(sb_output_root).parent
-    zip_filename = os.path.basename(sb_output_root) + '.zip'
-    all_filenames = os.listdir(sb_output_root)
-
-    with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
-        for filename in tqdm(all_filenames):
-            zipfile.write(os.path.join(sb_output_root, filename), filename)
-
-    if os.path.isfile(os.path.join(sb_output_root, zip_filename)):
-        # maybe remove in a future
-        print("Zipfile saved succesfully")
+    if os.path.isfile(zip_path):
+        print(f"Zipfile {zip_path} was successfully created")
 
 
 if __name__ == "__main__":
@@ -217,37 +163,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cngt_output_folder",
         type=str,
-        default="CNGT_isolated_signers_512res"
-    )
-
-    parser.add_argument(
-        "--sb_folder",
-        type=str,
-        default="NGT_Signbank"
-    )
-
-    parser.add_argument(
-        "--sb_output_folder",
-        type=str,
-        default="NGT_Signbank_512"
-    )
-
-    parser.add_argument(
-        "--video_size",
-        type=int,
-        default="512"
-    )
-
-    parser.add_argument(
-        "--framerate",
-        type=int,
-        default="25"
-    )
-
-    parser.add_argument(
-        "--window_size",
-        type=int,
-        default="16"
+        default="CNGT_isolated_signers"
     )
 
     params, _ = parser.parse_known_args()
