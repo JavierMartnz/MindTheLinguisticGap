@@ -7,6 +7,9 @@ from pathlib import Path
 from zipfile import ZipFile
 import math
 import shutil
+import sys
+
+sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 from src.utils.util import save_gzip, count_video_frames, extract_zip
 
