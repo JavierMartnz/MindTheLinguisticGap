@@ -14,30 +14,27 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 from src.utils.util import save_gzip, count_video_frames, extract_zip
 
 
-def resize_cngt(video_path, output_root, video_size, framerate):
+def resize_video(video_path, output_root, video_size, framerate, window_size=None, is_sb=False):
     filename = os.path.basename(video_path)
     output_filename = os.path.join(output_root, filename)
 
-    # resize the video and convert to steady framerate
-    cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
+    # if the file doesn't exist already
+    if not os.path.exists(output_filename):
+        if is_sb:
+            assert type(window_size) is int, "Please enter a valid window size"
 
-    os.system(cmd)
+        cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
+        os.system(cmd)
 
+        if is_sb:
+            # save the metadata for data loading
+            num_frames = count_video_frames(output_filename)
+            metadata = {"num_frames": num_frames, "start_frames": []}
+            num_clips = math.ceil(num_frames / window_size)
+            for j in range(num_clips):
+                metadata["start_frames"].append(j * window_size)
 
-def resize_sb(video_path, output_root, window_size, video_size, framerate):
-    filename = os.path.basename(video_path)
-    output_filename = os.path.join(output_root, filename)
-    cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
-    os.system(cmd)
-
-    # save the metadata for data loading
-    num_frames = count_video_frames(output_filename)
-    metadata = {"num_frames": num_frames, "start_frames": []}
-    num_clips = math.ceil(num_frames / window_size)
-    for j in range(num_clips):
-        metadata["start_frames"].append(j * window_size)
-
-    save_gzip(metadata, output_filename[:-3] + 'gzip')
+            save_gzip(metadata, output_filename[:-3] + 'gzip')
 
 
 def main(params):
@@ -83,7 +80,7 @@ def main(params):
         pbar.update()
 
     for i in range(pbar.total):
-        pool.apply_async(resize_cngt,
+        pool.apply_async(resize_video,
                          args=(os.path.join(cngt_root, cngt_videos[i]),
                                cngt_output_root,
                                video_size,
@@ -102,13 +99,13 @@ def main(params):
     for subdir, _, files in os.walk(sb_root):
         for file in files:
             if file.endswith(".mp4"):
-                sb_video_path = os.path.join(subdir, file)
-                pool.apply_async(resize_sb,
-                                 args=(sb_video_path,
+                pool.apply_async(resize_video,
+                                 args=(os.path.join(subdir, file),
                                        sb_output_root,
                                        window_size,
                                        video_size,
-                                       framerate))
+                                       framerate,
+                                       True))
 
     pool.close()
     pool.join()
