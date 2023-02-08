@@ -8,6 +8,10 @@ def main(params):
     output_path = params.output_path
     signbank_csv = params.signbank_csv
 
+    if os.path.exists(output_path):
+        print(f"The file {output_path} already exists.")
+        return
+
     sb_df = pd.read_csv(signbank_csv)
 
     english_to_dutch = pd.Series(sb_df["Annotation ID Gloss (Dutch)"].values, index=sb_df["Annotation ID Gloss (English)"]).to_dict()
