@@ -19,10 +19,10 @@ def resize_video(video_path, output_root, video_size, framerate, window_size=Non
     output_filename = os.path.join(output_root, filename)
 
     # if the file doesn't exist already
-    # if not os.path.exists(output_filename):
-    if is_sb:
-        assert type(window_size) is int, "Please enter a valid window size"
-        if not os.path.exists(output_filename):
+    if not os.path.exists(output_filename):
+        if is_sb:
+            assert type(window_size) is int, "Please enter a valid window size"
+
             cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
             os.system(cmd)
 
@@ -33,16 +33,15 @@ def resize_video(video_path, output_root, video_size, framerate, window_size=Non
             for j in range(num_clips):
                 metadata["start_frames"].append(j * window_size)
 
-        save_gzip(metadata, output_filename[:-3] + 'gzip')
-    else:
-        if not os.path.exists(output_filename):
+            save_gzip(metadata, output_filename[:-3] + 'gzip')
+        else:
             cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
             os.system(cmd)
 
-        # also copy the annotation file to the output folder
-        ann_path = video_path[:video_path.rfind(".mpg")] + ".eaf"
-        ann_dest_path = os.path.join(output_root, os.path.basename(ann_path))
-        shutil.copy(ann_path, ann_dest_path)
+            # also copy the annotation file to the output folder
+            ann_path = video_path[:video_path.rfind(".mpg")] + ".eaf"
+            ann_dest_path = os.path.join(output_root, os.path.basename(ann_path))
+            shutil.copy(ann_path, ann_dest_path)
 
 
 def main(params):
