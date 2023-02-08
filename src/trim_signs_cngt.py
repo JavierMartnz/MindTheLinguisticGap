@@ -17,7 +17,7 @@ import random
 from utils.util import extract_zip
 
 
-def trim_clip(input_filename, start_time, end_time, gloss, cls, output_root, trim_format="%.3f"):
+def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, gloss, id, output_root, trim_format="%.3f"):
 
     start_time /= 1000
     end_time /= 1000
@@ -25,12 +25,14 @@ def trim_clip(input_filename, start_time, end_time, gloss, cls, output_root, tri
     # windows forbids filenames with semicolon, so we need to change how those files are stored, comment if using linux
     # gloss = gloss.replace(":", ";")
 
-    filename = "%s_%s_%s_%s_%s.mpg" % (
+    filename = "%s_%s_%s_%s_%s_%s_%s.mpg" % (
         Path(input_filename).stem,
         trim_format % start_time,
         trim_format % end_time,
+        start_frame,
+        end_frame,
         gloss,
-        cls
+        id
     )
 
     output_filename = os.path.join(output_root, filename)
@@ -51,14 +53,13 @@ def trim_clip(input_filename, start_time, end_time, gloss, cls, output_root, tri
             "-i",
             input_filename,
             "-ss",
-            trim_format % start_time,
+            str(start_time),
             "-t",
-            trim_format % (end_time - start_time),
-            '%s' % output_filename,
+            str(end_time - start_time),
+            output_filename,
         ]
 
         command = " ".join(command)
-
         os.system(command)
 
         # Check if the video was successfully saved.
@@ -72,7 +73,6 @@ def trim_clip(input_filename, start_time, end_time, gloss, cls, output_root, tri
 
 def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_path, window_size):
     if file.endswith('.mpg'):
-
         file_path = os.path.join(cngt_root, file)
         ann_path = file_path[:-3] + 'eaf'
 
@@ -174,10 +174,13 @@ def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_
             trimmed_filename = trim_clip(file_path,
                                          interval_obj.data['start_ms'],
                                          interval_obj.data['stop_ms'],
+                                         interval_obj.begin,
+                                         interval_obj.end,
                                          interval_obj.data['parsed_gloss'],
                                          sb_vocab['gloss_to_id'][interval_obj.data['parsed_gloss']],
                                          cngt_output_root)
 
+            # if a trimmed file was created, save the corresponding metadata
             if trimmed_filename is not None:
                 # since opencv's number of frames is unreliable, we count the frames ourselves
                 num_trimmed_frames = count_video_frames(trimmed_filename)
@@ -201,20 +204,20 @@ def main(params):
     signbank_vocab_path = os.path.join(root, signbank_vocab_file)
 
     os.makedirs(cngt_output_root, exist_ok=True)
-    all_files = os.listdir(cngt_root)
+    all_videos = [video for video in os.listdir(cngt_root) if video.endswith(".mpg")]
 
     print(f"Trimming clips in {cngt_root}\nand saving them in\n{cngt_output_root}")
 
     # multiprocessing bit based on https://github.com/tqdm/tqdm/issues/484
     pool = Pool()
-    pbar = tqdm(total=len(all_files))
+    pbar = tqdm(total=len(all_videos))
 
     def update(*a):
         pbar.update()
 
     for i in range(pbar.total):
         pool.apply_async(process_file_for_trimming,
-                         args=(all_files[i],
+                         args=(all_videos[i],
                                cngt_root,
                                cngt_output_root,
                                signbank_vocab_path,
@@ -223,19 +226,6 @@ def main(params):
 
     pool.close()
     pool.join()
-
-    # zip the resulting folder
-    print(f"Zipping the files in {cngt_output_root}")
-    zip_basedir = Path(cngt_output_root).parent
-    zip_filename = os.path.basename(cngt_output_root) + '.zip'
-
-    with ZipFile(os.path.join(zip_basedir, zip_filename), 'w') as zipfile:
-        for filename in tqdm(os.listdir(cngt_output_root), position=0, leave=True):
-            zipfile.write(os.path.join(cngt_output_root, filename), filename)
-
-    # just delete the previous directory is the zip file was created
-    if os.path.isfile(os.path.join(zip_basedir, zip_filename)):
-        print("Zipfile was successfully created")
 
 
 if __name__ == "__main__":
@@ -250,13 +240,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cngt_folder",
         type=str,
-        default="CNGT_final_512res"
+        default="CNGT_final"
     )
 
     parser.add_argument(
         "--cngt_output_folder",
         type=str,
-        default="cngt_single_signs_512"
+        default="cngt_single_signs_256"
     )
 
     parser.add_argument(

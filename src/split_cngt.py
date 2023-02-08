@@ -12,14 +12,15 @@ from src.utils.util import save_gzip, count_video_frames
 
 
 def get_signers_dict(ann_object):
-
     signers = {}
 
     for tier in ann_object.tiers:
-        if "PARTICIPANT" in ann_object.tiers[tier][2].keys():
-            if tier[-2:] == "S1" and "S1" not in signers:
+
+        if tier[-2:] == "S1" and "PARTICIPANT" in ann_object.tiers[tier][2].keys():
+            if "S1" not in signers:
                 signers["S1"] = ann_object.tiers[tier][2]["PARTICIPANT"]
-            elif tier[-2:] == "S2" and "S2" not in signers:
+        elif tier[-2:] == "S2" and "PARTICIPANT" in ann_object.tiers[tier][2].keys():
+            if "S2" not in signers:
                 signers["S2"] = ann_object.tiers[tier][2]["PARTICIPANT"]
 
     return signers

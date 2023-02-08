@@ -2,7 +2,7 @@ import re
 from typing import Set, Union
 
 
-def parse_cngt_gloss(gloss: str, sb_vocab: None) -> Union[str, None]:
+def parse_cngt_gloss(gloss: str, sb_vocab):
 
     if gloss is None:
         return None
@@ -101,6 +101,5 @@ def parse_cngt_gloss(gloss: str, sb_vocab: None) -> Union[str, None]:
     #     gloss = gloss[2:]
     # if gloss.endswith(':1'):
     #     gloss = gloss[:-2]
-
 
     return gloss
