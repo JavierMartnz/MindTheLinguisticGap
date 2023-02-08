@@ -23,8 +23,17 @@ def resize_video(video_path, output_root, video_size, framerate, window_size=Non
         if is_sb:
             assert type(window_size) is int, "Please enter a valid window size"
 
-        cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
-        os.system(cmd)
+        try:
+            cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
+            os.system(cmd)
+        except Exception as e:
+            print(e)
+            
+        try:
+            cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k {output_filename}'
+            os.system(cmd)
+        except Exception as e:
+            print(e)
 
         if is_sb:
             # save the metadata for data loading
