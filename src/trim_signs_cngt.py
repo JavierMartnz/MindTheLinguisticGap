@@ -72,6 +72,9 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
 
 
 def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_path, window_size):
+
+    print(file)
+
     if file.endswith('.mpg'):
         file_path = os.path.join(cngt_root, file)
         ann_path = file_path[:-3] + 'eaf'
@@ -170,6 +173,8 @@ def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_
                             merged_intervalTree.remove(interval)
                             merged_intervalTree.add(merged_interval)
 
+        clip_cnt = 0
+
         for interval_obj in merged_intervalTree:
             trimmed_filename = trim_clip(file_path,
                                          interval_obj.data['start_ms'],
@@ -192,6 +197,11 @@ def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_
 
                 save_gzip(metadata, trimmed_filename[:-3] + 'gzip')
 
+                clip_cnt += 1
+
+
+        print(f"The file {file_path} generated {clip_cnt} clips")
+
 def main(params):
     root = params.root
     cngt_folder = params.cngt_folder
@@ -204,7 +214,7 @@ def main(params):
     signbank_vocab_path = os.path.join(root, signbank_vocab_file)
 
     os.makedirs(cngt_output_root, exist_ok=True)
-    all_videos = [video for video in os.listdir(cngt_root) if video.endswith(".mpg")]
+    all_videos = [file for file in os.listdir(cngt_root) if file.endswith(".mpg")]
 
     print(f"Trimming clips in {cngt_root}\nand saving them in\n{cngt_output_root}")
 
@@ -240,13 +250,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cngt_folder",
         type=str,
-        default="CNGT_final"
+        default="CNGT_512"
     )
 
     parser.add_argument(
         "--cngt_output_folder",
         type=str,
-        default="cngt_single_signs_256"
+        default="cngt_single_signs_512"
     )
 
     parser.add_argument(

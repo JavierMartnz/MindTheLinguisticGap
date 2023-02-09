@@ -7,10 +7,6 @@ def parse_cngt_gloss(gloss: str, sb_vocab):
     if gloss is None:
         return None
 
-    # before any parsing, we must unify the gloss to Dutch
-    if gloss not in sb_vocab["gloss_to_id"].keys():
-        gloss = sb_vocab["english_to_dutch"][gloss]
-
     gloss = gloss.strip()
 
     # gloss candidates separated by /
@@ -101,5 +97,10 @@ def parse_cngt_gloss(gloss: str, sb_vocab):
     #     gloss = gloss[2:]
     # if gloss.endswith(':1'):
     #     gloss = gloss[:-2]
+
+    # before any parsing, we must unify the gloss to Dutch
+    if gloss not in sb_vocab["gloss_to_id"].keys():  # if gloss is not in Dutch
+        # if the gloss isn't found and cannot be translated, this next line returns None
+        gloss = sb_vocab["english_to_dutch"].get(gloss)
 
     return gloss
