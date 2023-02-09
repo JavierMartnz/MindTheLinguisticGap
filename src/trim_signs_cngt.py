@@ -81,8 +81,6 @@ def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_
             print(f"Early return: video {file} does not have an associated annotation file")
             return
 
-        print(file_path)
-
         vcap = cv2.VideoCapture(file_path)
 
         num_video_frames = vcap.get(cv2.CAP_PROP_FRAME_COUNT)
