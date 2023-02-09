@@ -72,9 +72,6 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
 
 
 def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_path, window_size):
-
-    print(file)
-
     if file.endswith('.mpg'):
         file_path = os.path.join(cngt_root, file)
         ann_path = file_path[:-3] + 'eaf'
@@ -198,7 +195,6 @@ def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_
                 save_gzip(metadata, trimmed_filename[:-3] + 'gzip')
 
                 clip_cnt += 1
-
 
         print(f"The file {file_path} generated {clip_cnt} clips")
 
