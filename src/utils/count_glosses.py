@@ -155,7 +155,7 @@ def main():
                 for ann in glosses_righth:
                     start_ms, stop_ms = ann[0], ann[1]
                     gloss = ann[2]
-                    parsed_gloss = parse_cngt_gloss(gloss, signbank_vocab['glosses'])
+                    parsed_gloss = parse_cngt_gloss(gloss, signbank_vocab)
                     start_frame = math.ceil(25.0 * (start_ms / 1000.0))
                     stop_frame = math.floor(25.0 * (stop_ms / 1000.0)) + 1
 
@@ -176,7 +176,7 @@ def main():
                 for ann in glosses_lefth:
                     start_ms, stop_ms = ann[0], ann[1]
                     gloss = ann[2]
-                    parsed_gloss = parse_cngt_gloss(gloss, signbank_vocab['glosses'])
+                    parsed_gloss = parse_cngt_gloss(gloss, signbank_vocab)
                     start_frame = math.ceil(25.0 * (start_ms / 1000.0))
                     stop_frame = math.floor(25.0 * (stop_ms / 1000.0)) + 1
 
