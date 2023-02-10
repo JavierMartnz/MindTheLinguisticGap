@@ -5,7 +5,7 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 from src.utils import videotransforms
 from src.utils.helpers import load_config
-from src.utils.util import make_dir, load_gzip
+from src.utils.util import load_gzip
 
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = '1'
@@ -182,7 +182,7 @@ def run(cfg_path, mode='rgb'):
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
     new_save_dir = f"{run_name}_{glosses_string}_{epochs}_{batch_size}_{lr}_{str(optimizer).split('(')[0].strip()}"
     save_model_dir = os.path.join(save_model_root, new_save_dir)
-    make_dir(save_model_dir)
+    os.makedirs(save_model_dir, exist_ok=True)
 
     steps = 0  # count the number of optimizer steps
 
