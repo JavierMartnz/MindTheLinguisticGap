@@ -346,7 +346,7 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode:
         sb_extracted_root = sb_zip[:-4]
         # print(f"{sb_extracted_root} already exists, no need to extract")
 
-    cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
+    cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg') or file.endswith('mov')]
     sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
 
     cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
@@ -430,7 +430,7 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode:
     for video_path in tqdm(all_video_paths):
         metadata = load_gzip(video_path[:video_path.rfind(".m")] + ".gzip")
         num_frames = metadata.get("num_frames")
-        if video_path.endswith(".mpg"):  # cngt video
+        if video_path.endswith(".mpg") or video_path.endswith(".mov"):  # cngt video
             gloss_id = int(video_path.split("_")[-1][:-4])
         else:
             gloss_id = int(video_path.split("-")[-1][:-4])
