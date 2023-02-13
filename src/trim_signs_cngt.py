@@ -25,14 +25,15 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
     # windows forbids filenames with semicolon, so we need to change how those files are stored, comment if using linux
     # gloss = gloss.replace(":", ";")
 
-    filename = "%s_%s_%s_%s_%s_%s_%s.mpg" % (
+    filename = "%s_%s_%s_%s_%s_%s_%s.%s" % (
         Path(input_filename).stem,
         trim_format % start_time,
         trim_format % end_time,
         start_frame,
         end_frame,
         gloss,
-        id
+        id,
+        input_filename.split('.')[-1]
     )
 
     output_filename = os.path.join(output_root, filename)
