@@ -2,7 +2,6 @@ data:
 
   cngt_clips_path: "D:/Thesis/datasets/cngt_single_signs.zip"
   signbank_path: "D:/Thesis/datasets/NGT_Signbank_resized.zip"
-  cngt_vocab_path: "D:/Thesis/datasets/cngt_vocab.gzip"
   sb_vocab_path: "D:/Thesis/datasets/signbank_vocab.gzip"
   window_size: 16
   data_loading: "random"

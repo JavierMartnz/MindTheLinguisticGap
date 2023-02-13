@@ -156,8 +156,7 @@ def split_strat(signers: list, cngt_folds: dict, cngt_signer_paths: dict, train_
 
 
 def build_stratified_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict,
-                             window_size: int,
-                             split: str) -> list:
+                             window_size: int, split: str) -> list:
     assert split in {"train", "val", "test"}, "The variable 'split' can only have value  'train', 'val', and 'test'."
 
     num_classes = len(class_encodings)
@@ -326,7 +325,7 @@ def build_stratified_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, s
     return dataset
 
 
-def build_balanced_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict,
+def build_balanced_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: str, class_encodings: dict,
                            window_size: int, split: str) -> list:
     assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
 
@@ -350,19 +349,15 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_
     cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
     sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
 
-    # we filter the top n most frequent glosses
     cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
     sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
 
-    # use the vocabs from cngt and signbank to be able to get the glosses from their ID
-    cngt_vocab = load_gzip(cngt_vocab_path)
     sb_vocab = load_gzip(sb_vocab_path)
-    # join cngt and sb vocabularies (gloss to id dictionary)
-    sb_vocab.update(cngt_vocab)
     gloss_to_id = sb_vocab['gloss_to_id']
 
     class_cnt_dict = {}
     class_paths_dict = {}
+
     # count the total number of frames that each class will have, separate the video paths into classes
     for cngt_video_path in cngt_video_paths:
 
@@ -463,8 +458,8 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_
     return dataset
 
 
-def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict,
-                         window_size: int, split: str, input_size: int) -> list:
+def build_random_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: str, class_encodings: dict,
+                         window_size: int, split: str) -> list:
     assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
 
     num_classes = len(class_encodings)
@@ -490,10 +485,6 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vo
     # we filter the glosses
     cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
     sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
-
-    imgs = load_rgb_frames(cngt_video_paths[0], 0, window_size)
-
-    assert imgs.size(1) == input_size, f"The specified input size {input_size} does not match the videos' size {imgs.size(1)}"
 
     # use signbank vocab to be able to get the glosses from their IDs
     sb_vocab = load_gzip(sb_vocab_path)
@@ -617,17 +608,17 @@ def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, clas
     return dataset
 
 
-def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str,
+def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: str,
                   class_encodings: dict, window_size: int, split: str, diagonal_videos_path: str, input_size: int) -> list:
     if diagonal_videos_path and split == 'train':
         dataset = build_dataset_from_gzip(cngt_zip, sb_zip, sb_vocab_path, class_encodings, window_size, diagonal_videos_path)
     else:
         if loading_mode == "random":
-            dataset = build_random_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split, input_size)
+            dataset = build_random_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
         elif loading_mode == "balanced":
-            dataset = build_balanced_dataset(cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split, input_size)
+            dataset = build_balanced_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
         elif loading_mode == "stratified":
-            dataset = build_stratified_dataset(cngt_zip, sb_zip,  cngt_vocab_path, sb_vocab_path, mode, class_encodings, window_size, split, input_size)
+            dataset = build_stratified_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
 
     return dataset
 
@@ -678,7 +669,7 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_glo
 
 class I3Dataset(data_utl.Dataset):
 
-    def __init__(self, loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, split, window_size=64, transforms=None,
+    def __init__(self, loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, split, window_size=64, transforms=None,
                  filter_num=None, specific_gloss_ids=None, diagonal_videos_path=None, input_size=None):
         assert loading_mode in {'random', 'balanced', 'stratified'}, "The 'loading_mode' argument must have values 'random', 'balanced', 'stratified'"
         assert mode in {'rgb', 'flow'}, "The 'mode' argument must have values 'rgb' or 'flow'"
@@ -686,8 +677,8 @@ class I3Dataset(data_utl.Dataset):
         self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num, specific_gloss_ids)
         self.window_size = window_size
         self.transforms = transforms
-        self.data = build_dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, self.class_encodings, window_size,
-                                  split, diagonal_videos_path, input_size)
+        self.data = build_dataset(loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, self.class_encodings, window_size,
+                                  split, diagonal_videos_path)
 
     def __getitem__(self, index):
         """
