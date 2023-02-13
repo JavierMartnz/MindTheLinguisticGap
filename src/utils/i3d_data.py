@@ -609,7 +609,7 @@ def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, clas
 
 
 def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: str,
-                  class_encodings: dict, window_size: int, split: str, diagonal_videos_path: str, input_size: int) -> list:
+                  class_encodings: dict, window_size: int, split: str, diagonal_videos_path: str) -> list:
     if diagonal_videos_path and split == 'train':
         dataset = build_dataset_from_gzip(cngt_zip, sb_zip, sb_vocab_path, class_encodings, window_size, diagonal_videos_path)
     else:
@@ -670,7 +670,7 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_glo
 class I3Dataset(data_utl.Dataset):
 
     def __init__(self, loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, split, window_size=64, transforms=None,
-                 filter_num=None, specific_gloss_ids=None, diagonal_videos_path=None, input_size=None):
+                 filter_num=None, specific_gloss_ids=None, diagonal_videos_path=None):
         assert loading_mode in {'random', 'balanced', 'stratified'}, "The 'loading_mode' argument must have values 'random', 'balanced', 'stratified'"
         assert mode in {'rgb', 'flow'}, "The 'mode' argument must have values 'rgb' or 'flow'"
         self.mode = mode
