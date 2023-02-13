@@ -9,28 +9,18 @@ import statistics
 from pathlib import Path
 import subprocess
 
-def print_stats(frame_durations: list, framerate:int , dataset: str, fig_output_root: str):
-    n, bins = np.histogram(frame_durations)
-    mids = 0.5 * (bins[1:] + bins[:-1])  # mid values of the bins
-    # mean = np.average(mids, weights=n)
-    # std = np.sqrt(np.average((mids - mean) ** 2, weights=n))
-    # median = np.median(mids)
-    # mode = statistics.mode(mids)
-    #
-    # print(f"{dataset} clips have:\n- Average length: {round(mean, 1)} (std: {round(std, 1)})\n- Median: {round(median, 1)}\n- Mode: {round(mode, 1)}")
 
+def print_stats(frame_durations: list, framerate: int, dataset: str, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     upper_quartile = np.percentile(frame_durations, 75)
     lower_quartile = np.percentile(frame_durations, 25)
     iqr = upper_quartile - lower_quartile
 
-    no_outliers = np.array(frame_durations)
+    frame_durations = np.array(frame_durations)
 
-    upper_whisker = no_outliers[np.where(no_outliers <= upper_quartile + 1.5 * iqr, True, False)].max()
-    lower_whisker = no_outliers[np.where(no_outliers >= lower_quartile - 1.5 * iqr, True, False)].min()
-
-    # plt.figure(fig)
+    upper_whisker = frame_durations[np.where(frame_durations <= upper_quartile + 1.5 * iqr, True, False)].max()
+    lower_whisker = frame_durations[np.where(frame_durations >= lower_quartile - 1.5 * iqr, True, False)].min()
 
     f, (ax_box, ax_hist) = plt.subplots(2, sharex=True, gridspec_kw={"height_ratios": (.20, .80)})
 
@@ -38,8 +28,8 @@ def print_stats(frame_durations: list, framerate:int , dataset: str, fig_output_
     ax_box.set_yticks([])
 
     ax_hist.hist(frame_durations, bins='auto', align='mid')
-    plt.xlim([lower_whisker-1, upper_whisker+1])
-    plt.gca().set_xticks(np.linspace(lower_whisker-1, upper_whisker+1, num=8, dtype=int))
+    plt.xlim([lower_whisker - 1, upper_whisker + 1])
+    plt.gca().set_xticks(np.linspace(lower_whisker - 1, upper_whisker + 1, num=8, dtype=int))
 
     # plt.hist(frame_durations, bins='auto')
     # plt.yscale('log')
@@ -53,6 +43,7 @@ def print_stats(frame_durations: list, framerate:int , dataset: str, fig_output_
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, f"{dataset}_clips_duration_{framerate}fps.png"))
 
+
 def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
     cngt_clips = [file for file in os.listdir(cngt_root) if file.endswith('mpg') or file.endswith('.mov')]
 
@@ -65,33 +56,11 @@ def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
         frame_durations.append(duration_frames)
 
     print_stats(frame_durations, framerate, "CNGT", fig_output_root)
-    #
-    # n, bins = np.histogram(frame_durations)
-    # mids = 0.5 * (bins[1:] + bins[:-1])  # mid values of the bins
-    # mean = np.average(mids, weights=n)
-    # std = np.sqrt(np.average((mids - mean) ** 2, weights=n))
-    # median = np.median(mids)
-    # mode = statistics.mode(mids)
-    #
-    # print(f"The cngt clips have:\n- Average length: {round(mean, 1)} (std: {round(std, 1)})\n- Median: {round(median, 1)}\n- Mode: {round(mode, 1)}")
-    #
-    # zoomed_duration_frames = np.array(frame_durations)
-    # zoomed_duration_frames = zoomed_duration_frames[np.where(zoomed_duration_frames < 50, True, False)]
-    #
-    # plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
-    #
-    # plt.figure(fig)
-    # plt.hist(zoomed_duration_frames, bins='auto')
-    # plt.yscale('log')
-    # plt.axvline(mean, c='r', ls='--')
-    # plt.axvspan(mean - std, mean + std, alpha=0.2, color='red')
-    # plt.title("Histogram of number of frames in CNGT clips")
-    # plt.ylabel("Number of clips")
-    # plt.xlabel("Number of frames")
 
 
 def get_stats_signbank(signbank_root: str, framerate: int, fig_output_root: str):
-    sb_clip_paths = [os.path.join(signbank_root, file) for file in os.listdir(signbank_root) if file.endswith('mp4') or file.endswith('.mov')]
+    sb_clip_paths = [os.path.join(signbank_root, file) for file in os.listdir(signbank_root) if
+                     file.endswith('mp4') or file.endswith('.mov')]
 
     frame_durations = []
     for clip in tqdm(sb_clip_paths):
@@ -106,26 +75,6 @@ def get_stats_signbank(signbank_root: str, framerate: int, fig_output_root: str)
         frame_durations.append(frames)
 
     print_stats(frame_durations, framerate, "Signbank", fig_output_root)
-
-    # n, bins = np.histogram(frame_durations)
-    # mids = 0.5 * (bins[1:] + bins[:-1])  # mid values of the bins
-    # mean = np.average(mids, weights=n)
-    # std = np.sqrt(np.average((mids - mean) ** 2, weights=n))
-    # median = np.median(mids)
-    # mode = statistics.mode(mids)
-    #
-    # print(f"The Signbank clips have:\n- Average length: {round(mean, 1)} (std: {round(std, 1)}\n) - Median: {round(median, 1)}\n- Mode: {round(mode, 1)}")
-    #
-    # plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
-    #
-    # plt.figure(fig)
-    # plt.hist(frame_durations, bins='auto')
-    # plt.yscale('log')
-    # plt.axvline(mean, c='r', ls='--')
-    # plt.axvspan(mean - std, mean + std, alpha=0.2, color='red')
-    # plt.title("Histogram of number of frames in Signbank clips")
-    # plt.ylabel("Number of clips")
-    # plt.xlabel("Number of frames")
 
 
 def main(params):
