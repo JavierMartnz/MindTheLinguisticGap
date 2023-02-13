@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 
 sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
@@ -172,11 +173,8 @@ def run(cfg_path, mode='rgb'):
     lr = init_lr
     optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
 
-    lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1, verbose=True)
+    lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
     # lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
-
-    # create a new tensorboard log
-    writer = SummaryWriter()
 
     # before starting the training loop, make sure the directory where the model will be stored is created/exists
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
@@ -190,6 +188,9 @@ def run(cfg_path, mode='rgb'):
     num_steps_per_update = 1  # number of batches for which the gradient accumulates before backpropagation
     print_freq = 1  # number of optimizer steps before printing batch loss and metrics
 
+    training_history = {'train_loss': [], 'train_accuracy': [], 'train_f1': [],
+                        'val_loss': [], 'val_accuracy': [], 'val_f1': []}
+
     # start training
     for epoch in range(epochs):
         # Each epoch has a training and validation phase
@@ -200,8 +201,6 @@ def run(cfg_path, mode='rgb'):
                 i3d.train(False)  # Set model to evaluate mode
 
             tot_loss = 0.0
-            tot_loc_loss = 0.0
-            tot_cls_loss = 0.0
             num_iter = 0  # count number of iterations in an epoch
             num_acc_loss = 0  # count number of iterations in which the model hasn't been stored
             min_loss = np.inf
@@ -227,93 +226,67 @@ def run(cfg_path, mode='rgb'):
                     sign_logits = i3d(inputs)
                     sign_logits = torch.squeeze(sign_logits, -1)
 
-                    # upsample output to input size
-                    # per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
-
-                    # compute localization loss
-                    # loc_loss = F.binary_cross_entropy_with_logits(sign_logits, labels)
-                    # tot_loc_loss += loc_loss.item()
-
-                    # compute classification loss (with max-pooling along time B x C x T)
-                    # cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0], torch.max(labels, dim=2)[0])
-                    # tot_cls_loss += cls_loss.item()
-
-                    # compute total loss by calculating the mean of previous losses
-                    # loss = (0.5 * loc_loss + 0.5 * cls_loss)
-                    # tot_loss += loss.item()
-                    # backpropagate the loss
-                    # loss.backward()
-
+                    # calculate and backpropagate the loss
                     tot_loss = F.binary_cross_entropy_with_logits(sign_logits, labels)
                     tot_loss.backward()
 
+                    # save the loss
                     tot_loss = tot_loss.item()
 
-                    # get batch accuracy and f1 and append it
-                    # y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
-                    # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
-
+                    # get predictions and append them for later
                     y_pred = np.argmax(sign_logits.detach().cpu().numpy(), axis=1)
                     y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                     acc_list.append(accuracy_score(y_true.flatten(), y_pred.flatten()))
                     f1_list.append(f1_score(y_true.flatten(), y_pred.flatten()))
 
-                    # this if clause allows gradient accumulation. It also saves losses and metrics to
-                    # tensorboard and saves the model weights if the loss improves
+                    # this if clause allows gradient accumulation and saves the model weights if the loss improves
                     if phase == 'train' and num_iter % num_steps_per_update == 0:
                         optimizer.step()
                         steps += 1
+                        num_acc_loss += 1
 
                         if steps % print_freq == 0:
-                            # tepoch.set_postfix(loss=round(tot_loss / num_acc_loss, 4),
-                            #                    loc_loss=round(tot_loc_loss / num_acc_loss, 4),
-                            #                    cls_loss=round(tot_cls_loss / num_acc_loss, 4),
-                            #                    total_acc=round(np.mean(acc_list), 4),
-                            #                    total_f1=round(np.mean(f1_list), 4))
-
                             tepoch.set_postfix(loss=round(tot_loss / num_acc_loss, 4),
                                                total_acc=round(np.mean(acc_list), 4),
                                                total_f1=round(np.mean(f1_list), 4))
 
-                        # add values to tensorboard
-                        writer.add_scalar("train/loss", tot_loss / num_acc_loss, steps)
-                        # writer.add_scalar("train/loss_loc", tot_loc_loss / num_acc_loss, steps)
-                        # writer.add_scalar("train/loss_cls", tot_cls_loss / num_acc_loss, steps)
-                        writer.add_scalar("train/acc", np.mean(acc_list), steps)
-                        writer.add_scalar("train/f1", np.mean(f1_list), steps)
+                # after processing all data for this epoch, we store the loss and metrics and the model weight if the
+                # loss decreased wrt last epoch
+                if phase == 'train':
+                    # add values to training history
+                    training_history['train_loss'].append(tot_loss / num_acc_loss)
+                    training_history['train_accuracy'].append(np.mean(acc_list))
+                    training_history['train_f1'].append(np.mean(f1_list))
 
-                        # save model only when total loss is lower than the minimum loss achieved so far
-                        if tot_loss < min_loss:
-                            min_loss = tot_loss
-                            # save model
-                            torch.save(i3d.module.state_dict(),
-                                       save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '_' + str(
-                                           num_iter) + '.pt')
-                            # reset losses and counter
-                            num_acc_loss = 0
-                            tot_loss = tot_loc_loss = tot_cls_loss = 0.0
+                    # save model only when total loss is lower than the minimum loss achieved so far
+                    if tot_loss < min_loss:
+                        min_loss = tot_loss
+                        # save model
+                        torch.save(i3d.module.state_dict(),
+                                   save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '.pt')
+                        # reset losses and counter
+                        num_acc_loss = 0
+                        tot_loss = 0.0
 
                 # after processing the data, record validation metrics
-                if phase == 'val':
-                    lr_sched.step(tot_loss)
-
-                    writer.add_scalar("val/loss", tot_loss / num_iter, epoch)
-                    # writer.add_scalar("val/loss_loc", tot_loc_loss / num_iter, epoch)
-                    # writer.add_scalar("val/loss_cls", tot_cls_loss / num_iter, epoch)
-                    writer.add_scalar("val/acc", np.mean(acc_list), epoch)
-                    writer.add_scalar("val/f1", np.mean(f1_list), epoch)
+                elif phase == 'val':
+                    training_history['val_loss'].append(tot_loss / num_iter)
+                    training_history['val_accuracy'].append(np.mean(acc_list))
+                    training_history['val_f1'].append(np.mean(f1_list))
 
                     print('-------------------------\n'
                           f'Epoch {epoch + 1} validation phase:\n'
-                          f'Tot Loss: {tot_loss / num_iter:.4f}\t'
-                          # f'Loc Loss: {tot_loc_loss / num_iter:.4f}\t'
-                          # f'Cls Loss: {tot_cls_loss / num_iter:.4f}\t'
+                          f'Loss: {tot_loss / num_iter:.4f}\t'
                           f'Acc: {np.mean(acc_list):.4f}\t'
                           f'F1: {np.mean(f1_list):.4f}\n'
                           '-------------------------\n')
 
-        writer.close()
+        # make the scheduler step only at the end of the epoch
+        lr_sched.step()
+
+    with open(os.path.join(save_model_dir, 'training_history.txt'), 'w') as file:
+        file.write(json.dumps(training_history))
 
 
 def main(params):
