@@ -87,6 +87,9 @@ def main(params):
     cngt_root = os.path.join(root, cngt_folder)
     sb_root = os.path.join(root, sb_folder)
 
+    assert os.path.exists(cngt_root), f"{cngt_root} doesn't exist, please make sure the given root is correct"
+    assert os.path.exists(sb_root), f"{sb_root} doesn't exist, please make sure the given root is correct"
+
     get_stats_cngt(cngt_root, framerate, fig_output_root)
     get_stats_signbank(sb_root, framerate, fig_output_root)
 
