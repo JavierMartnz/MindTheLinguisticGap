@@ -210,7 +210,7 @@ def main(params):
     signbank_vocab_path = os.path.join(root, signbank_vocab_file)
 
     os.makedirs(cngt_output_root, exist_ok=True)
-    all_videos = [file for file in os.listdir(cngt_root) if file.endswith(".mpg")]
+    all_videos = [file for file in os.listdir(cngt_root) if file.endswith(".mpg") or file.endswith(".mov")]
 
     print(f"Trimming clips in {cngt_root}\nand saving them in\n{cngt_output_root}")
 
