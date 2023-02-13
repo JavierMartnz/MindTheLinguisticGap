@@ -43,9 +43,9 @@ def main(params):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    # plt.plot(epochs, training_history['train_accuracy'], label='train_acc', linestyle='--')
+    plt.plot(epochs, training_history['train_accuracy'], label='train_acc', linestyle='--')
     plt.plot(epochs, training_history['train_f1'], label='train_f1', linestyle='--')
-    # plt.plot(epochs, training_history['val_accuracy'], label='val_acc', linestyle='-')
+    plt.plot(epochs, training_history['val_accuracy'], label='val_acc', linestyle='-')
     plt.plot(epochs, training_history['val_f1'], label='val_f1', linestyle='-')
     plt.legend()
     plt.tight_layout()
