@@ -214,6 +214,8 @@ def main(params):
 
     print(f"Trimming clips in {cngt_root}\nand saving them in\n{cngt_output_root}")
 
+    print(len(all_videos))
+
     # multiprocessing bit based on https://github.com/tqdm/tqdm/issues/484
     pool = Pool()
     pbar = tqdm(total=len(all_videos))
