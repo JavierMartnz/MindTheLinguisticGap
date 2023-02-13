@@ -169,8 +169,6 @@ def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_
                         merged_intervalTree.remove(interval)
                         merged_intervalTree.add(merged_interval)
 
-    clip_cnt = 0
-
     for interval_obj in merged_intervalTree:
         trimmed_filename = trim_clip(file_path,
                                      interval_obj.data['start_ms'],
@@ -192,10 +190,6 @@ def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_
                 metadata["start_frames"].append(j * window_size)
 
             save_gzip(metadata, trimmed_filename[:-3] + 'gzip')
-
-            clip_cnt += 1
-
-    print(f"The file {file_path} generated {clip_cnt} clips")
 
 def main(params):
     root = params.root
