@@ -52,7 +52,7 @@ def main(params):
     # plt.show()
 
     os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, os.path.basename(trained_model_root) + '_metrics.png'))
+    plt.savefig(os.path.join(fig_output_root, weights_root + '_training_history.png'))
 
 
 if __name__ == "__main__":
