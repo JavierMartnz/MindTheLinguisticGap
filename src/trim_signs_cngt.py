@@ -72,7 +72,7 @@ def trim_clip(input_filename, start_time, end_time, start_frame, end_frame, glos
 
 
 def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_path, window_size):
-    if file.endswith('.mpg'):
+    if file.endswith('.mpg') or file.endswith('.mov'):
         file_path = os.path.join(cngt_root, file)
         ann_path = file_path[:-3] + 'eaf'
 
