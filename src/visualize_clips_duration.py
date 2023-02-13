@@ -64,7 +64,7 @@ def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
         duration_frames = math.ceil(framerate * (end_ms - start_ms) / 1000)
         frame_durations.append(duration_frames)
 
-    print_stats(frame_durations, framerate, "CNGT", fig)
+    print_stats(frame_durations, framerate, "CNGT", fig_output_root)
     #
     # n, bins = np.histogram(frame_durations)
     # mids = 0.5 * (bins[1:] + bins[:-1])  # mid values of the bins
@@ -90,7 +90,7 @@ def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
     # plt.xlabel("Number of frames")
 
 
-def get_stats_signbank(signbank_root, framerate, fig: int):
+def get_stats_signbank(signbank_root: str, framerate: int, fig_output_root: str):
     sb_clip_paths = [os.path.join(signbank_root, file) for file in os.listdir(signbank_root) if file.endswith('mp4')]
 
     frame_durations = []
@@ -105,7 +105,7 @@ def get_stats_signbank(signbank_root, framerate, fig: int):
 
         frame_durations.append(frames)
 
-    print_stats(frame_durations, framerate, "Signbank", fig)
+    print_stats(frame_durations, framerate, "Signbank", fig_output_root)
 
     # n, bins = np.histogram(frame_durations)
     # mids = 0.5 * (bins[1:] + bins[:-1])  # mid values of the bins
