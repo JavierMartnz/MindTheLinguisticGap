@@ -5,6 +5,9 @@ import seaborn as sns
 from pathlib import Path
 import json
 import numpy as np
+import sys
+
+sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 from src.utils.helpers import load_config
 
