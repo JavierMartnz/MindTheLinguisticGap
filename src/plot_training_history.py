@@ -46,10 +46,10 @@ def main(params):
     plt.plot(epochs, training_history['val_f1'], label='val_f1', linestyle='-')
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
-    # os.makedirs(fig_output_root, exist_ok=True)
-    # plt.savefig(os.path.join(fig_output_root, os.path.basename(trained_model_root) + '_metrics.png'))
+    os.makedirs(fig_output_root, exist_ok=True)
+    plt.savefig(os.path.join(fig_output_root, os.path.basename(trained_model_root) + '_metrics.png'))
 
 
 if __name__ == "__main__":

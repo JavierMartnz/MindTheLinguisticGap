@@ -9,7 +9,7 @@ import statistics
 from pathlib import Path
 import subprocess
 
-def print_stats(frame_durations: list, framerate, dataset: str, fig: int):
+def print_stats(frame_durations: list, framerate:int , dataset: str, fig_output_root: str):
     n, bins = np.histogram(frame_durations)
     mids = 0.5 * (bins[1:] + bins[:-1])  # mid values of the bins
     # mean = np.average(mids, weights=n)
@@ -50,8 +50,10 @@ def print_stats(frame_durations: list, framerate, dataset: str, fig: int):
     plt.xlabel("Number of frames")
     plt.tight_layout()
 
+    os.makedirs(fig_output_root, exist_ok=True)
+    plt.savefig(os.path.join(fig_output_root, f"{dataset}_clips_duration_{framerate}fps.png"))
 
-def get_stats_cngt(cngt_root, framerate, fig: int):
+def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
     cngt_clips = [file for file in os.listdir(cngt_root) if file.endswith('mpg')]
 
     frame_durations = []
@@ -131,13 +133,13 @@ def main(params):
     cngt_folder = params.cngt_folder
     sb_folder = params.sb_folder
     framerate = params.framerate
+    fig_output_root = params.fig_output_root
 
     cngt_root = os.path.join(root, cngt_folder)
     sb_root = os.path.join(root, sb_folder)
 
-    get_stats_cngt(cngt_root, framerate, 0)
-    get_stats_signbank(sb_root, framerate, 1)
-    plt.show()
+    get_stats_cngt(cngt_root, framerate, fig_output_root)
+    get_stats_signbank(sb_root, framerate, fig_output_root)
 
 
 if __name__ == "__main__":
