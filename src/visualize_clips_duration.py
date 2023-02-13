@@ -54,7 +54,7 @@ def print_stats(frame_durations: list, framerate:int , dataset: str, fig_output_
     plt.savefig(os.path.join(fig_output_root, f"{dataset}_clips_duration_{framerate}fps.png"))
 
 def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
-    cngt_clips = [file for file in os.listdir(cngt_root) if file.endswith('mpg')]
+    cngt_clips = [file for file in os.listdir(cngt_root) if file.endswith('mpg') or file.endswith('.mov')]
 
     frame_durations = []
     for clip in tqdm(cngt_clips):
@@ -91,7 +91,7 @@ def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
 
 
 def get_stats_signbank(signbank_root: str, framerate: int, fig_output_root: str):
-    sb_clip_paths = [os.path.join(signbank_root, file) for file in os.listdir(signbank_root) if file.endswith('mp4')]
+    sb_clip_paths = [os.path.join(signbank_root, file) for file in os.listdir(signbank_root) if file.endswith('mp4') or file.endswith('.mov')]
 
     frame_durations = []
     for clip in tqdm(sb_clip_paths):
