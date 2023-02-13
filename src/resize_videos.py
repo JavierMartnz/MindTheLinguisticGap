@@ -15,7 +15,11 @@ from src.utils.util import save_gzip, count_video_frames, extract_zip
 
 
 def resize_video(video_path, output_root, video_size, framerate, window_size=None, is_sb=False):
-    filename = os.path.basename(video_path)
+    # .mpeg doesn't support a framerate lower than 24, so change to .mov if that happens
+    if framerate < 24:
+        filename = os.path.basename(video_path).replace("mpg", "mov")
+    else:
+        filename = os.path.basename(video_path)
     output_filename = os.path.join(output_root, filename)
 
     # if the file doesn't exist already
@@ -23,7 +27,7 @@ def resize_video(video_path, output_root, video_size, framerate, window_size=Non
         if is_sb:
             assert type(window_size) is int, "Please enter a valid window size"
 
-            cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k -preset ultrafast {output_filename}'
+            cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -preset ultrafast {output_filename}'
             os.system(cmd)
 
             # save the metadata for data loading
@@ -35,7 +39,7 @@ def resize_video(video_path, output_root, video_size, framerate, window_size=Non
 
             save_gzip(metadata, output_filename[:-3] + 'gzip')
         else:
-            cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -b:v 1000k -preset ultrafast {output_filename}'
+            cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -preset ultrafast {output_filename}'
             os.system(cmd)
 
             # also copy the annotation file to the output folder
@@ -117,22 +121,6 @@ def main(params):
     pool.close()
     pool.join()
 
-    # # We zip the SignBank videos since there isn't any further pre-processing
-    # print("Zipping SignBank resized videos")
-    #
-    # zip_path = os.path.join(Path(sb_output_root).parent, os.path.basename(sb_output_root) + '.zip')
-    #
-    # all_filenames = os.listdir(sb_output_root)
-    #
-    # with ZipFile(zip_path, 'w') as zipfile:
-    #     for filename in tqdm(all_filenames):
-    #         zipfile.write(os.path.join(sb_output_root, filename), filename)
-    #
-    # if os.path.isfile(zip_path):
-    #     # maybe remove in a future
-    #     print(f"Zipfile {zip_path} saved succesfully")
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -151,7 +139,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cngt_output_folder",
         type=str,
-        default="CNGT_512"
+        default="CNGT_12fps"
     )
 
     parser.add_argument(
@@ -163,19 +151,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sb_output_folder",
         type=str,
-        default="NGT_Signbank_512"
+        default="NGT_Signbank_12fps"
     )
 
     parser.add_argument(
         "--video_size",
         type=int,
-        default="512"
+        default="256"
     )
 
     parser.add_argument(
         "--framerate",
         type=int,
-        default="25"
+        default="12"
     )
 
     parser.add_argument(
