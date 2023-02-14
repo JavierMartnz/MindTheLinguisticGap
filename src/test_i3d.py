@@ -185,8 +185,6 @@ def test(cfg_path, log_filename, mode="rgb"):
                     inputs = Variable(inputs.cuda())
                     labels = Variable(labels.cuda())
 
-                print(inputs.size())
-
                 # forward pass of the inputs through the network
                 sign_logits = i3d(inputs)
                 sign_logits = torch.squeeze(sign_logits, -1)
