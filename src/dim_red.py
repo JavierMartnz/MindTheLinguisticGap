@@ -17,45 +17,8 @@ from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip, save_gzip
 from scipy.spatial import distance
-from MulticoreTSNE import MulticoreTSNE as TSNE
 from sklearn.decomposition import PCA
-from sklearn.manifold import MDS
-
-
-def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, root_path=None):
-    """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    """
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        print("Normalized confusion matrix")
-    else:
-        print('Confusion matrix, without normalization')
-
-    # print(cm)
-
-    figure = plt.figure(figsize=(8, 8))
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
-
-    fmt = '.2f' if normalize else 'd'
-    thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, format(cm[i, j], fmt),
-                 horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
-
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    if root_path:
-        plt.savefig(os.path.join(root_path, "confusion_matrix"))
-    # plt.show()
+from pathlib import Path
 
 def stress(X_pred, X):
     # distance of every point (row) to the rest of points in matrix
@@ -64,8 +27,11 @@ def stress(X_pred, X):
     # stress formula from http://analytictech.com/networks/mds.htm
     return np.sqrt(sum((pred_dist - orig_dist)**2)/sum(orig_dist**2))
 
-def tsne(cfg_path, log_filename, mode="rgb"):
-    cfg = load_config(cfg_path)
+def main(params):
+    config_path = params.config_path
+    fig_output_root = params.fig_output_root
+
+    cfg = load_config(config_path)
     test_cfg = cfg.get("test")
     data_cfg = cfg.get("data")
 
@@ -74,7 +40,7 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     pred_dir = test_cfg.get("pred_dir")
     fold = test_cfg.get("fold")
     assert fold in {"train", "test",
-                    "val"}, f"Please, make sure the parameter 'fold' in {cfg_path} is either 'train' 'val' or 'test'"
+                    "val"}, f"Please, make sure the parameter 'fold' in {config_path} is either 'train' 'val' or 'test'"
     run_name = test_cfg.get("run_name")
     run_batch_size = test_cfg.get("run_batch_size")
     optimizer = test_cfg.get("optimizer").upper()
@@ -85,57 +51,45 @@ def tsne(cfg_path, log_filename, mode="rgb"):
     batch_size = test_cfg.get("batch_size")
     use_cuda = test_cfg.get("use_cuda")
     specific_glosses = test_cfg.get("specific_glosses")
-    extra_conv = test_cfg.get("extra_conv")
 
     # data configs
     cngt_zip = data_cfg.get("cngt_clips_path")
     sb_zip = data_cfg.get("signbank_path")
     window_size = data_cfg.get("window_size")
-    cngt_vocab_path = data_cfg.get("cngt_vocab_path")
     sb_vocab_path = data_cfg.get("sb_vocab_path")
     loading_mode = data_cfg.get("data_loading")
-    use_diag_videos = data_cfg.get("use_diag_videos")
-    if use_diag_videos:
-        diag_videos_path = data_cfg.get("diagonal_videos_path")
-    else:
-        diag_videos_path = None
-    final_pooling_size = data_cfg.get("final_pooling_size")
+    input_size = data_cfg.get("input_size")
 
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
     run_dir = f"{run_name}_{glosses_string}_{num_epochs}_{run_batch_size}_{learning_rate}_{optimizer}"
-    # run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
     ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}_{ckpt_step}.pt"
-    ckpt_folder = ckpt_filename.split('.')[0]
 
     num_top_glosses = None
 
-    # get glosses from the class encodings
-    cngt_vocab = load_gzip(cngt_vocab_path)
     sb_vocab = load_gzip(sb_vocab_path)
-    # join cngt and sb vocabularies (gloss to id dictionary)
-    sb_vocab.update(cngt_vocab)
     gloss_to_id = sb_vocab['gloss_to_id']
 
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
     print(f"Loading {fold} split...")
-    dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size,
+    dataset = I3Dataset(loading_mode=loading_mode,
+                        cngt_zip=cngt_zip,
+                        sb_zip=sb_zip,
+                        sb_vocab_path=sb_vocab_path,
+                        mode="rgb",
+                        split=fold,
+                        window_size=window_size,
                         transforms=None,
-                        filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
-                        diagonal_videos_path=diag_videos_path)
+                        filter_num=num_top_glosses,
+                        specific_gloss_ids=specific_gloss_ids,
+                        diagonal_videos_path=None)
+
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                              pin_memory=True)
 
-    # load model and specified checkpoint
-    if extra_conv:
-        i3d = InceptionDimsConv(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16,
-                            conv_output_dims=final_pooling_size)
-        i3d.add_dim_conv()
-        i3d.replace_logits(num_classes=len(dataset.class_encodings))
-    else:
-        i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16)
-
+    i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=window_size,
+                       input_size=input_size)
 
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
@@ -145,6 +99,7 @@ def tsne(cfg_path, log_filename, mode="rgb"):
 
     if use_cuda:
         i3d.cuda()
+
     i3d.train(False)  # Set model to evaluate mode
 
     ckpt_folder = ckpt_filename.split('.')[0]
@@ -190,37 +145,29 @@ def tsne(cfg_path, log_filename, mode="rgb"):
 
                     Y = np.append(Y, y_true)
 
-    GLOSS1 = Y == 0
-    GLOSS2 = Y == 1
-
-    X_pred = X.detach().cpu()
     X_features = X_features.detach().cpu()
 
-    # here I save the feature vectors of the training datapoints.
+    n_components = 2 ** np.arange(1, 11)[::-1]
 
-    # save_gzip(X_features, "D:/Thesis/datasets/i3d_features.gzip")
-    #
-    # return
-
-    n_components = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-
+    pca_stress = []
     print("Running PCA...")
     for nc in n_components:
         try:
             X_pca = PCA(n_components=nc).fit_transform(X_features)
+            pca_stress.append(stress(X_pca, X_features))
             print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
         except Exception as e:
             print(e)
 
-    # print("Running MCS...")
-    # for nc in n_components:
-    #     X_mds = MDS(n_components=nc).fit_transform(X_features)
-    #     print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_mds, X_features), 4)}")
+    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-def main(params):
-    config_path = params.config_path
-    log_filename = params.log_filename
-    tsne(config_path, log_filename)
+    plt.plot(n_components, pca_stress)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    os.makedirs(fig_output_root, exist_ok=True)
+    plt.savefig(os.path.join(fig_output_root, run_dir + '_pcastress.png'))
 
 
 if __name__ == "__main__":
@@ -232,9 +179,9 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--log_filename",
+        "--fig_output_root",
         type=str,
-        default="test_metrics.txt"
+        default="D:/Thesis/graphs"
     )
 
     params, _ = parser.parse_known_args()

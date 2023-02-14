@@ -6,16 +6,14 @@ data:
   sb_vocab_path: "D:/Thesis/datasets/signbank_vocab.gzip"
   window_size: 16
   data_loading: "random"
-  diagonal_videos_path: None
-  use_diag_videos: False
-  final_pooling_size: 1024
+  input_size: 256
 
 test:
   extra_conv: False
   specific_glosses: ["JA-A", "GEBAREN-A"]
   model_dir: "D:/Thesis/models/i3d"
   pred_dir: "D:Thesis/predictions/i3d"
-  fold: "val"
+  fold: "train"
   use_cuda: True
   run_name: "baseline_imagenet"
   run_batch_size: 128

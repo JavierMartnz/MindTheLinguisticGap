@@ -5,10 +5,8 @@ data:
   cngt_vocab_path: "/vol/tensusers5/jmartinez/datasets/cngt_vocab.gzip"
   sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
   window_size: 16
-  data_loading: "random"
-  diagonal_videos_path: None
-  use_diag_videos: False
-  final_pooling_size: 1024
+  data_loading: "balanced"
+  input_size: 256
 
 test:
   extra_conv: False
