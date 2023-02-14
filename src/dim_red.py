@@ -20,6 +20,12 @@ from scipy.spatial import distance
 from sklearn.decomposition import PCA
 from pathlib import Path
 
+def forward(x):
+    return np.log2(x)
+
+def inverse(x):
+    return 2**x
+
 def stress(X_pred, X):
     # distance of every point (row) to the rest of points in matrix
     orig_dist = distance.pdist(X, 'euclidean')
@@ -156,7 +162,7 @@ def main(params):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(n_components, pca_stress)
-    plt.xscale('linear')
+    plt.xscale('function', functions=(forward, inverse))
     plt.xticks(n_components)
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
