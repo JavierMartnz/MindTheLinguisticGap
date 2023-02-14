@@ -153,6 +153,7 @@ def test(cfg_path, log_filename, mode="rgb"):
     print(f"Predicting for glosses {glosses} mapped as classes {list(dataset.class_encodings.values())}")
 
     i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16, input_size=cropped_input_size)
+    i3d.replace_logits(len(dataset.class_encodings))
 
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
