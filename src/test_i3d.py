@@ -97,7 +97,7 @@ def test(cfg_path, log_filename, mode="rgb"):
     else:
         diag_videos_path = None
     save_predictions = data_cfg.get("save_predictions")
-    input_size = test_cfg.get("input_size")
+    input_size = data_cfg.get("input_size")
 
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
