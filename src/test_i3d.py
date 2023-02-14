@@ -162,9 +162,7 @@ def test(cfg_path, log_filename, mode="rgb"):
 
     i3d.train(False)  # Set model to evaluate mode
 
-    summary(i3d, (3, 16, 224, 224))
-
-    return
+    # summary(i3d, (3, 16, 224, 224))
 
     total_pred = []
     total_true = []
