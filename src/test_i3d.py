@@ -131,8 +131,16 @@ def test(cfg_path, log_filename, mode="rgb"):
     test_transforms = transforms.Compose([transforms.CenterCrop(cropped_input_size)])
 
     print(f"Loading {fold} split...")
-    dataset = I3Dataset(loading_mode=loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, fold, window_size,
-                        transforms=test_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
+    dataset = I3Dataset(loading_mode=loading_mode,
+                        cngt_zip=cngt_zip,
+                        sb_zip=sb_zip,
+                        sb_vocab_path=sb_vocab_path,
+                        mode=mode,
+                        split=fold,
+                        window_size=window_size,
+                        transforms=test_transforms,
+                        filter_num=num_top_glosses,
+                        specific_gloss_ids=specific_gloss_ids,
                         diagonal_videos_path=diag_videos_path)
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
