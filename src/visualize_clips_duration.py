@@ -13,8 +13,6 @@ import subprocess
 def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    print(clip_durations)
-
     upper_quartile = np.percentile(clip_durations, 75)
     lower_quartile = np.percentile(clip_durations, 25)
     iqr = upper_quartile - lower_quartile

@@ -114,17 +114,11 @@ def run(cfg_path, mode='rgb'):
         i3d = InceptionI3d(400, in_channels=2)
         i3d.load_state_dict(torch.load(weights_dir + '/flow_imagenet.pt'))
     else:
+        # THIS IS THE STANDARD ORIGINAL I3D
+        i3d = InceptionI3d(400, in_channels=3, window_size=window_size, input_size=cropped_input_size)
 
-        if extra_conv:
-            # THIS NETWORK HERE ALLOWS ADDING A CONV LAYER BEFORE THE LAST LAYER
-            i3d = InceptionDimsConv(157, in_channels=3, window_size=window_size, input_size=cropped_input_size, conv_output_dims=final_pooling_size)
-            i3d.load_state_dict(torch.load(os.path.join(weights_dir, model_weights)))
-        else:
-            # THIS IS THE STANDARD ORIGINAL I3D
-            i3d = InceptionI3d(400, in_channels=3, window_size=window_size, input_size=cropped_input_size)
-
-            # i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
-            i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
+        # i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
+        i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
 
     # changes the last layer in order to accommodate the new number of classes (after loading weights)
     i3d.replace_logits(num_classes=len(train_dataset.class_encodings))

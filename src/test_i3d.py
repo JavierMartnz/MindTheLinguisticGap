@@ -69,7 +69,7 @@ def test(cfg_path, log_filename, mode="rgb"):
     test_cfg = cfg.get("test")
     data_cfg = cfg.get("data")
 
-    # test parametersf
+    # test parameters
     model_dir = test_cfg.get("model_dir")
     pred_dir = test_cfg.get("pred_dir")
     fold = test_cfg.get("fold")
@@ -80,11 +80,9 @@ def test(cfg_path, log_filename, mode="rgb"):
     learning_rate = test_cfg.get("lr")
     num_epochs = test_cfg.get("epochs")
     ckpt_epoch = test_cfg.get("ckpt_epoch")
-    ckpt_step = test_cfg.get("ckpt_step")
     batch_size = test_cfg.get("batch_size")
     use_cuda = test_cfg.get("use_cuda")
     specific_glosses = test_cfg.get("specific_glosses")
-    extra_conv = test_cfg.get("extra_conv")
 
     # data configs
     cngt_zip = data_cfg.get("cngt_clips_path")
@@ -99,13 +97,13 @@ def test(cfg_path, log_filename, mode="rgb"):
     else:
         diag_videos_path = None
     save_predictions = data_cfg.get("save_predictions")
-    final_pooling_size = data_cfg.get("final_pooling_size")
+    input_size = test_cfg.get("input_size")
 
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
     run_dir = f"{run_name}_{glosses_string}_{num_epochs}_{run_batch_size}_{learning_rate}_{optimizer}"
     # run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
-    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}_{ckpt_step}.pt"
+    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}.pt"
     ckpt_folder = ckpt_filename.split('.')[0]
 
     if use_diag_videos:
@@ -128,11 +126,15 @@ def test(cfg_path, log_filename, mode="rgb"):
 
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
-    test_transforms = transforms.Compose([transforms.CenterCrop(224)])
+    cropped_input_size = input_size * 0.875
+
+    test_transforms = transforms.Compose([transforms.CenterCrop(cropped_input_size)])
 
     print(f"Loading {fold} split...")
-    dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size, transforms=test_transforms,
-                        filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids, diagonal_videos_path=diag_videos_path)
+    dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, cngt_vocab_path, sb_vocab_path, mode, fold, window_size,
+                        transforms=test_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
+                        diagonal_videos_path=diag_videos_path)
+
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     glosses = []
@@ -142,14 +144,7 @@ def test(cfg_path, log_filename, mode="rgb"):
 
     print(f"Predicting for glosses {glosses} mapped as classes {list(dataset.class_encodings.values())}")
 
-    # load model and specified checkpoint
-    if extra_conv:
-        i3d = InceptionDimsConv(157, in_channels=3, window_size=16, input_size=224, conv_output_dims=final_pooling_size)
-        i3d.add_dim_conv()
-    else:
-        i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16, input_size=224)
-
-    i3d.replace_logits(num_classes=len(dataset.class_encodings))
+    i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=16, input_size=cropped_input_size)
 
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
@@ -234,7 +229,7 @@ def test(cfg_path, log_filename, mode="rgb"):
                     img_cnt += 1
 
     # save_gzip(discard_videos, os.path.join(pred_path, "discard_list.gzip"))
-    save_gzip(diagonal_videos, os.path.join(pred_path, f"{run_name}_{fold}_diagonal_videos.gzip"))
+    # save_gzip(diagonal_videos, os.path.join(pred_path, f"{run_name}_{fold}_diagonal_videos.gzip"))
 
     acc = accuracy_score(total_true, total_pred)
     p = precision_score(total_true, total_pred)
