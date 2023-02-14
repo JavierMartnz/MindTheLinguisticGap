@@ -160,6 +160,8 @@ def test(cfg_path, log_filename, mode="rgb"):
     else:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename), map_location=torch.device('cpu')))
 
+    print(f"Successfully loaded model weights from {os.path.join(model_dir, run_dir, ckpt_filename)}")
+
     i3d.train(False)  # Set model to evaluate mode
 
     # summary(i3d, (3, 16, 224, 224))
