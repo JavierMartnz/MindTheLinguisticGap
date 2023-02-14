@@ -157,6 +157,7 @@ def main(params):
 
     plt.plot(n_components, pca_stress)
     plt.xticks(n_components)
+    plt.xscale('linear')
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
     plt.tight_layout()
