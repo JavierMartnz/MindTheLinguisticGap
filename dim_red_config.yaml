@@ -1,8 +1,7 @@
 data:
 
   cngt_clips_path: "/vol/tensusers5/jmartinez/datasets/cngt_single_signs.zip"
-  signbank_path: "/vol/tensusers5/jmartinez/datasets/NGT_Signbank_resized.zip"
-  cngt_vocab_path: "/vol/tensusers5/jmartinez/datasets/cngt_vocab.gzip"
+  signbank_path: "/vol/tensusers5/jmartinez/datasets/NGT_Signbank.zip"
   sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
   window_size: 16
   data_loading: "balanced"
