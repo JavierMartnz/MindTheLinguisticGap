@@ -156,9 +156,10 @@ def main(params):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(n_components, pca_stress)
-    plt.legend()
+    plt.xticks(n_components)
+    plt.xlabel("Number of dimensions")
+    plt.ylabel("Stress")
     plt.tight_layout()
-    plt.show()
 
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, run_dir + '_pcastress.png'))
