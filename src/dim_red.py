@@ -37,7 +37,6 @@ def main(params):
 
     # test parameters
     model_dir = test_cfg.get("model_dir")
-    pred_dir = test_cfg.get("pred_dir")
     fold = test_cfg.get("fold")
     assert fold in {"train", "test",
                     "val"}, f"Please, make sure the parameter 'fold' in {config_path} is either 'train' 'val' or 'test'"
@@ -47,7 +46,6 @@ def main(params):
     learning_rate = test_cfg.get("lr")
     num_epochs = test_cfg.get("epochs")
     ckpt_epoch = test_cfg.get("ckpt_epoch")
-    ckpt_step = test_cfg.get("ckpt_step")
     batch_size = test_cfg.get("batch_size")
     use_cuda = test_cfg.get("use_cuda")
     specific_glosses = test_cfg.get("specific_glosses")
@@ -63,7 +61,7 @@ def main(params):
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
     run_dir = f"{run_name}_{glosses_string}_{num_epochs}_{run_batch_size}_{learning_rate}_{optimizer}"
-    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}_{ckpt_step}.pt"
+    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}.pt"
 
     num_top_glosses = None
 
@@ -101,10 +99,6 @@ def main(params):
         i3d.cuda()
 
     i3d.train(False)  # Set model to evaluate mode
-
-    ckpt_folder = ckpt_filename.split('.')[0]
-    pred_path = os.path.join(pred_dir, run_dir, ckpt_folder, fold)
-    make_dir(pred_path)
 
     X_features = torch.zeros((1, 1024))
     X = torch.zeros((1, 1024))

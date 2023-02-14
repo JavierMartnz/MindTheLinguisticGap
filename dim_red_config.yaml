@@ -9,10 +9,8 @@ data:
   input_size: 256
 
 test:
-  extra_conv: False
   specific_glosses: ["JA-A", "GEBAREN-A"]
   model_dir: "/vol/tensusers5/jmartinez/models/i3d"
-  pred_dir: "D:Thesis/predictions/i3d"
   fold: "train"
   use_cuda: True
   run_name: "baseline_imagenet"
@@ -22,5 +20,4 @@ test:
   lr: 0.1
   epochs: 50
   ckpt_epoch: 49
-  ckpt_step: 8
   batch_size: 128
