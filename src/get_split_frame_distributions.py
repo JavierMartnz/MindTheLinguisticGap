@@ -53,6 +53,7 @@ def main(params):
     gloss_to_id = sb_vocab['gloss_to_id']
 
     specific_glosses = specific_glosses.strip().replace('[', '').replace(']', '').split(',')
+    print(specific_glosses)
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in list(specific_glosses)]
 
     print("Loading training split...")
