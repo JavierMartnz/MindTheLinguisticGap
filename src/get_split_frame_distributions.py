@@ -105,6 +105,7 @@ def main(params):
                 _, _, video_paths = data
 
                 for clip in video_paths:
+                    print(clip)
                     start_ms = int(clip.split("_")[4])
                     end_ms = int(clip.split("_")[5])
                     n_frames = math.ceil(25 * (end_ms - start_ms) / 1000)
