@@ -104,8 +104,8 @@ def main(params):
             for data in tepoch:
                 _, _, video_paths = data
 
-                for clip in video_paths:
-                    print(clip)
+                for video_path in video_paths:
+                    clip = os.path.basename(video_path)
                     start_ms = int(clip.split("_")[4])
                     end_ms = int(clip.split("_")[5])
                     n_frames = math.ceil(25 * (end_ms - start_ms) / 1000)
