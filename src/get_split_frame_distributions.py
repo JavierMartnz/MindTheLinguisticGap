@@ -52,7 +52,8 @@ def main(params):
     sb_vocab = load_gzip(sb_vocab_path)
     gloss_to_id = sb_vocab['gloss_to_id']
 
-    specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
+    specific_glosses = specific_glosses.strip().replace('[', '').replace[']', ''].split(',')
+    specific_gloss_ids = [gloss_to_id[gloss] for gloss in list(specific_glosses)]
 
     print("Loading training split...")
     train_dataset = I3Dataset(loading_mode=loading_mode,
@@ -169,7 +170,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--specific_glosses",
-        type=list,
+        type=str,
     )
 
     parser.add_argument(
