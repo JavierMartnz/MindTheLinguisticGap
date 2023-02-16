@@ -24,6 +24,7 @@ import math
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_exp import InceptionI3d as InceptionDims
@@ -38,12 +39,14 @@ def main(params):
     sb_folder = params.sb_folder
     sb_vocab_file = params.sb_vocab_file
     fig_output_root = params.fig_output_root
+    specific_glosses = params.specific_glosses
+    window_size = params.window_size
+    batch_size = params.batch_size
+    loading_mode = params.loading_mode
 
     cngt_zip = os.path.join(root, cngt_folder + ".zip")
     sb_zip = os.path.join(root, sb_folder + ".zip")
     sb_vocab_path = os.path.join(root, sb_vocab_file)
-
-    specific_glosses = ["JA-A", "GEBAREN-A"]
 
     # get glosses from the class encodings
     sb_vocab = load_gzip(sb_vocab_path)
@@ -52,13 +55,13 @@ def main(params):
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
     print("Loading training split...")
-    train_dataset = I3Dataset(loading_mode="balanced",
+    train_dataset = I3Dataset(loading_mode=loading_mode,
                               cngt_zip=cngt_zip,
                               sb_zip=sb_zip,
                               sb_vocab_path=sb_vocab_path,
                               mode="rgb",
                               split="train",
-                              window_size=16,
+                              window_size=window_size,
                               transforms=None,
                               filter_num=None,
                               specific_gloss_ids=specific_gloss_ids,
@@ -71,7 +74,7 @@ def main(params):
                             sb_vocab_path=sb_vocab_path,
                             mode="rgb",
                             split="val",
-                            window_size=16,
+                            window_size=window_size,
                             transforms=None,
                             filter_num=None,
                             specific_gloss_ids=specific_gloss_ids,
@@ -84,15 +87,15 @@ def main(params):
                              sb_vocab_path=sb_vocab_path,
                              mode="rgb",
                              split="test",
-                             window_size=16,
+                             window_size=window_size,
                              transforms=None,
                              filter_num=None,
                              specific_gloss_ids=specific_gloss_ids,
                              diagonal_videos_path=None)
 
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=0, pin_memory=True)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=8, shuffle=True, num_workers=0, pin_memory=True)
-    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=8, shuffle=True, num_workers=0, pin_memory=True)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     dataloaders = [train_dataloader, val_dataloader, test_dataloader]
 
@@ -107,20 +110,33 @@ def main(params):
                     # filter out SB videos
                     if "cngt" in video_path.split("/")[-2]:
                         clip = os.path.basename(video_path)
-                        print(clip)
                         start_ms = int(clip.split("_")[4])
                         end_ms = int(clip.split("_")[5])
                         n_frames = math.ceil(25 * (end_ms - start_ms) / 1000)
                         clip_durations.append(n_frames)
         clip_duration_per_split.append(clip_durations)
 
+    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+
+    upper_quartile = np.percentile(clip_duration_per_split[0], 75)
+    lower_quartile = np.percentile(clip_duration_per_split[0], 25)
+    iqr = upper_quartile - lower_quartile
+
+    clip_duration_per_split[0] = np.array(clip_duration_per_split[0])
+
+    upper_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] <= upper_quartile + 1.5 * iqr, True, False)].max()
+    lower_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] >= lower_quartile - 1.5 * iqr, True, False)].min()
+
     plt.hist(clip_duration_per_split[0], bins='auto', align='mid')
     plt.hist(clip_duration_per_split[1], bins='auto', align='mid')
     plt.hist(clip_duration_per_split[2], bins='auto', align='mid')
+    plt.xlim([lower_whisker - 1, upper_whisker + 1])
     plt.tight_layout()
 
+    glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
+
     os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, f"{specific_glosses}_frames_per_split_distribution.png"))
+    plt.savefig(os.path.join(fig_output_root, f"{glosses_string}_{loading_mode}_frames_per_split_distribution.png"))
 
 
 if __name__ == '__main__':
@@ -148,6 +164,26 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--fig_output_root",
+        type=str,
+    )
+
+    parser.add_argument(
+        "--specific_glosses",
+        type=list,
+    )
+
+    parser.add_argument(
+        "--window_size",
+        type=int,
+    )
+
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+    )
+
+    parser.add_argument(
+        "--loading_mode",
         type=str,
     )
 
