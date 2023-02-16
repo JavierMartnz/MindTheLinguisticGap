@@ -681,12 +681,6 @@ class I3Dataset(data_utl.Dataset):
                                   split, diagonal_videos_path)
 
     def __getitem__(self, index):
-        """
-        Args:
-            index (int): Index
-        Returns:
-            tuple: (image, target) where target is class_index of the target class.
-        """
         video_path, label, num_frames, start_frame = self.data[index]
 
         if self.mode == 'rgb':

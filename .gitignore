@@ -128,3 +128,5 @@ config_local.yaml
 test_config.yaml
 test_config.yaml
 config_local.yaml
+.idea/MindTheLinguisticGap.iml
+.idea/misc.xml
