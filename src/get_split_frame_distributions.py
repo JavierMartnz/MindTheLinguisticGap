@@ -119,19 +119,19 @@ def main(params):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    upper_quartile = np.percentile(clip_duration_per_split[0], 75)
-    lower_quartile = np.percentile(clip_duration_per_split[0], 25)
-    iqr = upper_quartile - lower_quartile
+    # upper_quartile = np.percentile(clip_duration_per_split[0], 75)
+    # lower_quartile = np.percentile(clip_duration_per_split[0], 25)
+    # iqr = upper_quartile - lower_quartile
+    #
+    # clip_duration_per_split[0] = np.array(clip_duration_per_split[0])
+    #
+    # upper_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] <= upper_quartile + 1.5 * iqr, True, False)].max()
+    # lower_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] >= lower_quartile - 1.5 * iqr, True, False)].min()
 
-    clip_duration_per_split[0] = np.array(clip_duration_per_split[0])
-
-    upper_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] <= upper_quartile + 1.5 * iqr, True, False)].max()
-    lower_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] >= lower_quartile - 1.5 * iqr, True, False)].min()
-
-    plt.hist(clip_duration_per_split[0], bins='auto', align='mid')
-    plt.hist(clip_duration_per_split[1], bins='auto', align='mid')
-    plt.hist(clip_duration_per_split[2], bins='auto', align='mid')
-    plt.xlim([lower_whisker - 1, upper_whisker + 1])
+    plt.hist(clip_duration_per_split[0], bins='auto', align='mid', alpha=0.5, label="train")
+    plt.hist(clip_duration_per_split[1], bins='auto', align='mid', alpha=0.5, label="val")
+    plt.hist(clip_duration_per_split[2], bins='auto', align='mid', alpha=0.5, label="test")
+    # plt.xlim([lower_whisker - 1, upper_whisker + 1])
     plt.tight_layout()
 
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
