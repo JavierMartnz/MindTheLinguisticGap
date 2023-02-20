@@ -122,37 +122,37 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
 #     frames.append(img)
 #     return np.asarray(frames, dtype=np.float32)
 
-def split_strat(signers: list, cngt_folds: dict, cngt_signer_paths: dict, train_size: int, val_test_size: int) -> dict:
-    # loop for the stratification of the data splits
-    for signer in signers:
-        # if the training split isn't full
-        if len(cngt_folds['train']) < train_size:
-            # if it can still fit the next whole signer
-            if len(cngt_folds['train']) + len(cngt_signer_paths[signer]) <= train_size:
-                cngt_folds['train'].extend(cngt_signer_paths[signer])
-            # if it can't, then fill with paths from the next signer
-            else:
-                paths_to_fill = train_size - len(cngt_folds['train'])
-                cngt_folds['train'].extend(cngt_signer_paths[signer][:paths_to_fill])
-                # fill beginning of val split
-                cngt_folds['val'].extend(cngt_signer_paths[signer][paths_to_fill:])
-
-        # if the val split isn't full
-        elif len(cngt_folds['val']) < val_test_size:
-            if len(cngt_folds['val']) + len(cngt_signer_paths[signer]) <= val_test_size:
-                cngt_folds['val'].extend(cngt_signer_paths[signer])
-            # if it can't, then fill with paths from the next signer
-            else:
-                paths_to_fill = val_test_size - len(cngt_folds['val'])
-                cngt_folds['val'].extend(cngt_signer_paths[signer][:paths_to_fill])
-                # fill beginning of val split
-                cngt_folds['test'].extend(cngt_signer_paths[signer][paths_to_fill:])
-
-        # if code gets here, fill test split with the remaining paths
-        elif len(cngt_folds['test']) < val_test_size:
-            cngt_folds['test'].extend(cngt_signer_paths[signer])
-
-    return cngt_folds
+# def split_strat(signers: list, cngt_folds: dict, cngt_signer_paths: dict, train_size: int, val_test_size: int) -> dict:
+#     # loop for the stratification of the data splits
+#     for signer in signers:
+#         # if the training split isn't full
+#         if len(cngt_folds['train']) < train_size:
+#             # if it can still fit the next whole signer
+#             if len(cngt_folds['train']) + len(cngt_signer_paths[signer]) <= train_size:
+#                 cngt_folds['train'].extend(cngt_signer_paths[signer])
+#             # if it can't, then fill with paths from the next signer
+#             else:
+#                 paths_to_fill = train_size - len(cngt_folds['train'])
+#                 cngt_folds['train'].extend(cngt_signer_paths[signer][:paths_to_fill])
+#                 # fill beginning of val split
+#                 cngt_folds['val'].extend(cngt_signer_paths[signer][paths_to_fill:])
+#
+#         # if the val split isn't full
+#         elif len(cngt_folds['val']) < val_test_size:
+#             if len(cngt_folds['val']) + len(cngt_signer_paths[signer]) <= val_test_size:
+#                 cngt_folds['val'].extend(cngt_signer_paths[signer])
+#             # if it can't, then fill with paths from the next signer
+#             else:
+#                 paths_to_fill = val_test_size - len(cngt_folds['val'])
+#                 cngt_folds['val'].extend(cngt_signer_paths[signer][:paths_to_fill])
+#                 # fill beginning of val split
+#                 cngt_folds['test'].extend(cngt_signer_paths[signer][paths_to_fill:])
+#
+#         # if code gets here, fill test split with the remaining paths
+#         elif len(cngt_folds['test']) < val_test_size:
+#             cngt_folds['test'].extend(cngt_signer_paths[signer])
+#
+#     return cngt_folds
 
 
 def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
@@ -242,8 +242,7 @@ def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vo
     # print the videos per signer count for every split
     for t_split in ['train', 'val', 'test']:
         cnt_dict[t_split] = count_occurrences([os.path.basename(path).split('_')[0] for path in cngt_split_dict[t_split]])
-        print(
-            f"The {t_split} split has {len(cnt_dict[t_split].keys())} different signers and a total of {sum(cnt_dict[t_split].values())} clips")
+        print(f"The {t_split} split has {len(cnt_dict[t_split].keys())} different signers and a total of {sum(cnt_dict[t_split].values())} clips")
 
     print(f"train-val overlap: {set(cnt_dict['train'].keys()).intersection(set(cnt_dict['val'].keys()))}")
     print(f"val-test overlap: {set(cnt_dict['val'].keys()).intersection(set(cnt_dict['test'].keys()))}")
@@ -260,10 +259,10 @@ def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vo
                 'test': sb_video_paths[sb_idx_val_test:]}
 
     all_video_paths = cngt_split_dict[split]
-    # THIS NEXT LINE IS ONLY FOR TESTING, SHOULD BE REMOVED
-    # all_video_paths = []
     all_video_paths.extend(sb_folds[split])
 
+    num_classes = len(class_encodings)
+    dataset = []
     label_dict = {}
 
     for video_path in tqdm(all_video_paths):
@@ -565,12 +564,6 @@ def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, sb_vocab_path: 
         dataset = build_balanced_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
     elif loading_mode == "stratified":
         dataset = build_stratified_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
-
-
-
-
-
-
 
     # if diagonal_videos_path and split == 'train':
     #     dataset = build_dataset_from_gzip(cngt_zip, sb_zip, sb_vocab_path, class_encodings, window_size, diagonal_videos_path)
