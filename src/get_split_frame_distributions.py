@@ -55,55 +55,33 @@ def main(params):
     specific_glosses = specific_glosses.split(",")
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in list(specific_glosses)]
 
-    print("Loading training split...")
-    train_dataset = I3Dataset(loading_mode=loading_mode,
-                              cngt_zip=cngt_zip,
-                              sb_zip=sb_zip,
-                              sb_vocab_path=sb_vocab_path,
-                              mode="rgb",
-                              split="train",
-                              window_size=window_size,
-                              transforms=None,
-                              filter_num=None,
-                              specific_gloss_ids=specific_gloss_ids,
-                              diagonal_videos_path=None)
+    splits = ["train", "val", "test"]
+    dataloaders = []
 
-    print("Loading validation split...")
-    val_dataset = I3Dataset(loading_mode="balanced",
+    for split in splits:
+        print(f"Loading {split} split...")
+        dataset = I3Dataset(loading_mode=loading_mode,
                             cngt_zip=cngt_zip,
                             sb_zip=sb_zip,
                             sb_vocab_path=sb_vocab_path,
                             mode="rgb",
-                            split="val",
+                            split=split,
                             window_size=window_size,
                             transforms=None,
                             filter_num=None,
                             specific_gloss_ids=specific_gloss_ids,
                             diagonal_videos_path=None)
 
-    print("Loading test split...")
-    test_dataset = I3Dataset(loading_mode="balanced",
-                             cngt_zip=cngt_zip,
-                             sb_zip=sb_zip,
-                             sb_vocab_path=sb_vocab_path,
-                             mode="rgb",
-                             split="test",
-                             window_size=window_size,
-                             transforms=None,
-                             filter_num=None,
-                             specific_gloss_ids=specific_gloss_ids,
-                             diagonal_videos_path=None)
-
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
-    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
-
-    dataloaders = [train_dataloader, val_dataloader, test_dataloader]
+        dataloaders.append(torch.utils.data.DataLoader(dataset,
+                                                       batch_size=batch_size,
+                                                       shuffle=True,
+                                                       num_workers=0,
+                                                       pin_memory=True))
 
     clip_duration_per_split = []
-    for dataloader in dataloaders:
+    for i, dataloader in enumerate(dataloaders):
+        print(f"Getting distribution of the {splits[i]} split...")
         with tqdm(dataloader, unit="batch") as tepoch:
-
             clip_durations = []
             for data in tepoch:
                 _, _, video_paths = data
@@ -125,8 +103,10 @@ def main(params):
 
     clip_duration_per_split[0] = np.array(clip_duration_per_split[0])
 
-    upper_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] <= upper_quartile + 1.5 * iqr, True, False)].max()
-    lower_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] >= lower_quartile - 1.5 * iqr, True, False)].min()
+    upper_whisker = clip_duration_per_split[0][
+        np.where(clip_duration_per_split[0] <= upper_quartile + 1.5 * iqr, True, False)].max()
+    lower_whisker = clip_duration_per_split[0][
+        np.where(clip_duration_per_split[0] >= lower_quartile - 1.5 * iqr, True, False)].min()
 
     plt.hist(clip_duration_per_split[0], bins='auto', align='mid', label="train")
     plt.hist(clip_duration_per_split[1], bins='auto', align='mid', label="val")
