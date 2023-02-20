@@ -128,10 +128,11 @@ def main(params):
     upper_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] <= upper_quartile + 1.5 * iqr, True, False)].max()
     lower_whisker = clip_duration_per_split[0][np.where(clip_duration_per_split[0] >= lower_quartile - 1.5 * iqr, True, False)].min()
 
-    plt.hist(clip_duration_per_split[0], bins='auto', align='mid', alpha=0.5, label="train")
-    plt.hist(clip_duration_per_split[1], bins='auto', align='mid', alpha=0.5, label="val")
-    plt.hist(clip_duration_per_split[2], bins='auto', align='mid', alpha=0.5, label="test")
+    plt.hist(clip_duration_per_split[0], bins='auto', align='mid', label="train")
+    plt.hist(clip_duration_per_split[1], bins='auto', align='mid', label="val")
+    plt.hist(clip_duration_per_split[2], bins='auto', align='mid', alpha=0.75, label="test")
     plt.xlim([lower_whisker - 1, upper_whisker + 1])
+    plt.legend(loc='best')
     plt.tight_layout()
 
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"

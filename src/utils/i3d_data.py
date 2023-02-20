@@ -155,53 +155,25 @@ def split_strat(signers: list, cngt_folds: dict, cngt_signer_paths: dict, train_
     return cngt_folds
 
 
-def build_stratified_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, sb_vocab_path: str, mode: str, class_encodings: dict,
-                             window_size: int, split: str) -> list:
-    assert split in {"train", "val", "test"}, "The variable 'split' can only have value  'train', 'val', and 'test'."
+def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
+                             class_encodings: dict, window_size: int, split: str) -> list:
 
-    num_classes = len(class_encodings)
+    cngt_root = os.path.basename(cngt_video_paths)
     classes = list(class_encodings.keys())
-    dataset = []
-
-    # extract zip files (if not extracted already) and get the directory root
-    if not os.path.isdir(cngt_zip[:-4]):
-        cngt_extracted_root = extract_zip(cngt_zip)
-    else:
-        cngt_extracted_root = cngt_zip[:-4]
-
-    if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(sb_zip)
-    else:
-        sb_extracted_root = sb_zip[:-4]
-
-    # use the vocabs from cngt and signbank to be able to get the glosses from their ID
-    cngt_vocab = load_gzip(cngt_vocab_path)
-    sb_vocab = load_gzip(sb_vocab_path)
-    # join cngt and sb vocabularies (gloss to id dictionary)
-    sb_vocab.update(cngt_vocab)
-    gloss_to_id = sb_vocab['gloss_to_id']
-
-    cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
-    sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
-
-    # we filter the top n most frequent glosses
-    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
-    sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
+    gloss_to_id = sb_vocab["gloss_to_id"]
 
     # CREATE DICTIONARY OF VIDEO PATHS FOR EACH SIGNER
     n_paths = 0
     cngt_signer_dicts = {}
     class_cnt_dict = {}
-    for file in os.listdir(cngt_extracted_root):
-        # filter videos based on the selected glosses
-        if file.endswith('.mpg') and int(file.split("_")[-1][:-4]) in classes:
-            n_paths += 1
-            file_path = os.path.join(cngt_extracted_root, file)
 
-            metadata = load_gzip(file_path[:file_path.rfind(".m")] + ".gzip")
+    for cngt_video_path in cngt_video_paths:
+        if int(cngt_video_path.split("_")[-1][:-4]) in classes:
+            n_paths += 1
+            metadata = load_gzip(cngt_video_path[:cngt_video_path.rfind(".m")] + ".gzip")
             num_frames = metadata.get("num_frames")
 
-            gloss_id = int(file.split("_")[-1][:-4])
+            gloss_id = int(cngt_video_path.split("_")[-1][:-4])
             gloss = list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)]
 
             # count number of frames taking into account window expansion
@@ -211,7 +183,7 @@ def build_stratified_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, s
             num_windows = math.ceil(num_frames / window_size)
             class_cnt_dict[gloss] += window_size * num_windows
 
-            signer = os.path.basename(file).split('_')[0]
+            signer = os.path.basename(cngt_video_path).split('_')[0]
             signer_dict = cngt_signer_dicts.get(signer, -1)
 
             # if the signer wasn't added yet, initialize dictionary
@@ -219,9 +191,9 @@ def build_stratified_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, s
                 cngt_signer_dicts[signer] = {}
 
             if gloss not in cngt_signer_dicts[signer].keys():  # if the signer doesn't have the gloss added yet
-                cngt_signer_dicts[signer][gloss] = [(os.path.join(cngt_extracted_root, file), num_frames)]
+                cngt_signer_dicts[signer][gloss] = [(cngt_video_path, num_frames)]
             else:
-                cngt_signer_dicts[signer][gloss].append((os.path.join(cngt_extracted_root, file), num_frames))
+                cngt_signer_dicts[signer][gloss].append((cngt_video_path, num_frames))
 
     signers = list(cngt_signer_dicts.keys())
 
@@ -325,34 +297,9 @@ def build_stratified_dataset(cngt_zip: str, sb_zip: str, cngt_vocab_path: str, s
     return dataset
 
 
-def build_balanced_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: str, class_encodings: dict,
-                           window_size: int, split: str) -> list:
-    assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
+def build_balanced_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
+                           class_encodings: dict, window_size: int, split: str) -> list:
 
-    num_classes = len(class_encodings)
-    classes = list(class_encodings.keys())
-    dataset = []
-
-    # process zip files first
-    if not os.path.isdir(cngt_zip[:-4]):
-        cngt_extracted_root = extract_zip(cngt_zip)
-    else:
-        cngt_extracted_root = cngt_zip[:-4]
-        # print(f"{cngt_extracted_root} already exists, no need to extract")
-
-    if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(sb_zip)
-    else:
-        sb_extracted_root = sb_zip[:-4]
-        # print(f"{sb_extracted_root} already exists, no need to extract")
-
-    cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg') or file.endswith('mov')]
-    sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
-
-    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
-    sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
-
-    sb_vocab = load_gzip(sb_vocab_path)
     gloss_to_id = sb_vocab['gloss_to_id']
 
     class_cnt_dict = {}
@@ -425,6 +372,8 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode:
     all_video_paths = cngt_split_dict[split]
     all_video_paths.extend(sb_folds[split])
 
+    num_classes = len(class_encodings)
+    dataset = []
     label_dict = {}
 
     for video_path in tqdm(all_video_paths):
@@ -458,37 +407,8 @@ def build_balanced_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode:
     return dataset
 
 
-def build_random_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: str, class_encodings: dict,
-                         window_size: int, split: str) -> list:
-    assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
-
-    num_classes = len(class_encodings)
-    classes = list(class_encodings.keys())
-    dataset = []
-
-    # process zip files first
-    if not os.path.isdir(cngt_zip[:-4]):
-        cngt_extracted_root = extract_zip(cngt_zip)
-    else:
-        cngt_extracted_root = cngt_zip[:-4]
-        # print(f"{cngt_extracted_root} already exists, no need to extract")
-
-    if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(sb_zip)
-    else:
-        sb_extracted_root = sb_zip[:-4]
-        # print(f"{sb_extracted_root} already exists, no need to extract")
-
-    cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
-    sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
-
-    # we filter the glosses
-    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
-    sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
-
-    # use signbank vocab to be able to get the glosses from their IDs
-    sb_vocab = load_gzip(sb_vocab_path)
-    id_to_gloss = sb_vocab['id_to_gloss']
+def build_random_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
+                         class_encodings: dict, window_size: int, split: str) -> list:
 
     random.seed(42)
     random.shuffle(cngt_video_paths)
@@ -513,7 +433,9 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: s
     all_video_paths = cngt_folds[split]
     all_video_paths.extend(sb_folds[split])
 
+    num_classes = len(class_encodings)
     label_dict = {}
+    dataset = []
 
     for video_path in tqdm(all_video_paths):
         metadata = load_gzip(video_path[:video_path.rfind(".m")] + ".gzip")
@@ -528,14 +450,12 @@ def build_random_dataset(cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: s
 
         label = np.zeros(num_classes, np.float32)
         label_idx = class_encodings[gloss_id]
-        gloss = id_to_gloss[gloss_id]
+        gloss = sb_vocab["id_to_gloss"][gloss_id]
 
         if gloss not in label_dict.keys():
             label_dict[gloss] = 0
 
         label[label_idx] = 1
-        # for frame in range(window_size):
-        #     label[label_idx, frame] = 1
 
         num_windows = math.ceil(num_frames / window_size)
 
@@ -610,15 +530,57 @@ def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, clas
 
 def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: str,
                   class_encodings: dict, window_size: int, split: str, diagonal_videos_path: str) -> list:
-    if diagonal_videos_path and split == 'train':
-        dataset = build_dataset_from_gzip(cngt_zip, sb_zip, sb_vocab_path, class_encodings, window_size, diagonal_videos_path)
+    assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
+
+    classes = list(class_encodings.keys())
+
+    # process zip files first
+    if not os.path.isdir(cngt_zip[:-4]):
+        cngt_extracted_root = extract_zip(cngt_zip)
     else:
-        if loading_mode == "random":
-            dataset = build_random_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
-        elif loading_mode == "balanced":
-            dataset = build_balanced_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
-        elif loading_mode == "stratified":
-            dataset = build_stratified_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
+        cngt_extracted_root = cngt_zip[:-4]
+        # print(f"{cngt_extracted_root} already exists, no need to extract")
+
+    if not os.path.isdir(sb_zip[:-4]):
+        sb_extracted_root = extract_zip(sb_zip)
+    else:
+        sb_extracted_root = sb_zip[:-4]
+        # print(f"{sb_extracted_root} already exists, no need to extract")
+
+    cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
+    sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
+
+    # we filter the glosses
+    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if
+                        int(video.split("_")[-1][:-4]) in classes]
+    sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if
+                      int(video.split("-")[-1][:-4]) in classes]
+
+    # use signbank vocab to be able to get the glosses from their IDs
+    sb_vocab = load_gzip(sb_vocab_path)
+
+    if loading_mode == "random":
+        dataset = build_random_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
+    elif loading_mode == "balanced":
+        dataset = build_balanced_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
+    elif loading_mode == "stratified":
+        dataset = build_stratified_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
+
+
+
+
+
+
+
+    # if diagonal_videos_path and split == 'train':
+    #     dataset = build_dataset_from_gzip(cngt_zip, sb_zip, sb_vocab_path, class_encodings, window_size, diagonal_videos_path)
+    # else:
+    #     if loading_mode == "random":
+    #         dataset = build_random_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
+    #     elif loading_mode == "balanced":
+    #         dataset = build_balanced_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
+    #     elif loading_mode == "stratified":
+    #         dataset = build_stratified_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
 
     return dataset
 
