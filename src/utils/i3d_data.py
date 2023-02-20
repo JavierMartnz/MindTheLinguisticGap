@@ -157,8 +157,7 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
 
 def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
                              class_encodings: dict, window_size: int, split: str) -> list:
-
-    cngt_root = os.path.basename(cngt_video_paths)
+    
     classes = list(class_encodings.keys())
     gloss_to_id = sb_vocab["gloss_to_id"]
 
