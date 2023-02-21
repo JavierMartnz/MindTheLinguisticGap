@@ -57,6 +57,8 @@ def main(params):
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, weights_root + '_metrics.png'))
 
+    plt.clf()
+
     plt.plot(epochs, training_history['train_loss'], label='train_loss', linestyle='--')
     plt.plot(epochs, training_history['val_loss'], label='val_loss', linestyle='-')
     plt.legend()
