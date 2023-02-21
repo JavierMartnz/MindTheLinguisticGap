@@ -37,6 +37,9 @@ def main(params):
     with open(training_file_path, 'r') as file:
         training_history = json.load(file)
 
+    # do this if files have to be open on Windows later
+    weights_root = weights_root.replace(':', ';')
+
     epochs = np.arange(1, len(training_history['train_loss']) + 1)
 
     colors = sns.color_palette('pastel')
@@ -52,7 +55,16 @@ def main(params):
     # plt.show()
 
     os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, weights_root + '_training_history.png'))
+    plt.savefig(os.path.join(fig_output_root, weights_root + '_metrics.png'))
+
+    plt.plot(epochs, training_history['train_loss'], label='train_loss', linestyle='--')
+    plt.plot(epochs, training_history['val_loss'], label='val_loss', linestyle='-')
+    plt.legend()
+    plt.tight_layout()
+    # plt.show()
+
+    os.makedirs(fig_output_root, exist_ok=True)
+    plt.savefig(os.path.join(fig_output_root, weights_root + '_loss.png'))
 
 
 if __name__ == "__main__":

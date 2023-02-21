@@ -124,7 +124,7 @@ def run(cfg_path, mode='rgb'):
                             filter_num=num_top_glosses,
                             specific_gloss_ids=specific_gloss_ids,
                             clips_per_class=clips_per_class)
-    
+
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
