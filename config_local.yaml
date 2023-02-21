@@ -6,6 +6,7 @@ data:
   window_size: 16
   data_loading: "random"
   input_size: 256
+  clips_per_class: -1
 
 training:
   specific_glosses: ['VERDWIJNEN-C', 'HOND-A']

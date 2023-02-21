@@ -527,7 +527,7 @@ def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, clas
 
 
 def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: str,
-                  class_encodings: dict, window_size: int, split: str, diagonal_videos_path: str) -> list:
+                  class_encodings: dict, window_size: int, split: str, clips_per_class=-1) -> list:
     assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
 
     classes = list(class_encodings.keys())
@@ -555,12 +555,31 @@ def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, sb_vocab_path: 
     # use signbank vocab to be able to get the glosses from their IDs
     sb_vocab = load_gzip(sb_vocab_path)
 
-    if loading_mode == "random":
-        dataset = build_random_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
-    elif loading_mode == "balanced":
-        dataset = build_balanced_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
-    elif loading_mode == "stratified":
-        dataset = build_stratified_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
+    # if the numbers of clips per class is not specified
+    if clips_per_class == -1:
+        if loading_mode == "random":
+            dataset = build_random_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
+        elif loading_mode == "balanced":
+            dataset = build_balanced_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
+        elif loading_mode == "stratified":
+            dataset = build_stratified_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
+    else:
+
+        random.seed(42)
+
+        subsample_cngt_videos = []
+        subsample_sb_videos = []
+        for gloss_class in classes:
+            cngt_videos_single_class = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) == gloss_class]
+            sb_videos_single_class = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) == gloss_class]
+
+            random.shuffle(cngt_videos_single_class)
+            random.shuffle(sb_videos_single_class)
+
+            subsample_sb_videos.extend(sb_videos_single_class)
+            subsample_cngt_videos.extend(cngt_videos_single_class[:clips_per_class-len(sb_videos_single_class)])
+
+        dataset = build_balanced_dataset(subsample_cngt_videos, subsample_sb_videos, sb_vocab, mode, class_encodings, window_size, split)
 
     # if diagonal_videos_path and split == 'train':
     #     dataset = build_dataset_from_gzip(cngt_zip, sb_zip, sb_vocab_path, class_encodings, window_size, diagonal_videos_path)
@@ -622,15 +641,14 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_glo
 class I3Dataset(data_utl.Dataset):
 
     def __init__(self, loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, split, window_size=64, transforms=None,
-                 filter_num=None, specific_gloss_ids=None, diagonal_videos_path=None):
+                 filter_num=None, specific_gloss_ids=None, clips_per_class=-1):
         assert loading_mode in {'random', 'balanced', 'stratified'}, "The 'loading_mode' argument must have values 'random', 'balanced', 'stratified'"
         assert mode in {'rgb', 'flow'}, "The 'mode' argument must have values 'rgb' or 'flow'"
         self.mode = mode
         self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num, specific_gloss_ids)
         self.window_size = window_size
         self.transforms = transforms
-        self.data = build_dataset(loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, self.class_encodings, window_size,
-                                  split, diagonal_videos_path)
+        self.data = build_dataset(loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, self.class_encodings, window_size, split, clips_per_class)
 
     def __getitem__(self, index):
         video_path, label, num_frames, start_frame = self.data[index]

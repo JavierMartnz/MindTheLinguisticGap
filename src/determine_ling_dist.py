@@ -83,20 +83,22 @@ def main(params):
             numb_occ = all_diffs[gloss][1][key][1]
 
             if ling_dist not in ling_dists.keys():
-                ling_dists[ling_dist] = numb_occ
+                ling_dists[ling_dist] = (key, numb_occ)
 
-        all_ling_dists = np.array(list(ling_dists.keys()))[:10] if len(ling_dists.keys()) > 10 else np.array(
-            list(ling_dists.keys()))
+        all_ling_dists = np.array(list(ling_dists.keys()))[:10] if len(ling_dists.keys()) > 10 else np.array(list(ling_dists.keys()))
         perf_ling_dists = np.arange(1, 11) if len(ling_dists.keys()) > 10 else np.arange(1, len(ling_dists.keys()) + 1)
 
+        # print only the signs that have signs with ling distance from 1 to 10.
         if (all_ling_dists == perf_ling_dists).all():
-            ling_dist_values = list(ling_dists.values())
-            min_num_samples = min(ling_dist_values)
-            min_sample = list(all_diffs[gloss][1].keys())[list(all_diffs[gloss][1].values()).index(
-                (list(ling_dists.keys())[ling_dist_values.index(min_num_samples)], min_num_samples))]
+            glosses = [gloss for gloss, _ in ling_dists.values()]
+            number_clips = [numb_occ for _, numb_occ in ling_dists.values()]
+            min_num_samples = min(number_clips)
+            min_gloss = glosses[number_clips.index(min(number_clips))]
 
-            print(
-                f"{gloss} ({all_diffs[gloss][0]}) has signs with ling dist {ling_dists.keys()}.\nThe sign with the minimum number of samples is {min_sample} with {min_num_samples} clips.\n")
+            print(f"{gloss} ({all_diffs[gloss][0]}) has signs with ling dist:")
+            for key in ling_dists.keys():
+                print(f"-{key}: {ling_dists[key][0]} with {ling_dists[key][1]} clips")
+            print(f"The sign with the minimum number of samples is {min_gloss} with {min_num_samples} clips.\n")
 
 
 if __name__ == "__main__":

@@ -69,6 +69,7 @@ def run(cfg_path, mode='rgb'):
     diagonal_videos_path = data_cfg.get("diagonal_videos_path") if use_diag_videos else None
     final_pooling_size = data_cfg.get("final_pooling_size")
     input_size = data_cfg.get("input_size")
+    clips_per_class = data_cfg.get("clips_per_class")
 
     if extra_conv:
         assert model_weights
@@ -97,14 +98,33 @@ def run(cfg_path, mode='rgb'):
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
     print("Loading training split...")
-    train_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, 'train', window_size,
-                              transforms=train_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids,
-                              diagonal_videos_path=diagonal_videos_path)
+    train_dataset = I3Dataset(loading_mode,
+                              cngt_zip,
+                              sb_zip,
+                              sb_vocab_path,
+                              mode,
+                              'train',
+                              window_size,
+                              transforms=train_transforms,
+                              filter_num=num_top_glosses,
+                              specific_gloss_ids=specific_gloss_ids,
+                              clips_per_class=clips_per_class)
+
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Loading val split...")
-    val_dataset = I3Dataset(loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, 'val', window_size,
-                            transforms=val_transforms, filter_num=num_top_glosses, specific_gloss_ids=specific_gloss_ids)
+    val_dataset = I3Dataset(loading_mode,
+                            cngt_zip,
+                            sb_zip,
+                            sb_vocab_path,
+                            mode,
+                            'val',
+                            window_size,
+                            transforms=val_transforms,
+                            filter_num=num_top_glosses,
+                            specific_gloss_ids=specific_gloss_ids,
+                            clips_per_class=clips_per_class)
+    
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}

@@ -70,7 +70,7 @@ def main(params):
                             transforms=None,
                             filter_num=None,
                             specific_gloss_ids=specific_gloss_ids,
-                            diagonal_videos_path=None)
+                            clips_per_class=None)
 
         dataloaders.append(torch.utils.data.DataLoader(dataset,
                                                        batch_size=batch_size,
