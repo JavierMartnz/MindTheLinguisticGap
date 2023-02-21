@@ -157,7 +157,7 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
 
 def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
                              class_encodings: dict, window_size: int, split: str) -> list:
-    
+
     classes = list(class_encodings.keys())
     gloss_to_id = sb_vocab["gloss_to_id"]
 
@@ -549,10 +549,8 @@ def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, sb_vocab_path: 
     sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
 
     # we filter the glosses
-    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if
-                        int(video.split("_")[-1][:-4]) in classes]
-    sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if
-                      int(video.split("-")[-1][:-4]) in classes]
+    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
+    sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
 
     # use signbank vocab to be able to get the glosses from their IDs
     sb_vocab = load_gzip(sb_vocab_path)
