@@ -50,7 +50,7 @@ def main(params):
     batch_size = test_cfg.get("batch_size")
     use_cuda = test_cfg.get("use_cuda")
     specific_glosses = test_cfg.get("specific_glosses")
-    
+
     # data configs
     cngt_zip = data_cfg.get("cngt_clips_path")
     sb_zip = data_cfg.get("signbank_path")
@@ -148,6 +148,7 @@ def main(params):
     print("Running PCA...")
     for nc in n_components:
         try:
+            print(X_features.size())
             X_pca = PCA(n_components=nc).fit_transform(X_features)
             pca_stress.append(stress(X_pca, X_features))
             print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
