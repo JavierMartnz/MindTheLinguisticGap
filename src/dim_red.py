@@ -126,12 +126,8 @@ def main(params):
                 features = i3d.extract_features(inputs)
                 # preds = i3d(inputs)
 
-                print(features.size())
-
                 features = torch.squeeze(features, -1)
                 # preds = torch.squeeze(preds, -1)
-
-                print(features.size())
 
                 # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
@@ -153,14 +149,16 @@ def main(params):
 
     X_features = X_features.detach().cpu()
 
+
     n_components = 2 ** np.arange(1, 11)[::-1]
 
     pca_stress = []
+    n_valid_components = []
     print("Running PCA...")
     for nc in n_components:
         try:
-            print(X_features.size())
             X_pca = PCA(n_components=nc).fit_transform(X_features)
+            n_valid_components.append(nc)
             pca_stress.append(stress(X_pca, X_features))
             print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
         except Exception as e:
@@ -168,7 +166,7 @@ def main(params):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(n_components, pca_stress)
+    plt.plot(n_valid_components, pca_stress)
     plt.xticks(n_components)
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
