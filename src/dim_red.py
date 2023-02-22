@@ -117,28 +117,32 @@ def main(params):
 
                 # get the features of the penultimate layer
                 features = i3d.extract_features(inputs)
-                preds = i3d(inputs)
+                # preds = i3d(inputs)
+
+                print(features.size())
 
                 features = torch.squeeze(features, -1)
-                preds = torch.squeeze(preds, -1)
+                # preds = torch.squeeze(preds, -1)
 
-                y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
+                print(features.size())
+
+                # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
                 # if X is empty
                 if X_features.sum() == 0:
                     X_features = features.squeeze()
-                    X_pred = preds.squeeze()
-                    Y = y_true
+                    # X_pred = preds.squeeze()
+                    # Y = y_true
                 else:
                     # if the last batch has only 1 video, the squeeze function removes an extra dimension and cannot be concatenated
                     if len(features.squeeze().size()) == 1:
                         X_features = torch.cat((X_features, torch.unsqueeze(features.squeeze(), 0)), dim=0)
-                        X_pred = torch.cat((X_pred, torch.unsqueeze(preds.squeeze(), 0)), dim=0)
+                        # X_pred = torch.cat((X_pred, torch.unsqueeze(preds.squeeze(), 0)), dim=0)
                     else:
                         X_features = torch.cat((X_features, features.squeeze()), dim=0)
-                        X_pred = torch.cat((X_pred, preds.squeeze()), dim=0)
+                        # X_pred = torch.cat((X_pred, preds.squeeze()), dim=0)
 
-                    Y = np.append(Y, y_true)
+                    # Y = np.append(Y, y_true)
 
     X_features = X_features.detach().cpu()
 
