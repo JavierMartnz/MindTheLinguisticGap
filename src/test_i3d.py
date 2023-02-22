@@ -136,7 +136,7 @@ def test(cfg_path, log_filename, mode="rgb"):
                         transforms=test_transforms,
                         filter_num=num_top_glosses,
                         specific_gloss_ids=specific_gloss_ids,
-                        diagonal_videos_path=diag_videos_path)
+                        clips_per_class=clips_per_class)
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
