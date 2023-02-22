@@ -165,6 +165,8 @@ def main(params):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(n_valid_components, pca_stress, marker='o')
+    for i, j in zip(n_valid_components, pca_stress):
+        plt.annotate(str(j), xy=(i, j))
     plt.xticks(n_components)
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")

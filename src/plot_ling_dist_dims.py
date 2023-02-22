@@ -15,7 +15,7 @@ from src.utils.helpers import load_config
 def main():
 
     ling_dist = np.arange(1, 11)
-    min_num_dims = [128, ]
+    min_num_dims = [128, 128, ]
     performance = []
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
