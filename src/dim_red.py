@@ -80,8 +80,7 @@ def main(params):
                         window_size=window_size,
                         transforms=None,
                         filter_num=num_top_glosses,
-                        specific_gloss_ids=specific_gloss_ids,
-                        diagonal_videos_path=None)
+                        specific_gloss_ids=specific_gloss_ids)
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0,
                                              pin_memory=True)
