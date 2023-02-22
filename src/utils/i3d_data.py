@@ -103,58 +103,6 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
     return torch.Tensor(np.asarray(frames, dtype=np.float32))
 
 
-# def load_flow_frames(root, vid, start, num):
-#     frames = []
-#     for i in range(start, start+num):
-#         imgx = cv2.imread(os.path.join(image_dir, vid, vid+'-'+str(i).zfill(6)+'x.jpg'), cv2.IMREAD_GRAYSCALE)
-#         imgy = cv2.imread(os.path.join(image_dir, vid, vid+'-'+str(i).zfill(6)+'y.jpg'), cv2.IMREAD_GRAYSCALE)
-#
-#     w,h = imgx.shape
-#     if w < 224 or h < 224:
-#         d = 224.-min(w,h)
-#         sc = 1+d/min(w,h)
-#         imgx = cv2.resize(imgx,dsize=(0,0),fx=sc,fy=sc)
-#         imgy = cv2.resize(imgy,dsize=(0,0),fx=sc,fy=sc)
-#
-#     imgx = (imgx/255.)*2 - 1
-#     imgy = (imgy/255.)*2 - 1
-#     img = np.asarray([imgx, imgy]).transpose([1,2,0])
-#     frames.append(img)
-#     return np.asarray(frames, dtype=np.float32)
-
-# def split_strat(signers: list, cngt_folds: dict, cngt_signer_paths: dict, train_size: int, val_test_size: int) -> dict:
-#     # loop for the stratification of the data splits
-#     for signer in signers:
-#         # if the training split isn't full
-#         if len(cngt_folds['train']) < train_size:
-#             # if it can still fit the next whole signer
-#             if len(cngt_folds['train']) + len(cngt_signer_paths[signer]) <= train_size:
-#                 cngt_folds['train'].extend(cngt_signer_paths[signer])
-#             # if it can't, then fill with paths from the next signer
-#             else:
-#                 paths_to_fill = train_size - len(cngt_folds['train'])
-#                 cngt_folds['train'].extend(cngt_signer_paths[signer][:paths_to_fill])
-#                 # fill beginning of val split
-#                 cngt_folds['val'].extend(cngt_signer_paths[signer][paths_to_fill:])
-#
-#         # if the val split isn't full
-#         elif len(cngt_folds['val']) < val_test_size:
-#             if len(cngt_folds['val']) + len(cngt_signer_paths[signer]) <= val_test_size:
-#                 cngt_folds['val'].extend(cngt_signer_paths[signer])
-#             # if it can't, then fill with paths from the next signer
-#             else:
-#                 paths_to_fill = val_test_size - len(cngt_folds['val'])
-#                 cngt_folds['val'].extend(cngt_signer_paths[signer][:paths_to_fill])
-#                 # fill beginning of val split
-#                 cngt_folds['test'].extend(cngt_signer_paths[signer][paths_to_fill:])
-#
-#         # if code gets here, fill test split with the remaining paths
-#         elif len(cngt_folds['test']) < val_test_size:
-#             cngt_folds['test'].extend(cngt_signer_paths[signer])
-#
-#     return cngt_folds
-
-
 def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
                              class_encodings: dict, window_size: int, split: str) -> list:
 
@@ -580,16 +528,6 @@ def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, sb_vocab_path: 
             subsample_cngt_videos.extend(cngt_videos_single_class[:clips_per_class-len(sb_videos_single_class)])
 
         dataset = build_balanced_dataset(subsample_cngt_videos, subsample_sb_videos, sb_vocab, mode, class_encodings, window_size, split)
-
-    # if diagonal_videos_path and split == 'train':
-    #     dataset = build_dataset_from_gzip(cngt_zip, sb_zip, sb_vocab_path, class_encodings, window_size, diagonal_videos_path)
-    # else:
-    #     if loading_mode == "random":
-    #         dataset = build_random_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
-    #     elif loading_mode == "balanced":
-    #         dataset = build_balanced_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
-    #     elif loading_mode == "stratified":
-    #         dataset = build_stratified_dataset(cngt_zip, sb_zip, sb_vocab_path, mode, class_encodings, window_size, split)
 
     return dataset
 

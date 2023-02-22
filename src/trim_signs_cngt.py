@@ -190,7 +190,7 @@ def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_
             for j in range(num_clips):
                 metadata["start_frames"].append(j * window_size)
 
-            save_gzip(metadata, trimmed_filename[:-3] + 'gzip')
+            save_gzip(metadata, trimmed_filename[:trimmed_filename.rfind(".m")] + ".gzip")
 
 def main(params):
     root = params.root

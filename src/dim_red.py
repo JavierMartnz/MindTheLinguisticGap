@@ -20,12 +20,14 @@ from scipy.spatial import distance
 from sklearn.decomposition import PCA
 from pathlib import Path
 
+
 def stress(X_pred, X):
     # distance of every point (row) to the rest of points in matrix
     orig_dist = distance.pdist(X, 'euclidean')
     pred_dist = distance.pdist(X_pred, 'euclidean')
     # stress formula from http://analytictech.com/networks/mds.htm
-    return np.sqrt(sum((pred_dist - orig_dist)**2)/sum(orig_dist**2))
+    return np.sqrt(sum((pred_dist - orig_dist) ** 2) / sum(orig_dist ** 2))
+
 
 def main(params):
     config_path = params.config_path
@@ -38,8 +40,7 @@ def main(params):
     # test parameters
     model_dir = test_cfg.get("model_dir")
     fold = test_cfg.get("fold")
-    assert fold in {"train", "test",
-                    "val"}, f"Please, make sure the parameter 'fold' in {config_path} is either 'train' 'val' or 'test'"
+    assert fold in {"train", "test", "val"}, f"Please, make sure the parameter 'fold' in {config_path} is either 'train' 'val' or 'test'"
     run_name = test_cfg.get("run_name")
     run_batch_size = test_cfg.get("run_batch_size")
     optimizer = test_cfg.get("optimizer").upper()
@@ -82,11 +83,9 @@ def main(params):
                         filter_num=num_top_glosses,
                         specific_gloss_ids=specific_gloss_ids)
 
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0,
-                                             pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
-    i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=window_size,
-                       input_size=input_size)
+    i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=window_size, input_size=input_size)
 
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
