@@ -50,7 +50,7 @@ def main(params):
     batch_size = test_cfg.get("batch_size")
     use_cuda = test_cfg.get("use_cuda")
     specific_glosses = test_cfg.get("specific_glosses")
-
+    
     # data configs
     cngt_zip = data_cfg.get("cngt_clips_path")
     sb_zip = data_cfg.get("signbank_path")
@@ -58,6 +58,8 @@ def main(params):
     sb_vocab_path = data_cfg.get("sb_vocab_path")
     loading_mode = data_cfg.get("data_loading")
     input_size = data_cfg.get("input_size")
+    clips_per_class = data_cfg.get("clips_per_class")
+
 
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
@@ -81,7 +83,8 @@ def main(params):
                         window_size=window_size,
                         transforms=None,
                         filter_num=num_top_glosses,
-                        specific_gloss_ids=specific_gloss_ids)
+                        specific_gloss_ids=specific_gloss_ids,
+                        clips_per_class=clips_per_class)
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
