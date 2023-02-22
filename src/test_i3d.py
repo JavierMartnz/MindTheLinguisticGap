@@ -88,16 +88,11 @@ def test(cfg_path, log_filename, mode="rgb"):
     cngt_zip = data_cfg.get("cngt_clips_path")
     sb_zip = data_cfg.get("signbank_path")
     window_size = data_cfg.get("window_size")
-    cngt_vocab_path = data_cfg.get("cngt_vocab_path")
     sb_vocab_path = data_cfg.get("sb_vocab_path")
     loading_mode = data_cfg.get("data_loading")
-    use_diag_videos = data_cfg.get("use_diag_videos")
-    if use_diag_videos:
-        diag_videos_path = data_cfg.get("diagonal_videos_path")
-    else:
-        diag_videos_path = None
     save_predictions = data_cfg.get("save_predictions")
     input_size = data_cfg.get("input_size")
+    clips_per_class = data_cfg.get("clips_per_class")
 
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
@@ -106,8 +101,8 @@ def test(cfg_path, log_filename, mode="rgb"):
     ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}.pt"
     ckpt_folder = ckpt_filename.split('.')[0]
 
-    if use_diag_videos:
-        fold += "_diag"
+    # if use_diag_videos:
+    #     fold += "_diag"
 
     pred_path = os.path.join(pred_dir, run_dir, ckpt_folder, fold)
     make_dir(pred_path)
