@@ -220,8 +220,8 @@ def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vo
         else:
             gloss_id = int(video_path.split("-")[-1][:-4])
 
-        if mode == 'flow':
-            num_frames = num_frames // 2
+        # if mode == 'flow':
+        #     num_frames = num_frames // 2
 
         label = np.zeros(num_classes, np.float32)
         label_idx = class_encodings[gloss_id]
@@ -330,8 +330,8 @@ def build_balanced_dataset(cngt_video_paths: list, sb_video_paths: list, sb_voca
         else:
             gloss_id = int(video_path.split("-")[-1][:-4])
 
-        if mode == 'flow':
-            num_frames = num_frames // 2
+        # if mode == 'flow':
+        #     num_frames = num_frames // 2
 
         label = np.zeros(num_classes, np.float32)
         label_idx = class_encodings[gloss_id]
@@ -391,8 +391,8 @@ def build_random_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab:
         else:
             gloss_id = int(video_path.split("-")[-1][:-4])
 
-        if mode == 'flow':
-            num_frames = num_frames // 2
+        # if mode == 'flow':
+        #     num_frames = num_frames // 2
 
         label = np.zeros(num_classes, np.float32)
         label_idx = class_encodings[gloss_id]

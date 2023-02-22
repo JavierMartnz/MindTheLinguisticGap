@@ -19,7 +19,7 @@ from src.utils.util import load_gzip, save_gzip
 from scipy.spatial import distance
 from sklearn.decomposition import PCA
 from pathlib import Path
-
+from torchvision import transforms
 
 def stress(X_pred, X):
     # distance of every point (row) to the rest of points in matrix
@@ -73,6 +73,10 @@ def main(params):
 
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
+    cropped_input_size = input_size * 0.875
+
+    test_transforms = transforms.Compose([transforms.CenterCrop(cropped_input_size)])
+
     print(f"Loading {fold} split...")
     dataset = I3Dataset(loading_mode=loading_mode,
                         cngt_zip=cngt_zip,
@@ -81,14 +85,17 @@ def main(params):
                         mode="rgb",
                         split=fold,
                         window_size=window_size,
-                        transforms=None,
+                        transforms=test_transforms,
                         filter_num=num_top_glosses,
                         specific_gloss_ids=specific_gloss_ids,
                         clips_per_class=clips_per_class)
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
-    i3d = InceptionI3d(num_classes=len(dataset.class_encodings), in_channels=3, window_size=window_size, input_size=input_size)
+    i3d = InceptionI3d(num_classes=len(dataset.class_encodings),
+                       in_channels=3,
+                       window_size=window_size,
+                       input_size=cropped_input_size)
 
     if use_cuda:
         i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
