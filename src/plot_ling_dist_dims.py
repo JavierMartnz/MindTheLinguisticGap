@@ -33,6 +33,7 @@ def main():
 
     ax2 = ax1.twinx()
     ax2.set_ylabel("Performance")
+    ax2.spines['right'].set_visible(True)
     ax2.plot(ling_dist, acc, linestyle='--', label='accuracy', marker='o')
     ax2.plot(ling_dist, f1, linestyle='--', label='f1', marker='o')
     ax2.legend(loc='best')
