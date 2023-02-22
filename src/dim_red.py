@@ -148,9 +148,7 @@ def main(params):
                     # Y = np.append(Y, y_true)
 
     X_features = X_features.detach().cpu()
-
-
-    n_components = 2 ** np.arange(1, 11)[::-1]
+    n_components = 2 ** np.arange(1, 11)
 
     pca_stress = []
     n_valid_components = []
