@@ -170,8 +170,9 @@ def main(params):
     plt.ylabel("Stress")
     plt.tight_layout()
 
+    run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
     os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, run_dir.replace(":", ";") + '_pcastress.png'))
+    plt.savefig(os.path.join(fig_output_root, run_dir + '_pcastress.png'))
 
 
 if __name__ == "__main__":
