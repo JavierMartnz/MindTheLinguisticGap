@@ -65,6 +65,8 @@ def main(params):
     plt.tight_layout()
     # plt.show()
 
+    print(f"The epoch with the min loss was {training_history['val_loss'].index(min(training_history['val_loss']))}")
+
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, weights_root + '_loss.png'))
 

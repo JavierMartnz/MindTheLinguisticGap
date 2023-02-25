@@ -204,6 +204,12 @@ def run(cfg_path, mode='rgb'):
     training_history = {'train_loss': [], 'train_accuracy': [], 'train_f1': [],
                         'val_loss': [], 'val_accuracy': [], 'val_f1': []}
 
+    min_loss = np.inf
+    patience = 10
+    min_delta = 0.01
+
+    early_stopping_counter = 0
+
     # start training
     for epoch in range(epochs):
         # Each epoch has a training and validation phase
@@ -216,7 +222,6 @@ def run(cfg_path, mode='rgb'):
             tot_loss = 0.0
             num_iter = 0  # count number of iterations in an epoch
             num_acc_loss = 0  # count number of iterations in which the model hasn't been stored
-            min_loss = np.inf
 
             acc_list = []
             f1_list = []
@@ -281,6 +286,8 @@ def run(cfg_path, mode='rgb'):
                         # reset losses and counter
                         num_acc_loss = 0
                         tot_loss = 0.0
+                    else:
+                        num_stagnant_epochs += 1
 
                 # after processing the data, record validation metrics
                 elif phase == 'val':
