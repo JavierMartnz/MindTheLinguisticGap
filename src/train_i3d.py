@@ -43,7 +43,7 @@ def run(cfg_path, mode='rgb'):
     signbank_folder = data_cfg.get("signbank_folder")
     sb_vocab_file = data_cfg.get("sb_vocab_file")
     window_size = data_cfg.get("window_size")
-    loading_mode = data_cfg.get("data_loading")
+    loading_mode = data_cfg.get("loading_mode")
     input_size = data_cfg.get("input_size")
     clips_per_class = data_cfg.get("clips_per_class")
 
