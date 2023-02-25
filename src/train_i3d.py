@@ -264,7 +264,7 @@ def run(cfg_path, mode='rgb'):
                           f'F1: {np.mean(f1_list):.4f}\n'
                           '-------------------------\n')
 
-                    lr_sched.step(tot_loss / num_iter)
+                    lr_sched.step(tot_loss / num_iter, epoch=epoch+1)
 
     with open(os.path.join(save_model_dir, 'training_history.txt'), 'w') as file:
         file.write(json.dumps(training_history))
