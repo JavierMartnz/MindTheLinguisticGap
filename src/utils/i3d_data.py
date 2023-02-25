@@ -104,8 +104,7 @@ def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
 
 
 def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
-                             class_encodings: dict, window_size: int, split: str) -> list:
-
+                             class_encodings: dict, window_size: int, split: str, random_seed: int) -> list:
     classes = list(class_encodings.keys())
     gloss_to_id = sb_vocab["gloss_to_id"]
 
@@ -160,7 +159,7 @@ def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vo
     val_test_size_dict = {key: int(val_test_size * ratio_dict[key] // window_size) for key in glosses}
 
     # shuffle the signers for random assignment
-    random.seed(42)
+    random.seed(random_seed)
     random.shuffle(signers)
 
     cngt_split_dict = {'train': [], 'val': [], 'test': []}
@@ -244,8 +243,7 @@ def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vo
 
 
 def build_balanced_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
-                           class_encodings: dict, window_size: int, split: str) -> list:
-
+                           class_encodings: dict, window_size: int, split: str, random_seed: int) -> list:
     gloss_to_id = sb_vocab['gloss_to_id']
 
     class_cnt_dict = {}
@@ -285,7 +283,7 @@ def build_balanced_dataset(cngt_video_paths: list, sb_video_paths: list, sb_voca
     val_test_size_dict = {key: int(val_test_size * ratio_dict[key]) for key in ratio_dict.keys()}
 
     # setting a seed allows that the splits are always the same, regardless of when the data is loaded
-    random.seed(42)
+    random.seed(random_seed)
     # randomize the order of the paths
     for key in class_paths_dict.keys():
         random.shuffle(class_paths_dict[key])
@@ -354,9 +352,8 @@ def build_balanced_dataset(cngt_video_paths: list, sb_video_paths: list, sb_voca
 
 
 def build_random_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
-                         class_encodings: dict, window_size: int, split: str) -> list:
-
-    random.seed(42)
+                         class_encodings: dict, window_size: int, split: str, random_seed: int) -> list:
+    random.seed(random_seed)
     random.shuffle(cngt_video_paths)
     random.shuffle(sb_video_paths)
 
@@ -414,140 +411,126 @@ def build_random_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab:
     return dataset
 
 
-def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, class_encodings: dict,
-                            window_size: int, diagonal_videos_path: str):
-    # process zip files first
-    if not os.path.isdir(cngt_zip[:-4]):
-        cngt_extracted_root = extract_zip(cngt_zip)
-    else:
-        cngt_extracted_root = cngt_zip[:-4]
-        # print(f"{cngt_extracted_root} already exists, no need to extract")
+# def build_dataset_from_gzip(cngt_zip: str, sb_zip: str, sb_vocab_path: str, class_encodings: dict,
+#                             window_size: int, diagonal_videos_path: str):
+#     # process zip files first
+#     if not os.path.isdir(cngt_zip[:-4]):
+#         cngt_extracted_root = extract_zip(cngt_zip)
+#     else:
+#         cngt_extracted_root = cngt_zip[:-4]
+#         # print(f"{cngt_extracted_root} already exists, no need to extract")
+#
+#     if not os.path.isdir(sb_zip[:-4]):
+#         sb_extracted_root = extract_zip(sb_zip)
+#     else:
+#         sb_extracted_root = sb_zip[:-4]
+#         # print(f"{sb_extracted_root} already exists, no need to extract")
+#
+#     num_classes = len(class_encodings)
+#     dataset = []
+#
+#     sb_vocab = load_gzip(sb_vocab_path)
+#     id_to_gloss = sb_vocab['id_to_gloss']
+#
+#     diagonal_videos = list(set(load_gzip(diagonal_videos_path)))
+#     all_video_paths = []
+#
+#     for video in diagonal_videos:
+#         if video.endswith(".mpg"):  # cngt video
+#             all_video_paths.append(os.path.join(cngt_extracted_root, video))
+#         else:
+#             all_video_paths.append(os.path.join(sb_extracted_root, video))
+#
+#     label_dict = {}
+#
+#     for video_path in tqdm(all_video_paths):
+#         metadata = load_gzip(video_path[:video_path.rfind(".m")] + ".gzip")
+#         num_frames = metadata.get("num_frames")
+#         if video_path.endswith(".mpg"):  # cngt video
+#             gloss_id = int(video_path.split("_")[-1][:-4])
+#         else:
+#             gloss_id = int(video_path.split("-")[-1][:-4])
+#
+#         label = np.zeros(num_classes, np.float32)
+#         label_idx = class_encodings[gloss_id]
+#         gloss = id_to_gloss[gloss_id]
+#
+#         if gloss not in label_dict.keys():
+#             label_dict[gloss] = 0
+#
+#         label[label_idx] = 1
+#
+#         num_windows = math.ceil(num_frames / window_size)
+#
+#         for i in range(num_windows):
+#             label_dict[gloss] += 1
+#             dataset.append((video_path, label, num_frames, i * window_size))
+#
+#     print(f"The labels and label count is {label_dict}")
+#
+#     return dataset
 
-    if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(sb_zip)
-    else:
-        sb_extracted_root = sb_zip[:-4]
-        # print(f"{sb_extracted_root} already exists, no need to extract")
 
-    num_classes = len(class_encodings)
-    dataset = []
-
-    sb_vocab = load_gzip(sb_vocab_path)
-    id_to_gloss = sb_vocab['id_to_gloss']
-
-    diagonal_videos = list(set(load_gzip(diagonal_videos_path)))
-    all_video_paths = []
-
-    for video in diagonal_videos:
-        if video.endswith(".mpg"):  # cngt video
-            all_video_paths.append(os.path.join(cngt_extracted_root, video))
-        else:
-            all_video_paths.append(os.path.join(sb_extracted_root, video))
-
-    label_dict = {}
-
-    for video_path in tqdm(all_video_paths):
-        metadata = load_gzip(video_path[:video_path.rfind(".m")] + ".gzip")
-        num_frames = metadata.get("num_frames")
-        if video_path.endswith(".mpg"):  # cngt video
-            gloss_id = int(video_path.split("_")[-1][:-4])
-        else:
-            gloss_id = int(video_path.split("-")[-1][:-4])
-
-        label = np.zeros(num_classes, np.float32)
-        label_idx = class_encodings[gloss_id]
-        gloss = id_to_gloss[gloss_id]
-
-        if gloss not in label_dict.keys():
-            label_dict[gloss] = 0
-
-        label[label_idx] = 1
-
-        num_windows = math.ceil(num_frames / window_size)
-
-        for i in range(num_windows):
-            label_dict[gloss] += 1
-            dataset.append((video_path, label, num_frames, i * window_size))
-
-    print(f"The labels and label count is {label_dict}")
-
-    return dataset
-
-
-def build_dataset(loading_mode: str, cngt_zip: str, sb_zip: str, sb_vocab_path: str, mode: str,
-                  class_encodings: dict, window_size: int, split: str, clips_per_class=-1) -> list:
+def build_dataset(loading_mode: str, cngt_root: str, sb_root: str, sb_vocab_path: str, mode: str,
+                  class_encodings: dict, window_size: int, split: str, clips_per_class: int, random_seed: int) -> list:
     assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
 
     classes = list(class_encodings.keys())
 
-    # process zip files first
-    if not os.path.isdir(cngt_zip[:-4]):
-        cngt_extracted_root = extract_zip(cngt_zip)
-    else:
-        cngt_extracted_root = cngt_zip[:-4]
-        # print(f"{cngt_extracted_root} already exists, no need to extract")
+    # check for zip files
+    if not os.path.isdir(cngt_root) and os.path.exists(cngt_root + '.zip'):
+        cngt_root = extract_zip(cngt_root + '.zip')
 
-    if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(sb_zip)
-    else:
-        sb_extracted_root = sb_zip[:-4]
-        # print(f"{sb_extracted_root} already exists, no need to extract")
+    if not os.path.isdir(sb_root) and os.path.exists(sb_root + '.zip'):
+        sb_root = extract_zip(sb_root + '.zip')
 
-    cngt_videos = [file for file in os.listdir(cngt_extracted_root) if file.endswith('.mpg')]
-    sb_videos = [file for file in os.listdir(sb_extracted_root) if file.endswith('.mp4')]
-
-    # we filter the glosses
-    cngt_video_paths = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
-    sb_video_paths = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
+    cngt_videos = [file for file in os.listdir(cngt_root) if file.endswith('.mpg')]
+    sb_videos = [file for file in os.listdir(sb_root) if file.endswith('.mp4')]
 
     # use signbank vocab to be able to get the glosses from their IDs
     sb_vocab = load_gzip(sb_vocab_path)
 
-    # if the numbers of clips per class is not specified
-    if clips_per_class == -1:
-        if loading_mode == "random":
-            dataset = build_random_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
-        elif loading_mode == "balanced":
-            dataset = build_balanced_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
-        elif loading_mode == "stratified":
-            dataset = build_stratified_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split)
-    else:
+    # if a number of clips is specified, maybe a previous filtering of the videos
+    if clips_per_class != -1 and clips_per_class > 0:
 
-        random.seed(42)
-
+        random.seed(random_seed)
         subsample_cngt_videos = []
         subsample_sb_videos = []
         for gloss_class in classes:
-            cngt_videos_single_class = [os.path.join(cngt_extracted_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) == gloss_class]
-            sb_videos_single_class = [os.path.join(sb_extracted_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) == gloss_class]
+            cngt_videos_single_class = [os.path.join(cngt_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) == gloss_class]
+            sb_videos_single_class = [os.path.join(sb_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) == gloss_class]
 
             random.shuffle(cngt_videos_single_class)
             random.shuffle(sb_videos_single_class)
 
             subsample_sb_videos.extend(sb_videos_single_class)
-            subsample_cngt_videos.extend(cngt_videos_single_class[:clips_per_class-len(sb_videos_single_class)])
+            subsample_cngt_videos.extend(cngt_videos_single_class[:clips_per_class - len(sb_videos_single_class)])
 
-        dataset = build_balanced_dataset(subsample_cngt_videos, subsample_sb_videos, sb_vocab, mode, class_encodings, window_size, split)
+            cngt_video_paths = subsample_cngt_videos
+            sb_video_paths = subsample_sb_videos
+    else:
+        cngt_video_paths = [os.path.join(cngt_videos, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
+        sb_video_paths = [os.path.join(sb_videos, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
+
+    if loading_mode == "random":
+        dataset = build_random_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split, random_seed)
+    elif loading_mode == "balanced":
+        dataset = build_balanced_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split, random_seed)
+    elif loading_mode == "stratified":
+        dataset = build_stratified_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split, random_seed)
 
     return dataset
 
 
+def get_class_encodings(cngt_root, sb_root, filter_num=None, specific_gloss_ids=[]):
+    # check for zip files
+    if not os.path.isdir(cngt_root) and os.path.exists(cngt_root + '.zip'):
+        cngt_root = extract_zip(cngt_root + '.zip')
 
-def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_gloss_ids=[]):
-    # process zip files first
-    if not os.path.isdir(cngt_zip[:-4]):
-        cngt_extracted_root = extract_zip(cngt_zip)
-    else:
-        cngt_extracted_root = cngt_zip[:-4]
-        # print(f"{cngt_extracted_root} already exists, no need to extract")
+    if not os.path.isdir(sb_root) and os.path.exists(sb_root + '.zip'):
+        sb_root = extract_zip(sb_root + '.zip')
 
-    if not os.path.isdir(sb_zip[:-4]):
-        sb_extracted_root = extract_zip(sb_zip)
-    else:
-        sb_extracted_root = sb_zip[:-4]
-        # print(f"{sb_extracted_root} already exists, no need to extract")
-
-    cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in os.listdir(cngt_extracted_root) if video.endswith('.mpg')]
+    cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in os.listdir(cngt_root) if video.endswith('.mpg')]
     sb_gloss_ids = {}
 
     if filter_num is None:  # default case
@@ -556,16 +539,11 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_glo
             assert type(specific_gloss_ids[0]) == int, "The variable 'specific_glosses' must be a list of integers"
             cngt_gloss_ids = specific_gloss_ids
         else:
-            sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
+            sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_root) if video.endswith('.mp4')]
     else:
         assert type(filter_num) == int, "The variable 'filter_num' must be an integer"
         _, top_cngt_ids = filter_top_glosses(cngt_gloss_ids, filter_num)
         cngt_gloss_ids = top_cngt_ids
-
-    # THE NEXT 3 LINES ARE ONLY FOR TESTING, SHOULD BE REMOVED
-    # cngt_gloss_ids = {}
-    # sb_gloss_ids = [int(video.split("-")[-1][:-4]) for video in os.listdir(sb_extracted_root) if video.endswith('.mp4')]
-    # _, sb_gloss_ids = filter_top_glosses(sb_gloss_ids, filter_num)
 
     classes = list(set(cngt_gloss_ids).union(set(sb_gloss_ids)))
 
@@ -578,21 +556,24 @@ def get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num=None, specific_glo
 
 class I3Dataset(data_utl.Dataset):
 
-    def __init__(self, loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, split, window_size=64, transforms=None,
-                 filter_num=None, specific_gloss_ids=None, clips_per_class=-1):
+    def __init__(self, loading_mode, cngt_root, sb_root, sb_vocab_path, mode, split, window_size=64, transforms=None,
+                 filter_num=None, specific_gloss_ids=None, clips_per_class=-1, random_seed=42):
+
         assert loading_mode in {'random', 'balanced', 'stratified'}, "The 'loading_mode' argument must have values 'random', 'balanced', 'stratified'"
         assert mode in {'rgb', 'flow'}, "The 'mode' argument must have values 'rgb' or 'flow'"
+
         self.mode = mode
-        self.class_encodings = get_class_encodings_from_zip(cngt_zip, sb_zip, filter_num, specific_gloss_ids)
+        self.class_encodings = get_class_encodings(cngt_root, sb_root, filter_num, specific_gloss_ids)
         self.window_size = window_size
         self.transforms = transforms
-        self.data = build_dataset(loading_mode, cngt_zip, sb_zip, sb_vocab_path, mode, self.class_encodings, window_size, split, clips_per_class)
+        self.data = build_dataset(loading_mode, cngt_root, sb_root, sb_vocab_path, mode, self.class_encodings, window_size, split, clips_per_class, random_seed)
 
     def __getitem__(self, index):
         video_path, label, num_frames, start_frame = self.data[index]
 
         if self.mode == 'rgb':
             imgs = load_rgb_frames(video_path, start_frame, self.window_size)
+        # FLOW NOT IMPLEMENTED
         # else:
         #     imgs = load_flow_frames(self.root, vid, start_frame)
 

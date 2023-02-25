@@ -4,26 +4,17 @@ import json
 
 sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
-from src.utils import videotransforms
 from src.utils.helpers import load_config
 from src.utils.util import load_gzip
 
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 import argparse
-#
-# parser = argparse.ArgumentParser()
-# parser.add_argument('-mode', type=str, help='rgb or flow')
-# parser.add_argument('-save_model', type=str)
-# parser.add_argument('-root', type=str)
-#
-# args = parser.parse_args()
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.optim import lr_scheduler
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
@@ -36,8 +27,6 @@ from tqdm import tqdm
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 
 from src.utils.pytorch_i3d import InceptionI3d
-from src.utils.i3d_dimensions_exp import InceptionI3d as InceptionDims
-from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
 
@@ -48,31 +37,33 @@ def run(cfg_path, mode='rgb'):
     training_cfg = cfg.get("training")
     data_cfg = cfg.get("data")
 
-    # training configs
-    extra_conv = training_cfg.get("extra_conv")
-    model_weights = training_cfg.get("model_weights")
-    specific_glosses = training_cfg.get("specific_glosses")
-    run_name = training_cfg.get("run_name")
-    epochs = training_cfg.get("epochs")
-    init_lr = training_cfg.get("init_lr")
-    batch_size = training_cfg.get("batch_size")
-    save_model_root = training_cfg.get("model_dir")
-    weights_dir = training_cfg.get("weights_dir")
-
     # data configs
-    cngt_zip = data_cfg.get("cngt_clips_path")
-    sb_zip = data_cfg.get("signbank_path")
-    sb_vocab_path = data_cfg.get("sb_vocab_path")
+    root = data_cfg.get("root")
+    cngt_clips_folder = data_cfg.get("cngt_clips_folder")
+    signbank_folder = data_cfg.get("signbank_folder")
+    sb_vocab_file = data_cfg.get("sb_vocab_file")
     window_size = data_cfg.get("window_size")
     loading_mode = data_cfg.get("data_loading")
-    use_diag_videos = data_cfg.get("use_diag_videos")
-    diagonal_videos_path = data_cfg.get("diagonal_videos_path") if use_diag_videos else None
-    final_pooling_size = data_cfg.get("final_pooling_size")
     input_size = data_cfg.get("input_size")
     clips_per_class = data_cfg.get("clips_per_class")
 
-    if extra_conv:
-        assert model_weights
+    # training configs
+    specific_glosses = training_cfg.get("specific_glosses")
+    run_name = training_cfg.get("run_name")
+    epochs = training_cfg.get("epochs")
+    batch_size = training_cfg.get("batch_size")
+    init_lr = training_cfg.get("init_lr")
+    momentum = training_cfg.get("momentum")
+    weight_decay = training_cfg.get("weight_decay")
+    save_model_root = training_cfg.get("save_model_root")
+    weights_dir_path = training_cfg.get("weights_dir_path")
+    use_cuda = training_cfg.get("use_cuda")
+    random_seed = training_cfg.get("random_seed")
+
+    # stitch together the paths
+    cngt_clips_root = os.path.join(root, cngt_clips_folder)
+    sb_root = os.path.join(root, signbank_folder)
+    sb_vocab_path = os.path.join(root, sb_vocab_file)
 
     print(f"Using window size of {window_size} frames")
     print(f"Input size is {input_size}")
@@ -97,57 +88,41 @@ def run(cfg_path, mode='rgb'):
 
     specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
 
-    print("Loading training split...")
-    train_dataset = I3Dataset(loading_mode,
-                              cngt_zip,
-                              sb_zip,
-                              sb_vocab_path,
-                              mode,
-                              'train',
-                              window_size,
-                              transforms=train_transforms,
-                              filter_num=num_top_glosses,
-                              specific_gloss_ids=specific_gloss_ids,
-                              clips_per_class=clips_per_class)
+    transforms_list = [train_transforms, val_transforms]
+    dataloaders = {}
 
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
-
-    print("Loading val split...")
-    val_dataset = I3Dataset(loading_mode,
-                            cngt_zip,
-                            sb_zip,
+    for i, split in enumerate(["train", "val"]):
+        print(f"Loading {split} split...")
+        dataset = I3Dataset(loading_mode,
+                            cngt_clips_root,
+                            sb_root,
                             sb_vocab_path,
                             mode,
-                            'val',
+                            split,
                             window_size,
-                            transforms=val_transforms,
+                            transforms=transforms_list[i],
                             filter_num=num_top_glosses,
                             specific_gloss_ids=specific_gloss_ids,
-                            clips_per_class=clips_per_class)
+                            clips_per_class=clips_per_class,
+                            random_seed=random_seed)
 
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
-
-    dataloaders = {'train': train_dataloader, 'val': val_dataloader}
+        dataloaders[split] = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     print("Setting up the model...")
     if mode == 'flow':
         i3d = InceptionI3d(400, in_channels=2)
-        i3d.load_state_dict(torch.load(weights_dir + '/flow_imagenet.pt'))
+        i3d.load_state_dict(torch.load(weights_dir_path + '/flow_imagenet.pt'))
     else:
         # THIS IS THE STANDARD ORIGINAL I3D
         i3d = InceptionI3d(400, in_channels=3, window_size=window_size, input_size=cropped_input_size)
 
         # i3d.load_state_dict(torch.load(weights_dir + '/rgb_charades.pt'))
-        i3d.load_state_dict(torch.load(weights_dir + '/rgb_imagenet.pt'))
+        i3d.load_state_dict(torch.load(weights_dir_path + '/rgb_imagenet.pt'))
 
     # changes the last layer in order to accommodate the new number of classes (after loading weights)
-    i3d.replace_logits(num_classes=len(train_dataset.class_encodings))
+    i3d.replace_logits(num_classes=len(dataset.class_encodings))
 
-    # this only applies to the network with the extra conv layer
-    if extra_conv:
-        i3d.add_dim_conv()
-
-    print(f"\tThe model has {len(train_dataset.class_encodings)} classes")
+    print(f"\tThe model has {len(dataset.class_encodings)} classes")
 
     n_layers = 0
     # freeze all layers for fine-tuning
@@ -155,10 +130,7 @@ def run(cfg_path, mode='rgb'):
         param.requires_grad = False
         n_layers += 1
 
-    # unfreeze the layers that we want to train
-    if extra_conv:
-        i3d.dims_conv.requires_grad_(True)
-
+    # unfreeze the prev-to-last one
     i3d.logits.requires_grad_(True)
 
     # layers are ['Mixed_5c', 'Mixed_5b', 'MaxPool3d_5a_2x2', 'Mixed_4f', 'Mixed_4e', 'Mixed_4d', 'Mixed_4c', 'Mixed_4b']
@@ -166,17 +138,15 @@ def run(cfg_path, mode='rgb'):
     for layer in unfreeze_layers:
         i3d.end_points[layer].requires_grad_(True)
 
-    if extra_conv:
-        print(f"\tThe last {len(unfreeze_layers) + 2} out of 18 blocks are unfrozen.")
-    else:
-        print(f"\tThe last {len(unfreeze_layers) + 1} out of 17 blocks are unfrozen.")
+    print(f"\tThe last {len(unfreeze_layers) + 1} out of 17 blocks are unfrozen.")
 
     # prints number of parameters
     trainable_params = sum(p.numel() for p in i3d.parameters() if p.requires_grad)
     total_params = sum(p.numel() for p in i3d.parameters())
     print(f"\tThe network has {trainable_params} trainable parameters out of {total_params}")
 
-    i3d.cuda()
+    if use_cuda:
+        i3d.cuda()
 
     # print summary of the network, similar to keras
     # summary(i3d, (3, 16, 224, 224))
@@ -184,10 +154,10 @@ def run(cfg_path, mode='rgb'):
     i3d = nn.DataParallel(i3d)
 
     lr = init_lr
-    optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
+    optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
 
-    lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
-    # lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
+    # lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
 
     # before starting the training loop, make sure the directory where the model will be stored is created/exists
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
@@ -195,19 +165,11 @@ def run(cfg_path, mode='rgb'):
     save_model_dir = os.path.join(save_model_root, new_save_dir)
     os.makedirs(save_model_dir, exist_ok=True)
 
-    steps = 0  # count the number of optimizer steps
-
-    # THESE PARAMETERS CAN BE CHANGED
-    num_steps_per_update = 1  # number of batches for which the gradient accumulates before backpropagation
-    print_freq = 1  # number of optimizer steps before printing batch loss and metrics
-
-    training_history = {'train_loss': [], 'train_accuracy': [], 'train_f1': [],
-                        'val_loss': [], 'val_accuracy': [], 'val_f1': []}
+    training_history = {'train_loss': [], 'train_accuracy': [], 'train_f1': [], 'val_loss': [], 'val_accuracy': [], 'val_f1': []}
 
     min_loss = np.inf
     patience = 10
     min_delta = 0.01
-
     early_stopping_counter = 0
 
     # start training
@@ -221,7 +183,6 @@ def run(cfg_path, mode='rgb'):
 
             tot_loss = 0.0
             num_iter = 0  # count number of iterations in an epoch
-            num_acc_loss = 0  # count number of iterations in which the model hasn't been stored
 
             acc_list = []
             f1_list = []
@@ -230,26 +191,26 @@ def run(cfg_path, mode='rgb'):
                 for data in tepoch:
                     tepoch.set_description(f"Epoch {str(epoch + 1).zfill(len(str(epochs)))}/{epochs} -- ")
                     num_iter += 1
-                    num_acc_loss += 1
 
                     # clear gradients
                     optimizer.zero_grad()
 
                     # get the inputs
                     inputs, labels, _ = data
-                    inputs = Variable(inputs.cuda())
-                    labels = Variable(labels.cuda())
+                    if use_cuda:
+                        inputs = Variable(inputs.cuda())
+                        labels = Variable(labels.cuda())
 
                     # forward pass of the inputs through the network
                     sign_logits = i3d(inputs)
                     sign_logits = torch.squeeze(sign_logits, -1)
 
                     # calculate and backpropagate the loss
-                    tot_loss = F.binary_cross_entropy_with_logits(sign_logits, labels)
-                    tot_loss.backward()
+                    loss = F.binary_cross_entropy_with_logits(sign_logits, labels)
+                    loss.backward()
 
                     # save the loss
-                    tot_loss = tot_loss.item()
+                    tot_loss += loss.item()
 
                     # get predictions and append them for later
                     y_pred = np.argmax(sign_logits.detach().cpu().numpy(), axis=1)
@@ -258,36 +219,31 @@ def run(cfg_path, mode='rgb'):
                     acc_list.append(accuracy_score(y_true.flatten(), y_pred.flatten()))
                     f1_list.append(f1_score(y_true.flatten(), y_pred.flatten()))
 
-                    # this if clause allows gradient accumulation and saves the model weights if the loss improves
-                    if phase == 'train' and num_iter % num_steps_per_update == 0:
+                    if phase == 'train':
                         optimizer.step()
-                        steps += 1
-                        num_acc_loss += 1
+                        tepoch.set_postfix(loss=round(tot_loss / num_iter, 4),
+                                           total_acc=round(np.mean(acc_list), 4),
+                                           total_f1=round(np.mean(f1_list), 4))
 
-                        if steps % print_freq == 0:
-                            tepoch.set_postfix(loss=round(tot_loss / num_acc_loss, 4),
-                                               total_acc=round(np.mean(acc_list), 4),
-                                               total_f1=round(np.mean(f1_list), 4))
-
-                # after processing all data for this epoch, we store the loss and metrics and the model weight if the
-                # loss decreased wrt last epoch
+                # after processing all data for this epoch, we store the loss and metrics and the model weight only if the loss decreased wrt last epoch
                 if phase == 'train':
                     # add values to training history
-                    training_history['train_loss'].append(tot_loss / num_acc_loss)
+                    training_history['train_loss'].append(tot_loss / num_iter)
                     training_history['train_accuracy'].append(np.mean(acc_list))
                     training_history['train_f1'].append(np.mean(f1_list))
+
+                    # early stopping
+                    if tot_loss > min_loss or (tot_loss < min_loss and (min_loss - tot_loss) < min_delta):
+                        early_stopping_counter += 1
+
+                        if early_stopping_counter >= patience:
+                            print(f"Early stop: validation loss did not decrease more than {min_delta} in {patience} epochs.")
 
                     # save model only when total loss is lower than the minimum loss achieved so far
                     if tot_loss < min_loss:
                         min_loss = tot_loss
                         # save model
-                        torch.save(i3d.module.state_dict(),
-                                   save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '.pt')
-                        # reset losses and counter
-                        num_acc_loss = 0
-                        tot_loss = 0.0
-                    else:
-                        num_stagnant_epochs += 1
+                        torch.save(i3d.module.state_dict(), save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '.pt')
 
                 # after processing the data, record validation metrics
                 elif phase == 'val':
@@ -302,8 +258,7 @@ def run(cfg_path, mode='rgb'):
                           f'F1: {np.mean(f1_list):.4f}\n'
                           '-------------------------\n')
 
-        # make the scheduler step only at the end of the epoch
-        lr_sched.step()
+                    lr_sched.step(tot_loss / num_iter)
 
     with open(os.path.join(save_model_dir, 'training_history.txt'), 'w') as file:
         file.write(json.dumps(training_history))

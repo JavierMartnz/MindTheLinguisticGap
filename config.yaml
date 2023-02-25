@@ -1,22 +1,23 @@
-data:
-
-  cngt_clips_path: "/vol/tensusers5/jmartinez/datasets/cngt_single_signs.zip"
-  signbank_path: "/vol/tensusers5/jmartinez/datasets/NGT_Signbank_resized.zip"
-  cngt_vocab_path: "/vol/tensusers5/jmartinez/datasets/cngt_vocab.gzip"
-  sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
-  window_size: 16
-  data_loading: "random"
-  input_size: 512
-
 training:
   specific_glosses: ["JA-A", "GEBAREN-A"]
-  run_name: "baseline"
-  use_cuda: True
+  run_name: ""
   epochs: 50
-  random_seed: 42
   batch_size: 128
   init_lr: 0.1
   momentum: 0.9
   weight_decay: 0.0000001
-  model_dir: "/vol/tensusers5/jmartinez/models/i3d"
-  weights_dir: "/vol/tensusers5/jmartinez/models"
+  save_model_root: "/vol/tensusers5/jmartinez/models/i3d"
+  weights_dir_path: "/vol/tensusers5/jmartinez/models"
+  use_cuda: True
+  random_seed: 42
+
+data:
+  clips_per_class: -1
+  root: "/vol/tensusers5/jmartinez/datasets"
+  cngt_clips_folder: "cngt_single_signs_256"
+  signbank_folder: "NGT_Signbank_256"
+  sb_vocab_file: "signbank_vocab.gzip"
+  window_size: 16
+  loading_mode: "balanced"
+  input_size: 256
+
