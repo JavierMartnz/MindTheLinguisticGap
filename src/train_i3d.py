@@ -171,9 +171,14 @@ def run(cfg_path, mode='rgb'):
     patience = 10
     min_delta = 0.01
     early_stopping_counter = 0
+    early_stopping = False
 
     # start training
     for epoch in range(epochs):
+        # if the flag was raised in the previous epoch, finish training
+        if early_stopping:
+            break
+
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -238,6 +243,7 @@ def run(cfg_path, mode='rgb'):
 
                         if early_stopping_counter >= patience:
                             print(f"Early stop: validation loss did not decrease more than {min_delta} in {patience} epochs.")
+                            early_stopping = True
 
                     # save model only when total loss is lower than the minimum loss achieved so far
                     if tot_loss < min_loss:
