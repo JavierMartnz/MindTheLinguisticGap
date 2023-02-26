@@ -155,17 +155,22 @@ def dim_red(specific_glosses: list, ckpt_epoch: int, config: dict, fig_output_ro
     n_valid_components = []
     print("Running PCA...")
     for nc in n_components:
-        # this if guarantees that pca runs. pca only works when the number of samples is at least n_components-1
-        if X_features.size(0) < nc:
+        # pca won't work if num_components > num_samples
+        if X_features.size(0) >= nc:
             try:
                 X_pca = PCA(n_components=nc).fit_transform(X_features)
                 n_valid_components.append(nc)
                 pca_stress.append(stress(X_pca, X_features))
-                print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
+                # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
             except Exception as e:
                 print(e)
 
+    print(f"The stress values from 2 to 1024 are:\n{pca_stress}")
 
+    delta_stress = [np.abs(pca_stress[i]-pca_stress[i+1]) for i in range(len(pca_stress)-1)]
+    min_delta_index = delta_stress.index(min(delta_stress))
+
+    print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index+1]}")
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
