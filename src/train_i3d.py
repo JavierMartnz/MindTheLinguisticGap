@@ -50,11 +50,11 @@ class EarlyStopper:
             return False
 
 
-def run(cfg_path, mode='rgb'):
+def train(specific_glosses: list, config: dict, mode='rgb'):
     print("Configuring model and parameters...")
-    cfg = load_config(cfg_path)
-    training_cfg = cfg.get("training")
-    data_cfg = cfg.get("data")
+
+    training_cfg = config.get("training")
+    data_cfg = config.get("data")
 
     # data configs
     root = data_cfg.get("root")
@@ -67,7 +67,6 @@ def run(cfg_path, mode='rgb'):
     clips_per_class = data_cfg.get("clips_per_class")
 
     # training configs
-    specific_glosses = training_cfg.get("specific_glosses")
     run_name = training_cfg.get("run_name")
     epochs = training_cfg.get("epochs")
     batch_size = training_cfg.get("batch_size")
@@ -288,7 +287,19 @@ def run(cfg_path, mode='rgb'):
 
 def main(params):
     config_path = params.config_path
-    run(config_path)
+
+    config = load_config(config_path)
+
+    train_config = config.get("training")
+
+    reference_sign = train_config.get("reference_sign")
+    train_signs = train_config.get("train_signs")
+
+    assert type(train_signs) == list, "The variable 'train_signs' must be a list."
+
+    for sign in train_signs:
+        train(specific_glosses=[reference_sign, sign],
+              config=config)
 
 
 if __name__ == '__main__':

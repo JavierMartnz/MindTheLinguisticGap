@@ -1,5 +1,6 @@
 training:
-  specific_glosses: ["JA-A", "GEBAREN-A"]
+  reference_sign: "PT-1hand:1"
+  train_signs: ["WETEN-A"]
   run_name: ""
   epochs: 50
   batch_size: 128
