@@ -195,14 +195,14 @@ def main(params):
     pca_config = config.get("pca")
 
     reference_sign = pca_config.get("reference_sign")
-    train_signs = pca_config.get("train_signs")
+    signs = pca_config.get("signs")
     ckpt_epoch_list = pca_config.get("ckpt_epoch_list")
 
-    assert type(train_signs) == list, "The variable 'train_signs' must be a list."
+    assert type(signs) == list, "The variable 'train_signs' must be a list."
     assert type(ckpt_epoch_list) == list, "The variable 'ckpt_epoch_list' must be a list."
-    assert len(train_signs) == len(ckpt_epoch_list), "Every sign pair needs to have a corresponding checkpoint."
+    assert len(signs) == len(ckpt_epoch_list), "Every sign pair needs to have a corresponding checkpoint."
 
-    for i, sign in enumerate(train_signs):
+    for i, sign in enumerate(signs):
         dim_red(specific_glosses=[reference_sign, sign],
                 ckpt_epoch=ckpt_epoch_list[i],
                 config=config,
