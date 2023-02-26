@@ -80,8 +80,8 @@ def dim_red(specific_glosses: list, ckpt_epoch: int, config: dict, fig_output_ro
 
     print(f"Loading {fold} split...")
     dataset = I3Dataset(loading_mode=loading_mode,
-                        cngt_zip=cngt_root,
-                        sb_zip=sb_root,
+                        cngt_root=cngt_root,
+                        sb_root=sb_root,
                         sb_vocab_path=sb_vocab_path,
                         mode="rgb",
                         split=fold,
