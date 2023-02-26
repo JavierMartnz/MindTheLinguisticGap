@@ -149,6 +149,7 @@ def dim_red(specific_glosses: list, ckpt_epoch: int, config: dict, fig_output_ro
                     # Y = np.append(Y, y_true)
 
     X_features = X_features.detach().cpu()
+    print(X_features.size())
     n_components = 2 ** np.arange(1, 11)
 
     pca_stress = []
