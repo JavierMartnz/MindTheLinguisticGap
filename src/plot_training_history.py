@@ -55,7 +55,7 @@ def plot_train_history(specific_glosses: list, config: dict, trained_models_root
     plt.tight_layout()
     # plt.show()
 
-    print(f"The epoch with the min loss was {training_history['val_loss'].index(min(training_history['val_loss']))}")
+    print(f"The epoch with the min loss was {training_history['val_loss'].index(min(training_history['val_loss'])) + 1}")
 
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, weights_root + '_loss.png'))
@@ -82,19 +82,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--trained_models_root",
         type=str,
-        default="D:/Thesis/models/i3d"
     )
 
     parser.add_argument(
         "--fig_output_root",
         type=str,
-        default="D:/Thesis/graphs"
     )
 
     parser.add_argument(
         "--config_path",
         type=str,
-        default="C:/Users/Javi/PycharmProjects/MindTheLinguisticGap/config_local.yaml"
     )
 
     params, _ = parser.parse_known_args()
