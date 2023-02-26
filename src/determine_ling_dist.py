@@ -90,8 +90,8 @@ def main(params):
 
         # print only the signs that have signs with ling distance from 1 to 10.
         if (all_ling_dists == perf_ling_dists).all():
-            glosses = [gloss for gloss, _ in ling_dists.values()]
-            number_clips = [numb_occ for _, numb_occ in ling_dists.values()]
+            glosses = [gloss for gloss, _ in all_ling_dists.values()]
+            number_clips = [numb_occ for _, numb_occ in all_ling_dists.values()]
             min_num_samples = min(number_clips)
             min_gloss = glosses[number_clips.index(min(number_clips))]
 

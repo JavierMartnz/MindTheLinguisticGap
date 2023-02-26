@@ -31,6 +31,25 @@ from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
 
 
+class EarlyStopper:
+    def __init__(self, patience=5, min_delta=0.01):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.min_val_loss = np.inf
+
+    def __call__(self, val_loss):
+        # if loss doesn't improve or improves but less than min_delta
+        if val_loss > self.min_val_loss or (val_loss < self.min_val_loss and (self.min_val_loss - val_loss) < self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        else:
+            self.counter = 0
+            self.min_val_loss = val_loss
+            return False
+
+
 def run(cfg_path, mode='rgb'):
     print("Configuring model and parameters...")
     cfg = load_config(cfg_path)
@@ -156,8 +175,13 @@ def run(cfg_path, mode='rgb'):
     lr = init_lr
     optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
 
+    # early stopping setup
+    min_delta = 0.01
+    patience = 10
+    early_stopper = EarlyStopper(patience=patience, min_delta=min_delta)
+
     # lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
-    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
+    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True, threshold=min_delta)
 
     # before starting the training loop, make sure the directory where the model will be stored is created/exists
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
@@ -168,16 +192,13 @@ def run(cfg_path, mode='rgb'):
     training_history = {'train_loss': [], 'train_accuracy': [], 'train_f1': [], 'val_loss': [], 'val_accuracy': [], 'val_f1': []}
 
     min_loss = np.inf
-    patience = 10
-    min_delta = 0.01
-    early_stopping_counter = 0
-    early_stopping = False
+    early_stop_flag = False
 
     # start training
     for epoch in range(epochs):
         # if the flag was raised in the previous epoch, finish training
-        if early_stopping:
-            print(f"Early stop: validation loss did not decrease more than {min_delta} in {patience} epochs.")
+        if early_stop_flag:
+            print(f"Early stop: validation loss did not decrease more than {early_stopper.min_delta} in {early_stopper.patience} epochs.")
             break
 
         # Each epoch has a training and validation phase
@@ -238,16 +259,11 @@ def run(cfg_path, mode='rgb'):
                     training_history['train_accuracy'].append(np.mean(acc_list))
                     training_history['train_f1'].append(np.mean(f1_list))
 
-                    # early stopping
-                    if tot_loss > min_loss or (tot_loss < min_loss and (min_loss - tot_loss) < min_delta):
-                        early_stopping_counter += 1
-
-                        if early_stopping_counter >= patience:
-                            early_stopping = True
+                    early_stop_flag = early_stopper(tot_loss / num_iter)
 
                     # save model only when total loss is lower than the minimum loss achieved so far
-                    if tot_loss < min_loss:
-                        min_loss = tot_loss
+                    if (tot_loss / num_iter) < min_loss:
+                        min_loss = tot_loss / num_iter
                         # save model
                         torch.save(i3d.module.state_dict(), save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '.pt')
 
