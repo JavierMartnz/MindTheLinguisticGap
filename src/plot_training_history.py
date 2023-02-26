@@ -14,9 +14,9 @@ from src.utils.helpers import load_config
 
 def plot_train_history(specific_glosses: list, config: dict, trained_models_root: str, fig_output_root: str):
     run_name = config.get("run_name")
-    run_epochs = config.get("epochs")
-    run_lr = config.get("init_lr")
-    run_batch_size = config.get("batch_size")
+    run_epochs = config.get("run_epochs")
+    run_lr = config.get("run_lr")
+    run_batch_size = config.get("run_batch_size")
     run_optimizer = config.get("run_optimizer")
 
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
