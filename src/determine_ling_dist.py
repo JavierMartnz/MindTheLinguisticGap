@@ -90,16 +90,9 @@ def main(params):
 
         # print only the signs that have signs with ling distance from 1 to 10.
         if (all_ling_dists == perf_ling_dists).all():
-            glosses = [gloss for gloss, _ in all_ling_dists.values()]
-            number_clips = [numb_occ for _, numb_occ in all_ling_dists.values()]
-            min_num_samples = min(number_clips)
-            min_gloss = glosses[number_clips.index(min(number_clips))]
-
-            print(f"{gloss} ({all_diffs[gloss][0]}) has signs with ling dist:")
-            for key in ling_dists.keys():
+            print(f"\n{gloss} ({all_diffs[gloss][0]} clips) has signs with ling dist:")
+            for key in list(ling_dists.keys())[:10]:
                 print(f"-{key}: {ling_dists[key][0]} with {ling_dists[key][1]} clips")
-            print(f"The sign with the minimum number of samples is {min_gloss} with {min_num_samples} clips.\n")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

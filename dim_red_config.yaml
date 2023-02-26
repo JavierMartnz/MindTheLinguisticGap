@@ -1,22 +1,24 @@
-data:
-
-  cngt_clips_path: "/vol/tensusers5/jmartinez/datasets/cngt_single_signs.zip"
-  signbank_path: "/vol/tensusers5/jmartinez/datasets/NGT_Signbank.zip"
-  sb_vocab_path: "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
-  window_size: 16
-  data_loading: "balanced"
-  input_size: 256
-
-test:
-  specific_glosses: ["JA-A", "GEBAREN-A"]
-  model_dir: "/vol/tensusers5/jmartinez/models/i3d"
-  fold: "train"
-  use_cuda: True
-  run_name: "baseline_imagenet"
+pca:
+  reference_sign: "PT-1hand:1"
+  signs: ["WETEN-A"]
+  fold: "test"
+  batch_size: 16
+  ckpt_epoch_list: [49]
+  run_name: "test"
   run_batch_size: 128
+  run_lr: 0.1
+  run_optimizer: "SGD"
+  run_epochs: 50
+  model_root: "/vol/tensusers5/jmartinez/models/i3d"
+  use_cuda: True
   random_seed: 42
-  optimizer: "SGD"
-  lr: 0.1
-  epochs: 50
-  ckpt_epoch: 49
-  batch_size: 128
+
+data:
+  clips_per_class: -1
+  root: "/vol/tensusers5/jmartinez/datasets"
+  cngt_clips_folder: "cngt_single_signs_256"
+  signbank_folder: "NGT_Signbank_256"
+  sb_vocab_file: "signbank_vocab.gzip"
+  window_size: 16
+  loading_mode: "balanced"
+  input_size: 256

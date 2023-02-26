@@ -21,6 +21,7 @@ from sklearn.decomposition import PCA
 from pathlib import Path
 from torchvision import transforms
 
+
 def stress(X_pred, X):
     # distance of every point (row) to the rest of points in matrix
     orig_dist = distance.pdist(X, 'euclidean')
@@ -28,43 +29,43 @@ def stress(X_pred, X):
     # stress formula from http://analytictech.com/networks/mds.htm
     return np.sqrt(sum((pred_dist - orig_dist) ** 2) / sum(orig_dist ** 2))
 
+def dim_red(specific_glosses: list, ckpt_epoch: int, config: dict, fig_output_root: str):
 
-def main(params):
-    config_path = params.config_path
-    fig_output_root = params.fig_output_root
+    pca_config = config.get("pca")
+    data_config = config.get("data")
 
-    cfg = load_config(config_path)
-    test_cfg = cfg.get("test")
-    data_cfg = cfg.get("data")
+    # pca parameters
+    fold = pca_config.get("fold")
+    assert fold in {"train", "test", "val"}, f"Parameter 'fold' is {fold} but should be either 'train' 'val' or 'test'"
 
-    # test parameters
-    model_dir = test_cfg.get("model_dir")
-    fold = test_cfg.get("fold")
-    assert fold in {"train", "test", "val"}, f"Please, make sure the parameter 'fold' in {config_path} is either 'train' 'val' or 'test'"
-    run_name = test_cfg.get("run_name")
-    run_batch_size = test_cfg.get("run_batch_size")
-    optimizer = test_cfg.get("optimizer").upper()
-    learning_rate = test_cfg.get("lr")
-    num_epochs = test_cfg.get("epochs")
-    ckpt_epoch = test_cfg.get("ckpt_epoch")
-    batch_size = test_cfg.get("batch_size")
-    use_cuda = test_cfg.get("use_cuda")
-    specific_glosses = test_cfg.get("specific_glosses")
+    batch_size = pca_config.get("batch_size")
+    run_name = pca_config.get("run_name")
+    run_batch_size = pca_config.get("run_batch_size")
+    run_lr = pca_config.get("run_lr")
+    run_optimizer = pca_config.get("run_optimizer")
+    run_epochs = pca_config.get("run_epochs")
+    model_root = pca_config.get("model_root")
+    use_cuda = pca_config.get("use_cuda")
+    random_seed = pca_config.get("random_seed")
 
     # data configs
-    cngt_zip = data_cfg.get("cngt_clips_path")
-    sb_zip = data_cfg.get("signbank_path")
-    window_size = data_cfg.get("window_size")
-    sb_vocab_path = data_cfg.get("sb_vocab_path")
-    loading_mode = data_cfg.get("data_loading")
-    input_size = data_cfg.get("input_size")
-    clips_per_class = data_cfg.get("clips_per_class")
+    clips_per_class = data_config.get("clips_per_class")
+    root = data_config.get("root")
+    cngt_clips_folder = data_config.get("cngt_clips_folder")
+    signbank_folder = data_config.get("signbank_folder")
+    sb_vocab_file = data_config.get("sb_vocab_file")
+    window_size = data_config.get("window_size")
+    loading_mode = data_config.get("loading_mode")
+    input_size = data_config.get("input_size")
 
+    cngt_root = os.path.join(root, cngt_clips_folder)
+    sb_root = os.path.join(root, signbank_folder)
+    sb_vocab_path = os.path.join(root, sb_vocab_file)
 
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
-    run_dir = f"{run_name}_{glosses_string}_{num_epochs}_{run_batch_size}_{learning_rate}_{optimizer}"
-    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}.pt"
+    run_dir = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
+    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
 
     num_top_glosses = None
 
@@ -79,8 +80,8 @@ def main(params):
 
     print(f"Loading {fold} split...")
     dataset = I3Dataset(loading_mode=loading_mode,
-                        cngt_zip=cngt_zip,
-                        sb_zip=sb_zip,
+                        cngt_zip=cngt_root,
+                        sb_zip=sb_root,
                         sb_vocab_path=sb_vocab_path,
                         mode="rgb",
                         split=fold,
@@ -88,7 +89,8 @@ def main(params):
                         transforms=test_transforms,
                         filter_num=num_top_glosses,
                         specific_gloss_ids=specific_gloss_ids,
-                        clips_per_class=clips_per_class)
+                        clips_per_class=clips_per_class,
+                        random_seed=random_seed)
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
@@ -98,10 +100,9 @@ def main(params):
                        input_size=cropped_input_size)
 
     if use_cuda:
-        i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
+        i3d.load_state_dict(torch.load(os.path.join(model_root, run_dir, ckpt_filename)))
     else:
-        i3d.load_state_dict(
-            torch.load(os.path.join(model_dir, run_dir, ckpt_filename), map_location=torch.device('cpu')))
+        i3d.load_state_dict(torch.load(os.path.join(model_root, run_dir, ckpt_filename), map_location=torch.device('cpu')))
 
     if use_cuda:
         i3d.cuda()
@@ -154,13 +155,17 @@ def main(params):
     n_valid_components = []
     print("Running PCA...")
     for nc in n_components:
-        try:
-            X_pca = PCA(n_components=nc).fit_transform(X_features)
-            n_valid_components.append(nc)
-            pca_stress.append(stress(X_pca, X_features))
-            print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
-        except Exception as e:
-            print(e)
+        # this if guarantees that pca runs. pca only works when the number of samples is at least n_components-1
+        if X_features.size(0) < nc:
+            try:
+                X_pca = PCA(n_components=nc).fit_transform(X_features)
+                n_valid_components.append(nc)
+                pca_stress.append(stress(X_pca, X_features))
+                print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
+            except Exception as e:
+                print(e)
+
+
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
@@ -176,6 +181,27 @@ def main(params):
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, run_dir + '_pcastress.png'))
 
+
+def main(params):
+    config_path = params.config_path
+    fig_output_root = params.fig_output_root
+
+    config = load_config(config_path)
+    pca_config = config.get("pca")
+
+    reference_sign = pca_config.get("reference_sign")
+    train_signs = pca_config.get("train_signs")
+    ckpt_epoch_list = pca_config.get("ckpt_epoch_list")
+
+    assert type(train_signs) == list, "The variable 'train_signs' must be a list."
+    assert type(ckpt_epoch_list) == list, "The variable 'ckpt_epoch_list' must be a list."
+    assert len(train_signs) == len(ckpt_epoch_list), "Every sign pair needs to have a corresponding checkpoint."
+
+    for i, sign in enumerate(train_signs):
+        dim_red(specific_glosses=[reference_sign, sign],
+                ckpt_epoch=ckpt_epoch_list[i],
+                config=config,
+                fig_output_root=fig_output_root)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
