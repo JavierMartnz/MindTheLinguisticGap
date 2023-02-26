@@ -64,35 +64,37 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     # plt.show()
 
 
-def test(cfg_path, log_filename, mode="rgb"):
-    cfg = load_config(cfg_path)
-    test_cfg = cfg.get("test")
-    data_cfg = cfg.get("data")
+def test(specific_glosses: list, ckpt_epoch: int, config, log_filename, mode="rgb"):
+    test_cfg = config.get("test")
+    data_cfg = config.get("data")
 
     # test parameters
-    model_dir = test_cfg.get("model_dir")
-    pred_dir = test_cfg.get("pred_dir")
     fold = test_cfg.get("fold")
-    assert fold in {"train", "test", "val"}, f"Please, make sure the parameter 'fold' in {cfg_path} is either 'train' 'val' or 'test'"
+
+    assert fold in {"train", "test", "val"}, f"Parameter 'fold' is {fold} but should be either 'train' 'val' or 'test'"
+
+    reference_sign = test_cfg.get("reference_sign")
+    test_signs = test_cfg.get("test_signs")
+    batch_size = test_cfg.get("batch_size")
+    ckpt_epoch_list = test_cfg.get("ckpt_epoch_list")
     run_name = test_cfg.get("run_name")
     run_batch_size = test_cfg.get("run_batch_size")
-    optimizer = test_cfg.get("optimizer").upper()
-    learning_rate = test_cfg.get("lr")
-    num_epochs = test_cfg.get("epochs")
-    ckpt_epoch = test_cfg.get("ckpt_epoch")
-    batch_size = test_cfg.get("batch_size")
-    use_cuda = test_cfg.get("use_cuda")
-    specific_glosses = test_cfg.get("specific_glosses")
+    run_lr = test_cfg.get("run_lr")
+    run_optimizer = test_cfg.get("run_optimizer")
+    run_epochs = test_cfg.get("run_epochs")
+    model_root = test_cfg.get("model_root")
+    pred_output_root = test_cfg.get("pred_output_root")
 
     # data configs
-    cngt_zip = data_cfg.get("cngt_clips_path")
-    sb_zip = data_cfg.get("signbank_path")
-    window_size = data_cfg.get("window_size")
-    sb_vocab_path = data_cfg.get("sb_vocab_path")
-    loading_mode = data_cfg.get("data_loading")
     save_predictions = data_cfg.get("save_predictions")
-    input_size = data_cfg.get("input_size")
     clips_per_class = data_cfg.get("clips_per_class")
+    root = data_cfg.get("root")
+    cngt_clips_folder = data_cfg.get("cngt_clips_folder")
+    signbank_folder = data_cfg.get("signbank_folder")
+    sb_vocab_file = data_cfg.get("sb_vocab_file")
+    window_size = data_cfg.get("window_size")
+    loading_mode = data_cfg.get("loading_mode")
+    input_size = data_cfg.get("input_size")
 
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
@@ -263,8 +265,18 @@ def test(cfg_path, log_filename, mode="rgb"):
 def main(params):
     config_path = params.config_path
     log_filename = params.log_filename
-    test(config_path, log_filename)
 
+    config = load_config(config_path)
+    test_config = config.get("test")
+
+    reference_sign = test_config.get("reference_sign")
+    test_signs = test_config.get("test_signs")
+    ckpt_epoch_list = test_config.get("ckpt_epoch_list")
+
+    assert len(ckpt_epoch_list) == len(test_signs), "The length of the checkpoint list and test signs doesn't match."
+
+    for i, test_sign in enumerate(test_signs):
+        test([reference_sign, test_sign], ckpt_epoch_list[i], config, log_filename)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

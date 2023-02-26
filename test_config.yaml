@@ -1,27 +1,24 @@
-data:
-
-  cngt_clips_path: "D:/Thesis/datasets/cngt_single_signs.zip"
-  signbank_path: "D:/Thesis/datasets/NGT_Signbank_resized.zip"
-  cngt_vocab_path: "D:/Thesis/datasets/cngt_vocab.gzip"
-  sb_vocab_path: "D:/Thesis/datasets/signbank_vocab.gzip"
-  window_size: 8
-  data_loading: "random"
-  diagonal_videos_path: None #"D:/Thesis/predictions/diagonal_videos.gzip"
-  use_diag_videos: False
-  save_predictions: True
-  input_size: 256
-
 test:
-  specific_glosses: ["JA-A", "GEBAREN-A"]
-  model_dir: "D:Thesis/models/i3d"
-  pred_dir: "D:Thesis/predictions/i3d"
+  reference_sign: "PT-1hand:1"
+  test_signs: ["WETEN-A"]
   fold: "test"
-  run_name: "12fps"
-  use_cuda: True
-  random_seed: 42
-  run_batch_size: 128
-  optimizer: "SGD"
-  lr: 0.1
-  epochs: 50
-  ckpt_epoch: 49
   batch_size: 16
+  ckpt_epoch_list: [49]
+  run_name: "test"
+  run_batch_size: 128
+  run_lr: 0.1
+  run_optimizer: "SGD"
+  run_epochs: 50
+  model_root: "/vol/tensusers5/jmartinez/models/i3d"
+  pred_output_root: "/vol/tensusers5/jmartinez/predictions"
+
+data:
+  save_predictions: True
+  clips_per_class: -1
+  root: "/vol/tensusers5/jmartinez/datasets"
+  cngt_clips_folder: "cngt_single_signs_256"
+  signbank_folder: "NGT_Signbank_256"
+  sb_vocab_file: "signbank_vocab.gzip"
+  window_size: 16
+  loading_mode: "balanced"
+  input_size: 256
