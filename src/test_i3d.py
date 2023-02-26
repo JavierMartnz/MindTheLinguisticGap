@@ -65,6 +65,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
 
 
 def test(specific_glosses: list, ckpt_epoch: int, config, log_filename, mode="rgb"):
+
     test_cfg = config.get("test")
     data_cfg = config.get("data")
 
@@ -84,6 +85,8 @@ def test(specific_glosses: list, ckpt_epoch: int, config, log_filename, mode="rg
     run_epochs = test_cfg.get("run_epochs")
     model_root = test_cfg.get("model_root")
     pred_output_root = test_cfg.get("pred_output_root")
+    use_cuda = test_cfg.get("use_cuda")
+    random_seed = test_cfg.get("random_seed")
 
     # data configs
     save_predictions = data_cfg.get("save_predictions")
@@ -96,17 +99,21 @@ def test(specific_glosses: list, ckpt_epoch: int, config, log_filename, mode="rg
     loading_mode = data_cfg.get("loading_mode")
     input_size = data_cfg.get("input_size")
 
+    cngt_root = os.path.join(root, cngt_clips_folder)
+    sb_root = os.path.join(root, signbank_folder)
+    sb_vocab_path = os.path.join(root, sb_vocab_file)
+
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
-    run_dir = f"{run_name}_{glosses_string}_{num_epochs}_{run_batch_size}_{learning_rate}_{optimizer}"
+    run_dir = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
     # run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
-    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(num_epochs)))}.pt"
+    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
     ckpt_folder = ckpt_filename.split('.')[0]
 
     # if use_diag_videos:
     #     fold += "_diag"
 
-    pred_path = os.path.join(pred_dir, run_dir, ckpt_folder, fold)
+    pred_path = os.path.join(pred_output_root, run_dir, ckpt_folder, fold)
     make_dir(pred_path)
     if save_predictions:
         make_dir(os.path.join(pred_path, "TP"))
@@ -129,8 +136,8 @@ def test(specific_glosses: list, ckpt_epoch: int, config, log_filename, mode="rg
 
     print(f"Loading {fold} split...")
     dataset = I3Dataset(loading_mode=loading_mode,
-                        cngt_zip=cngt_zip,
-                        sb_zip=sb_zip,
+                        cngt_root=cngt_root,
+                        sb_root=sb_root,
                         sb_vocab_path=sb_vocab_path,
                         mode=mode,
                         split=fold,
@@ -138,7 +145,8 @@ def test(specific_glosses: list, ckpt_epoch: int, config, log_filename, mode="rg
                         transforms=test_transforms,
                         filter_num=num_top_glosses,
                         specific_gloss_ids=specific_gloss_ids,
-                        clips_per_class=clips_per_class)
+                        clips_per_class=clips_per_class,
+                        random_seed=random_seed)
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
@@ -155,12 +163,12 @@ def test(specific_glosses: list, ckpt_epoch: int, config, log_filename, mode="rg
                        input_size=cropped_input_size)
 
     if use_cuda:
-        i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename)))
+        i3d.load_state_dict(torch.load(os.path.join(model_root, run_dir, ckpt_filename)))
         i3d.cuda()
     else:
-        i3d.load_state_dict(torch.load(os.path.join(model_dir, run_dir, ckpt_filename), map_location=torch.device('cpu')))
+        i3d.load_state_dict(torch.load(os.path.join(model_root, run_dir, ckpt_filename), map_location=torch.device('cpu')))
 
-    print(f"Successfully loaded model weights from {os.path.join(model_dir, run_dir, ckpt_filename)}")
+    print(f"Successfully loaded model weights from {os.path.join(model_root, run_dir, ckpt_filename)}")
 
     i3d.train(False)  # Set model to evaluate mode
 

@@ -12,27 +12,17 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 from src.utils.helpers import load_config
 
 
-def main(params):
-    trained_models_parent = params.trained_models_parent
-    fig_output_root = params.fig_output_root
-    config_path = params.config_path
-
-    cfg = load_config(config_path)
-    training_cfg = cfg.get("training")
-
-    # training configs
-    specific_glosses = training_cfg.get("specific_glosses")
-    run_name = training_cfg.get("run_name")
-    epochs = training_cfg.get("epochs")
-    init_lr = training_cfg.get("init_lr")
-    batch_size = training_cfg.get("batch_size")
-
-    optimizer = 'SGD'
+def plot_train_history(specific_glosses: list, config: dict, trained_models_root: str, fig_output_root: str):
+    run_name = config.get("run_name")
+    run_epochs = config.get("epochs")
+    run_lr = config.get("init_lr")
+    run_batch_size = config.get("batch_size")
+    run_optimizer = config.get("run_optimizer")
 
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
-    weights_root = f"{run_name}_{glosses_string}_{epochs}_{batch_size}_{init_lr}_{optimizer}"
+    weights_root = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
 
-    training_file_path = os.path.join(trained_models_parent, weights_root, 'training_history.txt')
+    training_file_path = os.path.join(trained_models_root, weights_root, 'training_history.txt')
 
     with open(training_file_path, 'r') as file:
         training_history = json.load(file)
@@ -71,11 +61,26 @@ def main(params):
     plt.savefig(os.path.join(fig_output_root, weights_root + '_loss.png'))
 
 
+def main(params):
+    trained_models_root = params.trained_models_root
+    fig_output_root = params.fig_output_root
+    config_path = params.config_path
+
+    config = load_config(config_path)
+
+    # training configs
+    reference_sign = config.get("reference_sign")
+    test_signs = config.get("test_signs")
+
+    for sign in test_signs:
+        plot_train_history([reference_sign, sign], config, trained_models_root, fig_output_root)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--trained_models_parent",
+        "--trained_models_root",
         type=str,
         default="D:/Thesis/models/i3d"
     )

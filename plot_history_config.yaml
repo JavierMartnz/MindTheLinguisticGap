@@ -1,0 +1,8 @@
+reference_sign: "PT-1hand:1"
+test_signs: ["WETEN-A"]
+run_name: ""
+run_epochs: 50
+run_batch_size: 128
+run_lr: 0.1
+run_optimizer: "SGD"
+

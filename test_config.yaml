@@ -11,6 +11,8 @@ test:
   run_epochs: 50
   model_root: "/vol/tensusers5/jmartinez/models/i3d"
   pred_output_root: "/vol/tensusers5/jmartinez/predictions"
+  use_cuda: True
+  random_seed: 42
 
 data:
   save_predictions: True
