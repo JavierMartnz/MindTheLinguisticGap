@@ -30,7 +30,7 @@ def stress(X_pred, X):
     # stress formula from http://analytictech.com/networks/mds.htm
     return np.sqrt(sum((pred_dist - orig_dist) ** 2) / sum(orig_dist ** 2))
 
-def dim_red(specific_glosses: list, ckpt_epoch: int, config: dict, fig_output_root: str):
+def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     pca_config = config.get("pca")
     data_config = config.get("data")
@@ -66,7 +66,11 @@ def dim_red(specific_glosses: list, ckpt_epoch: int, config: dict, fig_output_ro
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
     run_dir = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
-    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
+
+    ckpt_files = [file for file in os.listdir(os.path.join(model_root, run_dir)) if file.endswith(".pt")]
+    # take the last save checkpoint, which contains the minimum val loss
+    ckpt_filename = ckpt_files[-1]
+    # ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
 
     num_top_glosses = None
 
@@ -241,7 +245,6 @@ def main(params):
 
     for i, sign in enumerate(signs):
         dim_red(specific_glosses=[reference_sign, sign],
-                ckpt_epoch=ckpt_epoch_list[i],
                 config=config,
                 fig_output_root=fig_output_root)
 
