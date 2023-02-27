@@ -51,6 +51,7 @@ class EarlyStopper:
 
 
 def train(specific_glosses: list, config: dict, mode='rgb'):
+    print(f"Training for {specific_glosses[0]} and {specific_glosses[1]}")
     print("Configuring model and parameters...")
 
     training_cfg = config.get("training")
