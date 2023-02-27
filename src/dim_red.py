@@ -18,6 +18,7 @@ from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip, save_gzip
 from scipy.spatial import distance
 from sklearn.decomposition import PCA
+from sklearn.manifold import MDS, Isomap
 from pathlib import Path
 from torchvision import transforms
 
@@ -172,11 +173,47 @@ def dim_red(specific_glosses: list, ckpt_epoch: int, config: dict, fig_output_ro
 
     print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index+1]}")
 
+    mds_stress = []
+    print("Running MDS...")
+    for nc in n_components:
+        try:
+            x_mds = MDS(n_components=nc).fit_transform(X_features)
+            mds_stress.append(stress(x_mds, X_features))
+            # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
+        except Exception as e:
+            print(e)
+
+    print(f"The stress values from 2 to 1024 are:\n{mds_stress}")
+
+    delta_stress = [np.abs(mds_stress[i] - mds_stress[i + 1]) for i in range(len(mds_stress) - 1)]
+    min_delta_index = delta_stress.index(min(delta_stress))
+
+    print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index + 1]}")
+
+    iso_stress = []
+    print("Running MDS...")
+    for nc in n_components:
+        try:
+            x_iso = Isomap(n_components=nc).fit_transform(X_features)
+            iso_stress.append(stress(x_iso, X_features))
+            # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
+        except Exception as e:
+            print(e)
+
+    print(f"The stress values from 2 to 1024 are:\n{iso_stress}")
+
+    delta_stress = [np.abs(iso_stress[i] - iso_stress[i + 1]) for i in range(len(iso_stress) - 1)]
+    min_delta_index = delta_stress.index(min(delta_stress))
+
+    print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index + 1]}")
+
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(n_valid_components, pca_stress, marker='o')
-    for i, j in zip(n_valid_components, pca_stress):
-        plt.annotate(str(j), xy=(i, j))
+    plt.plot(n_components, mds_stress, marker='o')
+    plt.plot(n_components, iso_stress, marker='o')
+    # for i, j in zip(n_valid_components, pca_stress):
+    #     plt.annotate(str(round(j, 2)), xy=(i, j))
     plt.xticks(n_components)
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
