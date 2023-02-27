@@ -259,7 +259,7 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
                     training_history['train_accuracy'].append(np.mean(acc_list))
                     training_history['train_f1'].append(np.mean(f1_list))
 
-                    print(i3d.module.state_dict())
+                    train_ckpt = i3d.module.state_dict()
 
                 # after processing the data, record validation metrics and check for early stopping
                 elif phase == 'val':
@@ -283,7 +283,7 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
                         print(f"Saving checkpoint as val loss was reduced from {round(min_loss, 4)} to {round(tot_loss / num_iter, 4)}")
                         min_loss = tot_loss / num_iter
                         # save model
-                        print(i3d.module.state_dict())
+                        print(train_ckpt == i3d.module.state_dict())
                         torch.save(i3d.module.state_dict(), save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '.pt')
 
                     lr_sched.step(tot_loss / num_iter)
