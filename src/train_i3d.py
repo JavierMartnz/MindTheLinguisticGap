@@ -260,8 +260,11 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
 
                     early_stop_flag = early_stopper(tot_loss / num_iter)
 
+                    print(tot_loss, tot_loss/num_iter, min_loss)
+
                     # save model only when total loss is lower than the minimum loss achieved so far
                     if (tot_loss / num_iter) < min_loss:
+                        print(f"Saving checkpoint as loss was reduced from {round(min_loss, 4)} to {round(tot_loss/num_iter, 4)}")
                         min_loss = tot_loss / num_iter
                         # save model
                         torch.save(i3d.module.state_dict(), save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '.pt')
