@@ -175,7 +175,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     delta_stress = [np.abs(pca_stress[i]-pca_stress[i+1]) for i in range(len(pca_stress)-1)]
     min_delta_index = delta_stress.index(min(delta_stress))
 
-    print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index+1]}")
+    print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index+1]}\n")
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
