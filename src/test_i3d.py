@@ -107,7 +107,13 @@ def test(specific_glosses: list, ckpt_epoch: int, config, log_filename, mode="rg
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
     run_dir = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
     # run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
-    ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
+
+    ckpt_files = [file for file in os.listdir(os.path.join(model_root, run_dir)) if file.endswith(".pt")]
+    # take the last save checkpoint, which contains the minimum val loss
+    ckpt_filename = ckpt_files[-1]
+
+    # ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
+
     ckpt_folder = ckpt_filename.split('.')[0]
 
     # if use_diag_videos:
