@@ -64,8 +64,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
     # plt.show()
 
 
-def test(specific_glosses: list, ckpt_epoch: int, config, log_filename, mode="rgb"):
-
+def test(specific_glosses: list, config, log_filename, mode="rgb"):
     test_cfg = config.get("test")
     data_cfg = config.get("data")
 
@@ -290,7 +289,10 @@ def main(params):
     # assert len(ckpt_epoch_list) == len(test_signs), "The length of the checkpoint list and test signs doesn't match."
 
     for i, test_sign in enumerate(test_signs):
-        test([reference_sign, test_sign], ckpt_epoch_list[i], config, log_filename)
+        test(specific_glosses=[reference_sign, test_sign],
+             config=config,
+             log_filename=log_filename)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
