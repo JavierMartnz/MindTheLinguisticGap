@@ -60,6 +60,7 @@ def plot_train_history(specific_glosses: list, config: dict, trained_models_root
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, weights_root + '_loss.png'))
 
+    plt.clf()
 
 def main(params):
     trained_models_root = params.trained_models_root
@@ -74,7 +75,6 @@ def main(params):
 
     for sign in test_signs:
         plot_train_history([reference_sign, sign], config, trained_models_root, fig_output_root)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
