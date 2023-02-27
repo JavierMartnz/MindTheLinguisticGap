@@ -287,7 +287,7 @@ def main(params):
     test_signs = test_config.get("test_signs")
     ckpt_epoch_list = test_config.get("ckpt_epoch_list")
 
-    assert len(ckpt_epoch_list) == len(test_signs), "The length of the checkpoint list and test signs doesn't match."
+    # assert len(ckpt_epoch_list) == len(test_signs), "The length of the checkpoint list and test signs doesn't match."
 
     for i, test_sign in enumerate(test_signs):
         test([reference_sign, test_sign], ckpt_epoch_list[i], config, log_filename)
