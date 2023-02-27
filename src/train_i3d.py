@@ -259,6 +259,7 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
                     training_history['train_accuracy'].append(np.mean(acc_list))
                     training_history['train_f1'].append(np.mean(f1_list))
 
+                    # store the model state_dict to store it later if the val loss improves
                     train_ckpt = i3d.module.state_dict()
 
                 # after processing the data, record validation metrics and check for early stopping
@@ -272,15 +273,13 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
                           f'Loss: {tot_loss / num_iter:.4f}\t'
                           f'Acc: {np.mean(acc_list):.4f}\t'
                           f'F1: {np.mean(f1_list):.4f}\n'
-                          '-------------------------\n')
+                          '-------------------------')
 
                     early_stop_flag = early_stopper(tot_loss / num_iter)
 
-                    print(tot_loss, tot_loss / num_iter, min_loss)
-
                     # save model only when total loss is lower than the minimum loss achieved so far
                     if (tot_loss / num_iter) < min_loss:
-                        print(f"Saving checkpoint as val loss was reduced from {round(min_loss, 4)} to {round(tot_loss / num_iter, 4)}")
+                        print(f"Saving checkpoint as val loss was reduced from {round(min_loss, 4)} to {round(tot_loss / num_iter, 4)}\n")
                         min_loss = tot_loss / num_iter
                         # save model
                         torch.save(train_ckpt, save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '.pt')
