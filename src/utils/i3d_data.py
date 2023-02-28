@@ -509,10 +509,8 @@ def build_dataset(loading_mode: str, cngt_root: str, sb_root: str, sb_vocab_path
             cngt_video_paths = subsample_cngt_videos
             sb_video_paths = subsample_sb_videos
     else:
-        print(classes)
-        print(cngt_videos[0].split("_")[-1][:-4])
-        cngt_video_paths = [os.path.join(cngt_videos, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
-        sb_video_paths = [os.path.join(sb_videos, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
+        cngt_video_paths = [os.path.join(cngt_root, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
+        sb_video_paths = [os.path.join(sb_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
 
     if loading_mode == "random":
         dataset = build_random_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split, random_seed)
