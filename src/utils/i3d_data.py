@@ -509,6 +509,7 @@ def build_dataset(loading_mode: str, cngt_root: str, sb_root: str, sb_vocab_path
             cngt_video_paths = subsample_cngt_videos
             sb_video_paths = subsample_sb_videos
     else:
+        print(classes)
         cngt_video_paths = [os.path.join(cngt_videos, video) for video in cngt_videos if int(video.split("_")[-1][:-4]) in classes]
         sb_video_paths = [os.path.join(sb_videos, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
 
