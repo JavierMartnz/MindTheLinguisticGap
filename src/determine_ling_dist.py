@@ -61,14 +61,19 @@ def main(params):
 
     # get the ids of the filtered dataframe and remove them from the df
     gloss_ids = ling_df["Signbank ID"].values.tolist()
+
     ling_df = ling_df.drop(columns=["Signbank ID"])
 
+    # unify missing values to nan for easier checking
     ling_df = ling_df.replace('-', np.NaN)
 
     # get the rows where no annotations exist whatsoever
     empty_rows = np.where(ling_df.iloc[:, :-2].isnull().all(1) & (~ling_df.iloc[:, -2:]).all(1))[0]
     # and remove them
     ling_df = ling_df.drop(empty_rows, axis=0)
+
+    # go back to missing values being '-' to help with checking in the next loop
+    ling_df = ling_df.fillna('-')
 
     ling_np = ling_df.to_numpy()
     num = len(gloss_ids)
