@@ -214,7 +214,7 @@ def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vo
     for video_path in tqdm(all_video_paths):
         metadata = load_gzip(video_path[:video_path.rfind(".m")] + ".gzip")
         num_frames = metadata.get("num_frames")
-        if video_path.endswith(".mpg"):  # cngt video
+        if video_path.endswith(".mpg") or video_path.endswith(".mov"):  # cngt video
             gloss_id = int(video_path.split("_")[-1][:-4])
         else:
             gloss_id = int(video_path.split("-")[-1][:-4])
@@ -383,7 +383,7 @@ def build_random_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab:
     for video_path in tqdm(all_video_paths):
         metadata = load_gzip(video_path[:video_path.rfind(".m")] + ".gzip")
         num_frames = metadata.get("num_frames")
-        if video_path.endswith(".mpg"):  # cngt video
+        if video_path.endswith(".mpg") or video_path.endswith(".mov"):  # cngt video
             gloss_id = int(video_path.split("_")[-1][:-4])
         else:
             gloss_id = int(video_path.split("-")[-1][:-4])
@@ -484,7 +484,7 @@ def build_dataset(loading_mode: str, cngt_root: str, sb_root: str, sb_vocab_path
     if not os.path.isdir(sb_root) and os.path.exists(sb_root + '.zip'):
         sb_root = extract_zip(sb_root + '.zip')
 
-    cngt_videos = [file for file in os.listdir(cngt_root) if file.endswith('.mpg')]
+    cngt_videos = [file for file in os.listdir(cngt_root) if file.endswith('.mpg') or file.endswith('.mov')]
     sb_videos = [file for file in os.listdir(sb_root) if file.endswith('.mp4')]
 
     # use signbank vocab to be able to get the glosses from their IDs
@@ -530,7 +530,7 @@ def get_class_encodings(cngt_root, sb_root, filter_num=None, specific_gloss_ids=
     if not os.path.isdir(sb_root) and os.path.exists(sb_root + '.zip'):
         sb_root = extract_zip(sb_root + '.zip')
 
-    cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in os.listdir(cngt_root) if video.endswith('.mpg')]
+    cngt_gloss_ids = [int(video.split("_")[-1][:-4]) for video in os.listdir(cngt_root) if video.endswith('.mpg') or video.endswith('.mov')]
     sb_gloss_ids = {}
 
     if filter_num is None:  # default case
