@@ -66,7 +66,7 @@ def main(params):
     ling_df = ling_df.replace('-', np.NaN)
 
     # get the rows where no annotations exist whatsoever
-    empty_rows = np.where(ling_df.iloc[:, 1:-2].isnull().all(1) & (~ling_df.iloc[:, -2:]).all(1))[0]
+    empty_rows = np.where(ling_df.iloc[:, :-2].isnull().all(1) & (~ling_df.iloc[:, -2:]).all(1))[0]
     # and remove them
     ling_df = ling_df.drop(empty_rows, axis=0)
 
