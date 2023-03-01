@@ -63,8 +63,12 @@ def main(params):
     gloss_ids = ling_df["Signbank ID"].values.tolist()
     ling_df = ling_df.drop(columns=["Signbank ID"])
 
-    # fill NaN values with -1 for easier comparison
-    ling_df = ling_df.fillna('-')
+    ling_df = ling_df.replace('-', np.NaN)
+
+    # get the rows where no annotations exist whatsoever
+    empty_rows = np.where(ling_df.iloc[:, 1:-2].isnull().all(1) & (~ling_df.iloc[:, -2:]).all(1))[0]
+    # and remove them
+    ling_df = ling_df.drop(empty_rows, axis=0)
 
     ling_np = ling_df.to_numpy()
     num = len(gloss_ids)
