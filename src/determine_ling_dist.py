@@ -8,6 +8,7 @@ import time
 def main(params):
     signbank_csv = params.signbank_csv
     cngt_root = params.cngt_root
+    txtfile_output_root = params.txtfile_output_root
 
     assert os.path.exists(signbank_csv), f"The indicated file {signbank_csv} does not exist."
 
@@ -103,13 +104,13 @@ def main(params):
     # order the dictionary based on the frequency of the glosses
     ordered_distances_and_freqs = {k: v for k, v in sorted(distances_and_freqs.items(), key=lambda item: item[1][0], reverse=True)}
 
-    for gloss_id in ordered_distances_and_freqs.keys():
-
-        # first check if they match in length
-        if len(ordered_distances_and_freqs[gloss_id][1].keys()) == len(np.arange(1, 11)) and np.equal(np.array(list(ordered_distances_and_freqs[gloss_id][1].keys())), np.arange(1, 11)).all():
-            print(f"\n{id_to_gloss[gloss_id]} ({ordered_distances_and_freqs[gloss_id][0]} clips) has signs with ling dist:")
-            for key in ordered_distances_and_freqs[gloss_id][1]:
-                print(f"-{key}: {id_to_gloss[ordered_distances_and_freqs[gloss_id][1][key][0]]} with {ordered_distances_and_freqs[gloss_id][1][key][1]} clips")
+    with open(os.path.join(txtfile_output_root, 'linguistic_distances.txt'), 'w') as file:
+        for gloss_id in ordered_distances_and_freqs.keys():
+            # check if they match in length and if they're the same
+            if len(ordered_distances_and_freqs[gloss_id][1].keys()) == len(np.arange(1, 11)) and np.equal(np.array(list(ordered_distances_and_freqs[gloss_id][1].keys())), np.arange(1, 11)).all():
+                print(f"\n{id_to_gloss[gloss_id]} ({ordered_distances_and_freqs[gloss_id][0]} clips) has signs with ling dist:", file=file)
+                for key in ordered_distances_and_freqs[gloss_id][1]:
+                    print(f"-{key}: {id_to_gloss[ordered_distances_and_freqs[gloss_id][1][key][0]]} with {ordered_distances_and_freqs[gloss_id][1][key][1]} clips", file=file)
 
 
 if __name__ == "__main__":
@@ -125,6 +126,12 @@ if __name__ == "__main__":
         "--signbank_csv",
         type=str,
         default="D:/Thesis/dictionary-export.csv",
+    )
+
+    parser.add_argument(
+        "--txtfile_output_root",
+        type=str,
+        default="D:/Thesis",
     )
 
     params, _ = parser.parse_known_args()
