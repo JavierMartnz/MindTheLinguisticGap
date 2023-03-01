@@ -3,6 +3,7 @@ import argparse
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
+import time
 
 def main(params):
     signbank_csv = params.signbank_csv
@@ -10,6 +11,7 @@ def main(params):
 
     assert os.path.exists(signbank_csv), f"The indicated file {signbank_csv} does not exist."
 
+    # GET DICTIONARY WITH GLOSS COUNT IN CNGT
     video_signs = [filename for filename in os.listdir(cngt_root) if filename.endswith(".mpg")]
 
     gloss_list = []
@@ -25,10 +27,12 @@ def main(params):
 
     ordered_id_freq = {k: v for k, v in sorted(gloss_id_freq.items(), key=lambda item: item[1], reverse=True)}
 
+    # we don't want glosses with less than 100 videos to train
     min_gloss_cnt = 100
 
     filtered_id_freq = {k: v for k, v in ordered_id_freq.items() if v > min_gloss_cnt}
 
+    # GET LINGUISTIC DISTANCE MATRIX (MAINLY NATALIE HOLLAIN'S CODE)
     sb_df = pd.read_csv(signbank_csv)
 
     ling_df = sb_df[["Signbank ID",
@@ -47,52 +51,66 @@ def main(params):
                      "Repeated Movement",
                      "Alternating Movement"]]
 
+    # keep only the rows with the filtered glosses
+    ling_df = ling_df[ling_df["Signbank ID"].isin(list(filtered_id_freq.keys()))]
+
+    # get dictionaries to work with id and glosses indistinctively
     id_to_gloss = pd.Series(sb_df["Annotation ID Gloss (Dutch)"].values, index=sb_df["Signbank ID"]).to_dict()
+    gloss_to_id = pd.Series(sb_df["Signbank ID"].values, index=sb_df["Annotation ID Gloss (Dutch)"]).to_dict()
 
-    all_diffs = {}
+    # get the ids of the filtered dataframe and remove them from the df
+    gloss_ids = ling_df["Signbank ID"].values.tolist()
+    ling_df = ling_df.drop(columns=["Signbank ID"])
 
-    # these signs have at least 100 clips
-    for gloss_id in tqdm(filtered_id_freq.keys()):
-        gloss_id_values = ling_df[ling_df["Signbank ID"] == gloss_id].values.tolist()[0]
-        gloss_id_values.remove(gloss_id)
+    # fill NaN values with -1 for easier comparison
+    ling_df = ling_df.fillna(-1)
 
-        diff_cnt = {}
+    ling_np = ling_df.to_numpy()
+    num = len(gloss_ids)
 
-        other_glosses = list(filtered_id_freq.keys())
-        other_glosses.remove(gloss_id)
+    # Linguistic difference matrix
+    ling_dist = np.zeros((num, num))
 
-        for other_id in other_glosses:
-            other_id_values = ling_df[ling_df["Signbank ID"] == other_id].values.tolist()[0]
-            other_id_values.remove(other_id)
+    # Loop over the indices of the glosses, and then compare the glosses
+    for i1 in tqdm(range(num)):
+        for i2 in range(i1 + 1, num):
+            gloss1, gloss2 = ling_np[i1], ling_np[i2]
+            # use this loop instead of np.where() since it's faster
+            dist = 0
+            for j in range(len(gloss1)):
+                dist += 1 if gloss1[j] != gloss2[j] else 0
 
-            ling_diff = sum(
-                1 for i, j in zip(gloss_id_values, other_id_values) if i != j and not (pd.isnull(i) and pd.isnull(j)))
+            ling_dist[i1, i2] = dist
+            # Distance should be symmetrical
+            ling_dist[i2, i1] = ling_dist[i1, i2]
 
-            diff_cnt[id_to_gloss[other_id]] = (ling_diff, filtered_id_freq[other_id])
-            ordered_diff_cnt = {k: v for k, v in sorted(diff_cnt.items(), key=lambda item: item[1][0])}
+    # now we want to get a dictionary with the frequency of the clips and their linguistic distance
+    distances_and_freqs = {}
+    for gloss_id_idx in range(len(gloss_ids)):
+        most_occ_glosses = {}
+        for i in range(1, 11):
+            matches = np.where(ling_dist[gloss_id_idx, :] == i)[0]
+            if len(matches) > 0:
+                idx_matches = []
+                for match in matches:
+                    idx_matches.append(list(filtered_id_freq.keys()).index(gloss_ids[match]))
+                # since the ids are ordered based on frequency, then the smallest index is the gloss with more clips
+                gloss_id = list(filtered_id_freq.keys())[min(idx_matches)]
+                most_occ_glosses[i] = (gloss_id, filtered_id_freq[gloss_id])
 
-        all_diffs[id_to_gloss[gloss_id]] = (filtered_id_freq[gloss_id], ordered_diff_cnt)
+        distances_and_freqs[gloss_ids[gloss_id_idx]] = (filtered_id_freq[gloss_ids[gloss_id_idx]], most_occ_glosses)
 
-    for gloss in list(all_diffs.keys()):
+    # order the dictionary based on the frequency of the glosses
+    ordered_distances_and_freqs = {k: v for k, v in sorted(distances_and_freqs.items(), key=lambda item: item[1][0], reverse=True)}
 
-        ling_dists = {}
+    for gloss_id in ordered_distances_and_freqs.keys():
 
-        for key in all_diffs[gloss][1].keys():
+        # first check if they match in length
+        if len(ordered_distances_and_freqs[gloss_id][1].keys()) == len(np.arange(1, 11)) and np.equal(np.array(list(ordered_distances_and_freqs[gloss_id][1].keys())), np.arange(1, 11)).all():
+            print(f"\n{id_to_gloss[gloss_id]} ({ordered_distances_and_freqs[gloss_id][0]} clips) has signs with ling dist:")
+            for key in ordered_distances_and_freqs[gloss_id][1]:
+                print(f"-{key}: {id_to_gloss[ordered_distances_and_freqs[gloss_id][1][key][0]]} with {ordered_distances_and_freqs[gloss_id][1][key][1]} clips")
 
-            ling_dist = all_diffs[gloss][1][key][0]
-            numb_occ = all_diffs[gloss][1][key][1]
-
-            if ling_dist not in ling_dists.keys():
-                ling_dists[ling_dist] = (key, numb_occ)
-
-        all_ling_dists = np.array(list(ling_dists.keys()))[:10] if len(ling_dists.keys()) > 10 else np.array(list(ling_dists.keys()))
-        perf_ling_dists = np.arange(1, 11) if len(ling_dists.keys()) > 10 else np.arange(1, len(ling_dists.keys()) + 1)
-
-        # print only the signs that have signs with ling distance from 1 to 10.
-        if (all_ling_dists == perf_ling_dists).all():
-            print(f"\n{gloss} ({all_diffs[gloss][0]} clips) has signs with ling dist:")
-            for key in list(ling_dists.keys())[:10]:
-                print(f"-{key}: {ling_dists[key][0]} with {ling_dists[key][1]} clips")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
