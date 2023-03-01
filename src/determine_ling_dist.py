@@ -64,7 +64,7 @@ def main(params):
     ling_df = ling_df.drop(columns=["Signbank ID"])
 
     # fill NaN values with -1 for easier comparison
-    ling_df = ling_df.fillna(-1)
+    ling_df = ling_df.fillna('-')
 
     ling_np = ling_df.to_numpy()
     num = len(gloss_ids)
