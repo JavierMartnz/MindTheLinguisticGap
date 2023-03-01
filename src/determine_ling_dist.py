@@ -72,17 +72,17 @@ def main(params):
     ling_dist = np.zeros((num, num))
 
     # Loop over the indices of the glosses, and then compare the glosses
-    for i1 in tqdm(range(num)):
-        for i2 in range(i1 + 1, num):
-            gloss1, gloss2 = ling_np[i1], ling_np[i2]
+    for i in tqdm(range(num-1)):
+        for j in range(i+1, num):
+            gloss1, gloss2 = ling_np[i], ling_np[j]
             # use this loop instead of np.where() since it's faster
             dist = 0
-            for j in range(len(gloss1)):
-                dist += 1 if gloss1[j] != gloss2[j] else 0
+            for k in range(len(gloss1)):
+                dist += 1 if gloss1[k] != gloss2[k] else 0
 
-            ling_dist[i1, i2] = dist
+            ling_dist[i, j] = dist
             # Distance should be symmetrical
-            ling_dist[i2, i1] = ling_dist[i1, i2]
+            ling_dist[j, i] = ling_dist[i, j]
 
     # now we want to get a dictionary with the frequency of the clips and their linguistic distance
     distances_and_freqs = {}
