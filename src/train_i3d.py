@@ -32,7 +32,7 @@ from src.utils import spatial_transforms
 
 
 class EarlyStopper:
-    def __init__(self, patience=5, min_delta=0.01):
+    def __init__(self, patience=5, min_delta=0):
         self.patience = patience
         self.min_delta = min_delta
         self.counter = 0
@@ -176,7 +176,7 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
     optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
 
     # early stopping setup
-    min_delta = 0.01
+    min_delta = 0.0
     patience = 10
     early_stopper = EarlyStopper(patience=patience, min_delta=min_delta)
 
