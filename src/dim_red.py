@@ -17,7 +17,7 @@ from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip, save_gzip
 from scipy.spatial import distance
-from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.decomposition import PCA, TruncatedSVD, KernelPCA
 from sklearn.manifold import MDS, Isomap
 from pathlib import Path
 from torchvision import transforms
@@ -171,7 +171,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
         # pca won't work if num_components > num_samples
         if X_features.size(0) >= nc:
             try:
-                pca = PCA(n_components=nc)
+                pca = KernelPCA(n_components=nc, kernel='rbf')
                 X_pca = pca.fit_transform(X_features)
                 n_valid_components.append(nc)
                 pca_stress.append(stress(X_pca, X_features))
