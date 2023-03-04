@@ -146,31 +146,31 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     X_features = X_features.detach().cpu()
     n_components = 2 ** np.arange(1, 11)
 
-    pca_stress = []
-    n_valid_components = []
+    # pca_stress = []
+    # n_valid_components = []
 
-    print("Running PCA...")
-    for nc in tqdm(n_components):
-        # pca won't work if num_components > num_samples
-        if X_features.size(0) >= nc:
-            try:
-                pca = KernelPCA(n_components=nc, kernel='linear')
-                X_pca = pca.fit_transform(X_features)
-                n_valid_components.append(nc)
-                pca_stress.append(stress(X_pca, X_features))
-                # pca_evr.append(sum(pca.explained_variance_ratio_))
-                # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
-            except Exception as e:
-                print(e)
+    # print("Running PCA...")
+    # for nc in tqdm(n_components):
+    #     # pca won't work if num_components > num_samples
+    #     if X_features.size(0) >= nc:
+    #         try:
+    #             pca = KernelPCA(n_components=nc, kernel='linear')
+    #             X_pca = pca.fit_transform(X_features)
+    #             n_valid_components.append(nc)
+    #             pca_stress.append(stress(X_pca, X_features))
+    #             # pca_evr.append(sum(pca.explained_variance_ratio_))
+    #             # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
+    #         except Exception as e:
+    #             print(e)
 
     mds_stress = []
-    my_mds_stress = []
+    # my_mds_stress = []
     print("Running nMDS...")
     for nc in tqdm(n_components):
-        mds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto')
-        X_mds = mds.fit_transform(X_features)
-        my_mds_stress.append(stress(X_mds, X_features))
-        mds_stress.append(mds.stress_)
+        nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto')
+        X_nmds = nmds.fit_transform(X_features)
+        # my_mds_stress.append(stress(X_mds, X_features))
+        mds_stress.append(nmds.stress_)
 
     # print(f"The stress values from 2 to 1024 are:\n{pca_stress}")
     #
@@ -184,24 +184,23 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     # plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(n_valid_components, mds_stress, marker='o', label='mds')
-    plt.plot(n_valid_components, my_mds_stress, marker='o', label='mds*')
-    plt.plot(n_valid_components, pca_stress, marker='o', label='pca*')
+    plt.plot(n_components, mds_stress, marker='o')
+    # plt.plot(n_valid_components, my_mds_stress, marker='o', label='mds*')
+    # plt.plot(n_valid_components, pca_stress, marker='o', label='pca*')
     #
-    # y_lims = plt.gca().get_ylim()
-    # y_range = np.abs(y_lims[0] - y_lims[1])
+    y_lims = plt.gca().get_ylim()
+    y_range = np.abs(y_lims[0] - y_lims[1])
 
-    # for i, j in zip(n_valid_components, pca_stress):
-    #     plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
+    for i, j in zip(n_components, mds_stress):
+        plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
     plt.xticks([2, 64, 128, 256, 512, 1024])
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
-    plt.legend(loc='best')
     plt.tight_layout()
 
     run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
     os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, run_dir + '_pcastress.png'))
+    plt.savefig(os.path.join(fig_output_root, run_dir + '_mdsstress.png'))
 
 def main(params):
     config_path = params.config_path
