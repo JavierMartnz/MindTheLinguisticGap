@@ -189,7 +189,6 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(n_valid_components, pca_stress, marker='o')
-    plt.plot(n_valid_components, mds_stress, marker='o')
 
     y_lims = plt.gca().get_ylim()
     y_range = np.abs(y_lims[0] - y_lims[1])
@@ -205,6 +204,25 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, run_dir + '_pcastress.png'))
 
+    plt.clf()
+
+    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+
+    plt.plot(n_components, mds_stress, marker='o')
+
+    y_lims = plt.gca().get_ylim()
+    y_range = np.abs(y_lims[0] - y_lims[1])
+
+    for i, j in zip(n_components, mds_stress):
+        plt.annotate(str(round(j, 2)), xy=(i + y_range * 0.05, j + y_range * 0.02))
+    plt.xticks([2, 64, 128, 256, 512, 1024])
+    plt.xlabel("Number of dimensions")
+    plt.ylabel("Stress")
+    plt.tight_layout()
+
+    run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
+    os.makedirs(fig_output_root, exist_ok=True)
+    plt.savefig(os.path.join(fig_output_root, run_dir + '_mdsstress.png'))
 
 def main(params):
     config_path = params.config_path
