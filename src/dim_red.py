@@ -159,7 +159,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     mds_stress = []
 
     for nc in n_components:
-        mds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto')
+        mds = MDS(n_components=nc, n_jobs=-1)
         X_transform = mds.fit_transform(X_features)
         mds_stress.append(mds.stress_)
 
