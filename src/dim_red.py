@@ -156,9 +156,16 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     X_features = X_features.detach().cpu()
     n_components = 2 ** np.arange(1, 11)
 
+    mds_stress = []
     pca_stress = []
-    pca_scree = []
     n_valid_components = []
+
+    print("Running nMDS...")
+    for nc in tqdm(n_components):
+        mds = MDS(n_components=nc, metric=False, n_jobs=-1)
+        X_mds = mds.fit_transform(X_features)
+        mds_stress.append(stress(X_mds, X_features))
+
     print("Running PCA...")
     for nc in tqdm(n_components):
         # pca won't work if num_components > num_samples
@@ -168,22 +175,21 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
                 X_pca = pca.fit_transform(X_features)
                 n_valid_components.append(nc)
                 pca_stress.append(stress(X_pca, X_features))
-                pca_scree.append(pca.explained_variance_ratio_)
                 # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
             except Exception as e:
                 print(e)
 
-    print(f"The stress values from 2 to 1024 are:\n{pca_stress}")
-
-    delta_stress = [np.abs(pca_stress[i]-pca_stress[i+1]) for i in range(len(pca_stress)-1)]
-    min_delta_index = delta_stress.index(min(delta_stress))
-
-    print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index+1]}\n")
+    # print(f"The stress values from 2 to 1024 are:\n{pca_stress}")
+    #
+    # delta_stress = [np.abs(pca_stress[i]-pca_stress[i+1]) for i in range(len(pca_stress)-1)]
+    # min_delta_index = delta_stress.index(min(delta_stress))
+    #
+    # print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index+1]}\n")
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(n_valid_components, pca_stress, marker='o')
-    plt.plot(n_valid_components, pca_scree, marker='o')
+    plt.plot(n_valid_components, mds_stress, marker='o')
 
     y_lims = plt.gca().get_ylim()
     y_range = np.abs(y_lims[0] - y_lims[1])
