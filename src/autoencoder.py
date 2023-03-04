@@ -224,7 +224,7 @@ def run(cfg_path):
     train_features = X_features / X_features.amax(dim=1, keepdim=True)
     # train_features = nn.functional.normalize(train_features)
 
-    train_dataloader = torch.utils.data.DataLoader(train_features, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    train_dataloader = torch.utils.data.DataLoader(train_features, batch_size=batch_size, shuffle=True, num_workers=0)
 
     autoencoder = AutoEncoder(k=2)
     if use_cuda:
