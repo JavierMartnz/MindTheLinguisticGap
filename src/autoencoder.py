@@ -34,6 +34,7 @@ from src.utils import spatial_transforms
 
 # why an autoencoder is similar to PCA
 # https://towardsdatascience.com/build-the-right-autoencoder-tune-and-optimize-using-pca-principles-part-i-1f01f821999b
+
 class AutoEncoder(nn.Module):
 
     def __init__(self, k):
