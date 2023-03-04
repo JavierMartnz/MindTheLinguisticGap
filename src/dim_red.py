@@ -156,40 +156,6 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     X_features = X_features.detach().cpu()
     n_components = 2 ** np.arange(1, 11)
 
-    mds_stress = []
-
-    for nc in n_components:
-        mds = MDS(n_components=nc, n_jobs=-1)
-        X_transform = mds.fit_transform(X_features)
-        mds_stress.append(mds.stress_)
-
-    print(f"The stress values from 2 to 1024 are:\n{mds_stress}")
-
-    delta_stress = [np.abs(mds_stress[i] - mds_stress[i + 1]) for i in range(len(mds_stress) - 1)]
-    min_delta_index = delta_stress.index(min(delta_stress))
-
-    print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index + 1]}\n")
-
-    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
-
-    plt.plot(nc, mds_stress, marker='o')
-
-    y_lims = plt.gca().get_ylim()
-    y_range = np.abs(y_lims[0] - y_lims[1])
-
-    for i, j in zip(nc, mds_stress):
-        plt.annotate(str(round(j, 2)), xy=(i + y_range * 0.05, j + y_range * 0.02))
-    plt.xticks(n_components)
-    plt.xlabel("Number of dimensions")
-    plt.ylabel("Stress")
-    plt.tight_layout()
-
-    run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
-    os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, run_dir + '_mdsstress.png'))
-
-    plt.clf()
-
     pca_stress = []
     n_valid_components = []
     print("Running PCA...")
@@ -220,7 +186,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     for i, j in zip(n_valid_components, pca_stress):
         plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
-    plt.xticks(n_components)
+    plt.xticks(n_valid_components)
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
     plt.tight_layout()
