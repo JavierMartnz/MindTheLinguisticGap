@@ -188,7 +188,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, run_dir + '_mdsstress.png'))
 
-    return
+    plt.clf()
 
     pca_stress = []
     n_valid_components = []
