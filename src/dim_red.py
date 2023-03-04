@@ -24,11 +24,26 @@ from torchvision import transforms
 
 
 def stress(X_pred, X):
-    # distance of every point (row) to the rest of points in matrix
-    orig_dist = distance.pdist(X, 'euclidean')
-    pred_dist = distance.pdist(X_pred, 'euclidean')
-    # stress formula from http://analytictech.com/networks/mds.htm
-    return np.sqrt(sum((pred_dist - orig_dist) ** 2) / sum(orig_dist ** 2))
+
+    orig_dist = 0
+    pred_dist = 0
+    dist_diff = 0
+    ref_diff = 0
+    for i in range(len(X)):
+        for j in range(len(X)):
+            orig_dist += distance.euclidean(X[i], X[j])
+            pred_dist += distance.euclidean(X_pred[i], X_pred[j])
+
+        ref_diff += orig_dist**2
+        dist_diff += (orig_dist - pred_dist)**2
+
+    return np.sqrt(dist_diff/ref_diff)
+
+    # # distance of every point (row) to the rest of points in matrix
+    # orig_dist = distance.pdist(X, 'euclidean')
+    # pred_dist = distance.pdist(X_pred, 'euclidean')
+    # # stress formula from http://analytictech.com/networks/mds.htm
+    # return np.sqrt(sum((pred_dist - orig_dist) ** 2) / sum(orig_dist ** 2))
 
 def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
