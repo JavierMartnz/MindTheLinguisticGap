@@ -226,7 +226,7 @@ def run(cfg_path):
 
     train_dataloader = torch.utils.data.DataLoader(train_features, batch_size=batch_size, shuffle=True, num_workers=0)
 
-    autoencoder = AutoEncoder(k=1024)
+    autoencoder = AutoEncoder(k=2)
     if use_cuda:
         autoencoder.cuda()
 
