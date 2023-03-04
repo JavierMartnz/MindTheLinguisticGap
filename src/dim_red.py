@@ -157,7 +157,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     n_components = 2 ** np.arange(1, 11)
 
     pca_stress = []
-    pca_evr = []
+    # pca_evr = []
     n_valid_components = []
 
     # print("Running nMDS...")
@@ -175,7 +175,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
                 X_pca = pca.fit_transform(X_features)
                 n_valid_components.append(nc)
                 pca_stress.append(stress(X_pca, X_features))
-                pca_evr.append(sum(pca.explained_variance_ratio_))
+                # pca_evr.append(sum(pca.explained_variance_ratio_))
                 # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
             except Exception as e:
                 print(e)
@@ -213,8 +213,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(n_valid_components, pca_stress, marker='o', label='pca')
     plt.plot(n_valid_components, svd_stress, marker='o', label='svd')
+    plt.plot(n_valid_components, pca_stress, marker='o', label='pca')
 
     y_lims = plt.gca().get_ylim()
     y_range = np.abs(y_lims[0] - y_lims[1])
@@ -235,13 +235,13 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(n_valid_components, pca_evr, marker='o', label='pca')
+    # plt.plot(n_valid_components, pca_evr, marker='o', label='pca')
     plt.plot(n_valid_components, svd_evr, marker='o', label='svd')
 
     y_lims = plt.gca().get_ylim()
     y_range = np.abs(y_lims[0] - y_lims[1])
 
-    for i, j in zip(n_valid_components, pca_evr):
+    for i, j in zip(n_valid_components, svd_evr):
         plt.annotate(str(round(j, 2)), xy=(i + y_range * 0.05, j + y_range * 0.02))
     plt.xticks([2, 64, 128, 256, 512, 1024])
     plt.xlabel("Number of dimensions")
