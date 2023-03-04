@@ -17,7 +17,7 @@ from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip, save_gzip
 from scipy.spatial import distance
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.manifold import MDS, Isomap
 from pathlib import Path
 from torchvision import transforms
@@ -156,7 +156,6 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     X_features = X_features.detach().cpu()
     n_components = 2 ** np.arange(1, 11)
 
-    mds_stress = []
     pca_stress = []
     pca_evr = []
     n_valid_components = []
@@ -176,7 +175,31 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
                 X_pca = pca.fit_transform(X_features)
                 n_valid_components.append(nc)
                 pca_stress.append(stress(X_pca, X_features))
-                pca_evr.append(pca.explained_variance_ratio_)
+                pca_evr.append(sum(pca.explained_variance_ratio_))
+                # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
+            except Exception as e:
+                print(e)
+
+    svd_stress = []
+    svd_evr = []
+    n_valid_components = []
+
+    # print("Running nMDS...")
+    # for nc in tqdm(n_components):
+    #     mds = MDS(n_components=nc, metric=False, n_jobs=-1)
+    #     X_mds = mds.fit_transform(X_features)
+    #     mds_stress.append(mds.stress_)
+
+    print("Running PCA...")
+    for nc in tqdm(n_components):
+        # pca won't work if num_components > num_samples
+        if X_features.size(0) >= nc:
+            try:
+                svd = TruncatedSVD(n_components=nc)
+                X_svd = svd.fit_transform(X_features)
+                n_valid_components.append(nc)
+                svd_stress.append(stress(X_svd, X_features))
+                svd_evr.append(sum(svd.explained_variance_ratio_))
                 # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
             except Exception as e:
                 print(e)
@@ -190,7 +213,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(n_valid_components, pca_stress, marker='o')
+    plt.plot(n_valid_components, pca_stress, marker='o', label='pca')
+    plt.plot(n_valid_components, svd_stress, marker='o', label='svd')
 
     y_lims = plt.gca().get_ylim()
     y_range = np.abs(y_lims[0] - y_lims[1])
@@ -200,6 +224,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     plt.xticks([2, 64, 128, 256, 512, 1024])
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
+    plt.legend(loc='best')
     plt.tight_layout()
 
     run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
@@ -210,7 +235,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(n_valid_components, pca_evr, marker='o')
+    plt.plot(n_valid_components, pca_evr, marker='o', label='pca')
+    plt.plot(n_valid_components, svd_evr, marker='o', label='svd')
 
     y_lims = plt.gca().get_ylim()
     y_range = np.abs(y_lims[0] - y_lims[1])
@@ -220,6 +246,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     plt.xticks([2, 64, 128, 256, 512, 1024])
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
+    plt.legend(loc='best')
     plt.tight_layout()
 
     run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
