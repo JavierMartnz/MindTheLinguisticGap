@@ -157,15 +157,18 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     n_components = 2 ** np.arange(1, 11)
 
     pca_stress = []
+    pca_scree = []
     n_valid_components = []
     print("Running PCA...")
     for nc in tqdm(n_components):
         # pca won't work if num_components > num_samples
         if X_features.size(0) >= nc:
             try:
-                X_pca = PCA(n_components=nc).fit_transform(X_features)
+                pca = PCA(n_components=nc)
+                X_pca = pca.fit_transform(X_features)
                 n_valid_components.append(nc)
                 pca_stress.append(stress(X_pca, X_features))
+                pca_scree.append(pca.explained_variance_ratio_)
                 # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
             except Exception as e:
                 print(e)
@@ -180,6 +183,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(n_valid_components, pca_stress, marker='o')
+    plt.plot(n_valid_components, pca_scree, marker='o')
 
     y_lims = plt.gca().get_ylim()
     y_range = np.abs(y_lims[0] - y_lims[1])
