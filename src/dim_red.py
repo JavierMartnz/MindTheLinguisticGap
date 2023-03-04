@@ -24,26 +24,11 @@ from torchvision import transforms
 
 
 def stress(X_pred, X):
-
-    orig_dist = 0
-    pred_dist = 0
-    dist_diff = 0
-    ref_diff = 0
-    for i in range(len(X)):
-        for j in range(len(X)):
-            orig_dist += distance.euclidean(X[i], X[j])
-            pred_dist += distance.euclidean(X_pred[i], X_pred[j])
-
-        ref_diff += orig_dist**2
-        dist_diff += (orig_dist - pred_dist)**2
-
-    return np.sqrt(dist_diff/ref_diff)
-
-    # # distance of every point (row) to the rest of points in matrix
-    # orig_dist = distance.pdist(X, 'euclidean')
-    # pred_dist = distance.pdist(X_pred, 'euclidean')
-    # # stress formula from http://analytictech.com/networks/mds.htm
-    # return np.sqrt(sum((pred_dist - orig_dist) ** 2) / sum(orig_dist ** 2))
+    # distance of every point (row) to the rest of points in matrix
+    orig_dist = distance.pdist(X, 'euclidean')
+    pred_dist = distance.pdist(X_pred, 'euclidean')
+    # stress formula from http://analytictech.com/networks/mds.htm
+    return np.sqrt(sum((pred_dist - orig_dist) ** 2) / sum(orig_dist ** 2))
 
 def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
@@ -129,6 +114,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     i3d.train(False)  # Set model to evaluate mode
 
+    # we initialize with shape (1, 1024) since we don't know the final size of the matrix
     X_features = torch.zeros((1, 1024))
     X = torch.zeros((1, 1024))
     Y = np.zeros(1)
@@ -145,48 +131,30 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
                 # get the features of the penultimate layer
                 features = i3d.extract_features(inputs)
-                # preds = i3d(inputs)
-
                 features = torch.squeeze(features, -1)
-                # preds = torch.squeeze(preds, -1)
 
-                # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
-
-                # if X is empty
+                # if X_features is 0 (empty)
                 if X_features.sum() == 0:
                     X_features = features.squeeze()
-                    # X_pred = preds.squeeze()
-                    # Y = y_true
                 else:
                     # if the last batch has only 1 video, the squeeze function removes an extra dimension and cannot be concatenated
                     if len(features.squeeze().size()) == 1:
                         X_features = torch.cat((X_features, torch.unsqueeze(features.squeeze(), 0)), dim=0)
-                        # X_pred = torch.cat((X_pred, torch.unsqueeze(preds.squeeze(), 0)), dim=0)
                     else:
                         X_features = torch.cat((X_features, features.squeeze()), dim=0)
-                        # X_pred = torch.cat((X_pred, preds.squeeze()), dim=0)
-
-                    # Y = np.append(Y, y_true)
 
     X_features = X_features.detach().cpu()
     n_components = 2 ** np.arange(1, 11)
 
     pca_stress = []
-    # pca_evr = []
     n_valid_components = []
-
-    # print("Running nMDS...")
-    # for nc in tqdm(n_components):
-    #     mds = MDS(n_components=nc, metric=False, n_jobs=-1)
-    #     X_mds = mds.fit_transform(X_features)
-    #     mds_stress.append(mds.stress_)
 
     print("Running PCA...")
     for nc in tqdm(n_components):
         # pca won't work if num_components > num_samples
         if X_features.size(0) >= nc:
             try:
-                pca = KernelPCA(n_components=nc, kernel='rbf')
+                pca = KernelPCA(n_components=nc, kernel='linear')
                 X_pca = pca.fit_transform(X_features)
                 n_valid_components.append(nc)
                 pca_stress.append(stress(X_pca, X_features))
@@ -195,29 +163,14 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
             except Exception as e:
                 print(e)
 
-    svd_stress = []
-    svd_evr = []
-    n_valid_components = []
-
-    # print("Running nMDS...")
-    # for nc in tqdm(n_components):
-    #     mds = MDS(n_components=nc, metric=False, n_jobs=-1)
-    #     X_mds = mds.fit_transform(X_features)
-    #     mds_stress.append(mds.stress_)
-
-    print("Running PCA...")
+    mds_stress = []
+    my_mds_stress = []
+    print("Running nMDS...")
     for nc in tqdm(n_components):
-        # pca won't work if num_components > num_samples
-        if X_features.size(0) >= nc:
-            try:
-                svd = TruncatedSVD(n_components=nc)
-                X_svd = svd.fit_transform(X_features)
-                n_valid_components.append(nc)
-                svd_stress.append(stress(X_svd, X_features))
-                svd_evr.append(sum(svd.explained_variance_ratio_))
-                # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
-            except Exception as e:
-                print(e)
+        mds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto')
+        X_mds = mds.fit_transform(X_features)
+        my_mds_stress.append(stress(X_mds, X_features))
+        mds_stress.append(mds.stress_)
 
     # print(f"The stress values from 2 to 1024 are:\n{pca_stress}")
     #
@@ -226,16 +179,20 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     #
     # print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index+1]}\n")
 
-    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+    # clear plot info in case several graphs are plotted in a row
+    plt.clf()
 
-    plt.plot(n_valid_components, svd_stress, marker='o', label='svd')
-    plt.plot(n_valid_components, pca_stress, marker='o', label='pca')
+    # plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    y_lims = plt.gca().get_ylim()
-    y_range = np.abs(y_lims[0] - y_lims[1])
+    plt.plot(n_valid_components, mds_stress, marker='o', label='mds')
+    plt.plot(n_valid_components, my_mds_stress, marker='o', label='mds*')
+    plt.plot(n_valid_components, my_mds_stress, marker='o', label='pca*')
+    #
+    # y_lims = plt.gca().get_ylim()
+    # y_range = np.abs(y_lims[0] - y_lims[1])
 
-    for i, j in zip(n_valid_components, pca_stress):
-        plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
+    # for i, j in zip(n_valid_components, pca_stress):
+    #     plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
     plt.xticks([2, 64, 128, 256, 512, 1024])
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
@@ -245,28 +202,6 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, run_dir + '_pcastress.png'))
-
-    plt.clf()
-
-    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
-
-    # plt.plot(n_valid_components, pca_evr, marker='o', label='pca')
-    plt.plot(n_valid_components, svd_evr, marker='o', label='svd')
-
-    y_lims = plt.gca().get_ylim()
-    y_range = np.abs(y_lims[0] - y_lims[1])
-
-    for i, j in zip(n_valid_components, svd_evr):
-        plt.annotate(str(round(j, 2)), xy=(i + y_range * 0.05, j + y_range * 0.02))
-    plt.xticks([2, 64, 128, 256, 512, 1024])
-    plt.xlabel("Number of dimensions")
-    plt.ylabel("Stress")
-    plt.legend(loc='best')
-    plt.tight_layout()
-
-    run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
-    os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, run_dir + '_pcaevr.png'))
 
 def main(params):
     config_path = params.config_path
