@@ -186,7 +186,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.plot(n_valid_components, mds_stress, marker='o', label='mds')
     plt.plot(n_valid_components, my_mds_stress, marker='o', label='mds*')
-    plt.plot(n_valid_components, my_mds_stress, marker='o', label='pca*')
+    plt.plot(n_valid_components, pca_stress, marker='o', label='pca*')
     #
     # y_lims = plt.gca().get_ylim()
     # y_range = np.abs(y_lims[0] - y_lims[1])
