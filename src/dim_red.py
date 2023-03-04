@@ -159,7 +159,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     pca_stress = []
     n_valid_components = []
     print("Running PCA...")
-    for nc in n_components:
+    for nc in tqdm(n_components):
         # pca won't work if num_components > num_samples
         if X_features.size(0) >= nc:
             try:
