@@ -182,7 +182,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     # clear plot info in case several graphs are plotted in a row
     plt.clf()
 
-    # plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(n_components, mds_stress, marker='o')
     # plt.plot(n_valid_components, my_mds_stress, marker='o', label='mds*')
