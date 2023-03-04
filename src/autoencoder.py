@@ -46,66 +46,66 @@ class AutoEncoder(nn.Module):
         if k >= 1024:
             raise ValueError("The bottlenack layer has to have dimension k < 1024")
 
-        # self.encoder = nn.Sequential(
-        #     nn.Linear(1024, 512),
-        #     # nn.ReLU(),
-        #     # nn.Linear(512, 256),
-        #     # nn.ReLU(),
-        #     # nn.Linear(256, 128),
-        #     # nn.ReLU(),
-        #     # nn.Linear(128, 64),
-        #     # nn.ReLU(),
-        #     # nn.Linear(64, 32),
-        #     # nn.ReLU(),
-        #     # nn.Linear(32, 16),
-        #     # nn.ReLU(),
-        #     # nn.Linear(16, 8),
-        #     # nn.ReLU(),
-        #     # nn.Linear(8, 4),
-        #     # nn.ReLU(),
-        #     # nn.Linear(4, 2),
-        # )
-        #
-        # self.decoder = nn.Sequential(
-        #     # nn.Linear(2, 4),
-        #     # nn.ReLU(),
-        #     # nn.Linear(4, 8),
-        #     # nn.ReLU(),
-        #     # nn.Linear(8, 16),
-        #     # nn.ReLU(),
-        #     # nn.Linear(16, 32),
-        #     # nn.ReLU(),
-        #     # nn.Linear(32, 64),
-        #     # nn.ReLU(),
-        #     # nn.Linear(64, 128),
-        #     # nn.ReLU(),
-        #     # nn.Linear(128, 256),
-        #     # nn.ReLU(),
-        #     # nn.Linear(256, 512),
-        #     # nn.ReLU(),
-        #     nn.Linear(512, 1024),
-        #     nn.Sigmoid()
-        # )
+        self.encoder = nn.Sequential(
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Linear(16, 8),
+            nn.ReLU(),
+            nn.Linear(8, 4),
+            nn.ReLU(),
+            nn.Linear(4, 2),
+        )
+
+        self.decoder = nn.Sequential(
+            nn.Linear(2, 4),
+            nn.ReLU(),
+            nn.Linear(4, 8),
+            nn.ReLU(),
+            nn.Linear(8, 16),
+            nn.ReLU(),
+            nn.Linear(16, 32),
+            nn.ReLU(),
+            nn.Linear(32, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, 256),
+            nn.ReLU(),
+            nn.Linear(256, 512),
+            nn.ReLU(),
+            nn.Linear(512, 1024),
+            nn.Sigmoid()
+        )
 
         # the autoencoder always has 4 layers, so calculate their input/output dimensions based on the given k
-        dim_step = (1024 - self.k) // self.n_layers
-        decoder_dims = list(range(self.k, 1024, dim_step))
-        decoder_dims.insert(len(decoder_dims), 1024)
-        encoder_dims = list(reversed(decoder_dims))
-
-        self.encoder = nn.ModuleList()
-        for idx in range(len(encoder_dims)-1):
-            self.encoder.append(nn.Linear(encoder_dims[idx], encoder_dims[idx+1]))
-            if idx+1 < len(encoder_dims)-1:  # if not the last layer
-                self.encoder.append(nn.ReLU())
-
-        self.decoder = nn.ModuleList()
-        for idx in range(len(decoder_dims)-1):
-            self.decoder.append(nn.Linear(decoder_dims[idx], decoder_dims[idx+1]))
-            if idx+1 < len(decoder_dims)-1:
-                self.decoder.append(nn.ReLU())
-            else:  # if last layer
-                self.decoder.append(nn.Sigmoid())
+        # dim_step = (1024 - self.k) // self.n_layers
+        # decoder_dims = list(range(self.k, 1024, dim_step))
+        # decoder_dims.insert(len(decoder_dims), 1024)
+        # encoder_dims = list(reversed(decoder_dims))
+        #
+        # self.encoder = nn.ModuleList()
+        # for idx in range(len(encoder_dims)-1):
+        #     self.encoder.append(nn.Linear(encoder_dims[idx], encoder_dims[idx+1]))
+        #     if idx+1 < len(encoder_dims)-1:  # if not the last layer
+        #         self.encoder.append(nn.ReLU())
+        #
+        # self.decoder = nn.ModuleList()
+        # for idx in range(len(decoder_dims)-1):
+        #     self.decoder.append(nn.Linear(decoder_dims[idx], decoder_dims[idx+1]))
+        #     if idx+1 < len(decoder_dims)-1:
+        #         self.decoder.append(nn.ReLU())
+        #     else:  # if last layer
+        #         self.decoder.append(nn.Sigmoid())
 
     def forward(self, x):
         # x = self.encoder(x)
@@ -226,7 +226,7 @@ def run(cfg_path):
 
     train_dataloader = torch.utils.data.DataLoader(train_features, batch_size=batch_size, shuffle=True, num_workers=0)
 
-    autoencoder = AutoEncoder(k=2)
+    autoencoder = AutoEncoder(k=1024)
     if use_cuda:
         autoencoder.cuda()
 
@@ -305,9 +305,9 @@ def run(cfg_path):
 
     for i, j in zip(n_components, all_MSE):
         plt.annotate(str(round(j, 2)), xy=(i + y_range * 0.05, j + y_range * 0.02))
-    plt.xticks([2, 64, 128, 256, 512, 1024])
+    plt.xticks([2, 64, 128, 256, 512])
     plt.xlabel("Number of dimensions")
-    plt.ylabel("Stress")
+    plt.ylabel("MSE")
     plt.tight_layout()
 
     run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
