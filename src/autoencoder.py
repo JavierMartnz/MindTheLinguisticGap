@@ -32,8 +32,8 @@ from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
 
-# why an autoencoder is similar to PCA
-# https://towardsdatascience.com/build-the-right-autoencoder-tune-and-optimize-using-pca-principles-part-i-1f01f821999b
+import matplotlib.pyplot as plt
+from pathlib import Path
 
 class AutoEncoder(nn.Module):
 
@@ -122,18 +122,113 @@ def run(cfg_path):
     weight_decay = 1e-5
     epochs = 50
 
-    # n_layers = 8
+    cngt_root = "/vol/tensusers5/jmartinez/datasets/cngt_single_signs_256"
+    sb_root = "/vol/tensusers5/jmartinez/datasets/NGT_Signbank_256"
+    sb_vocab_path = "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
+    model_root = "/vol/tensusers5/jmartinez/models/i3d"
+    fig_output_root = "/vol/tensusers5/jmartinez/graphs"
 
-    train_features = load_gzip("D:/Thesis/datasets/i3d_features.gzip")
+    specific_glosses = ["GEBAREN-A", "JA-A"]
+    run_name = "rq1"
+    run_epochs = 50
+    run_batch_size = 128
+    run_lr = 0.1
+    run_optimizer = "SGD"
+
+    input_size = 256
+    fold = "train"
+    loading_mode = "balanced"
+    window_size = 16
+    clips_per_class = -1
+    random_seed = 42
+    use_cuda = True
+
+    # get directory and filename for the checkpoints
+    glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
+    run_dir = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
+
+    ckpt_files = [file for file in os.listdir(os.path.join(model_root, run_dir)) if file.endswith(".pt")]
+    # take the last save checkpoint, which contains the minimum val loss
+    ckpt_filename = ckpt_files[-1]
+    # ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
+
+    num_top_glosses = None
+
+    sb_vocab = load_gzip(sb_vocab_path)
+    gloss_to_id = sb_vocab['gloss_to_id']
+
+    specific_gloss_ids = [gloss_to_id[gloss] for gloss in specific_glosses]
+
+    cropped_input_size = input_size * 0.875
+
+    test_transforms = transforms.Compose([transforms.CenterCrop(cropped_input_size)])
+
+    print(f"Loading {fold} split...")
+    dataset = I3Dataset(loading_mode=loading_mode,
+                        cngt_root=cngt_root,
+                        sb_root=sb_root,
+                        sb_vocab_path=sb_vocab_path,
+                        mode="rgb",
+                        split=fold,
+                        window_size=window_size,
+                        transforms=test_transforms,
+                        filter_num=num_top_glosses,
+                        specific_gloss_ids=specific_gloss_ids,
+                        clips_per_class=clips_per_class,
+                        random_seed=random_seed)
+
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+
+    i3d = InceptionI3d(num_classes=len(dataset.class_encodings),
+                       in_channels=3,
+                       window_size=window_size,
+                       input_size=cropped_input_size)
+
+    if use_cuda:
+        i3d.load_state_dict(torch.load(os.path.join(model_root, run_dir, ckpt_filename)))
+    else:
+        i3d.load_state_dict(torch.load(os.path.join(model_root, run_dir, ckpt_filename), map_location=torch.device('cpu')))
+
+    if use_cuda:
+        i3d.cuda()
+
+    i3d.train(False)  # Set model to evaluate mode
+
+    X_features = torch.zeros((1, 1024))
+
+    print(f"Running datapoints through model...")
+    with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
+        with tqdm(dataloader, unit="batch") as tepoch:
+            for data in tepoch:
+                # get the inputs
+                inputs, labels, _ = data
+                if use_cuda:
+                    inputs = Variable(inputs.cuda())
+                    labels = Variable(labels.cuda())
+
+                # get the features of the penultimate layer
+                features = i3d.extract_features(inputs)
+                features = torch.squeeze(features, -1)
+
+                # if X_features is 0 (empty)
+                if X_features.sum() == 0:
+                    X_features = features.squeeze()
+                else:
+                    # if the last batch has only 1 video, the squeeze function removes an extra dimension and cannot be concatenated
+                    if len(features.squeeze().size()) == 1:
+                        X_features = torch.cat((X_features, torch.unsqueeze(features.squeeze(), 0)), dim=0)
+                    else:
+                        X_features = torch.cat((X_features, features.squeeze()), dim=0)
 
     # this normalizes the features in order for them to have values in [0,1]
-    train_features = train_features / train_features.amax(dim=1, keepdim=True)
+    train_features = X_features / X_features.amax(dim=1, keepdim=True)
     # train_features = nn.functional.normalize(train_features)
 
     train_dataloader = torch.utils.data.DataLoader(train_features, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
 
     autoencoder = AutoEncoder(k=2)
-    autoencoder.cuda()
+    if use_cuda:
+        autoencoder.cuda()
 
     # for param in autoencoder.parameters():
     #     print(param)
@@ -162,38 +257,62 @@ def run(cfg_path):
 
     autoencoder.train(False)
 
-    MSE = []
-    for feature_vector in train_dataloader:
-        feature_vector = Variable(feature_vector.cuda())
+    # MSE = []
+    # for feature_vector in train_dataloader:
+    #     feature_vector = Variable(feature_vector.cuda())
+    #
+    #     preds = autoencoder(feature_vector)
+    #
+    #     MSE.append(mean_squared_error(y_true=feature_vector.detach().cpu().numpy(), y_pred=preds.detach().cpu().numpy()))
+    #
+    # print(np.mean(MSE))
 
-        preds = autoencoder(feature_vector)
+    all_MSE = []
+    trimmed_autoencoder = autoencoder
 
-        MSE.append(mean_squared_error(y_true=feature_vector.detach().cpu().numpy(), y_pred=preds.detach().cpu().numpy()))
+    ks = [2, 4, 8, 16, 32, 64, 128, 256, 512]
 
-    print(np.mean(MSE))
+    for i in range(len(ks)):
 
+        if i > 0:
+            trimmed_autoencoder.encoder = nn.Sequential(*list(trimmed_autoencoder.encoder.children())[:-2])
+            trimmed_autoencoder.decoder = nn.Sequential(*list(trimmed_autoencoder.decoder.children())[2:])
 
-    # trimmed_autoencoder = autoencoder
+        # summary(trimmed_autoencoder, (1, 1024))
+
+        MSE = []
+        for feature_vector in train_dataloader:
+            feature_vector = Variable(feature_vector.cuda())
+
+            preds = autoencoder(feature_vector)
+
+            MSE.append(mean_squared_error(y_true=feature_vector.detach().cpu().numpy(), y_pred=preds.detach().cpu().numpy()))
+
+        all_MSE.append(np.mean(MSE))
+
+    n_components = 2 ** np.arange(1, 10)
+
+    plt.clf()
+
+    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+
+    plt.plot(n_components, all_MSE, marker='o')
+    # plt.plot(n_valid_components, my_mds_stress, marker='o', label='mds*')
+    # plt.plot(n_valid_components, pca_stress, marker='o', label='pca*')
     #
-    # ks = [2, 4, 8, 16, 32, 64, 128, 256, 512]
-    #
-    # for i in range(len(ks)):
-    #
-    #     if i > 0:
-    #         trimmed_autoencoder.encoder = nn.Sequential(*list(trimmed_autoencoder.encoder.children())[:-2])
-    #         trimmed_autoencoder.decoder = nn.Sequential(*list(trimmed_autoencoder.decoder.children())[2:])
-    #
-    #     # summary(trimmed_autoencoder, (1, 1024))
-    #
-    #     MSE = []
-    #     for feature_vector in train_dataloader:
-    #         feature_vector = Variable(feature_vector.cuda())
-    #
-    #         preds = autoencoder(feature_vector)
-    #
-    #         MSE.append(mean_squared_error(y_true=feature_vector.detach().cpu().numpy(), y_pred=preds.detach().cpu().numpy()))
-    #
-    #     print(np.mean(MSE))
+    y_lims = plt.gca().get_ylim()
+    y_range = np.abs(y_lims[0] - y_lims[1])
+
+    for i, j in zip(n_components, all_MSE):
+        plt.annotate(str(round(j, 2)), xy=(i + y_range * 0.05, j + y_range * 0.02))
+    plt.xticks([2, 64, 128, 256, 512, 1024])
+    plt.xlabel("Number of dimensions")
+    plt.ylabel("Stress")
+    plt.tight_layout()
+
+    run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
+    os.makedirs(fig_output_root, exist_ok=True)
+    plt.savefig(os.path.join(fig_output_root, run_dir + '_autoencoder.png'))
 
 def main(params):
     config_path = params.config_path
