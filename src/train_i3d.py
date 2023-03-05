@@ -30,7 +30,6 @@ from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
 
-
 class EarlyStopper:
     def __init__(self, patience=5, min_delta=0):
         self.patience = patience
@@ -48,7 +47,6 @@ class EarlyStopper:
             self.counter = 0
             self.min_val_loss = val_loss
             return False
-
 
 def train(specific_glosses: list, config: dict, mode='rgb'):
     print(f"\nTraining for {specific_glosses[0]} and {specific_glosses[1]}")

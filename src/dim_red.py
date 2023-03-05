@@ -200,7 +200,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
     os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, run_dir + '_mdsstress.png'))
+    plt.savefig(os.path.join(fig_output_root, run_dir + '_nmdsstress.png'))
 
 def main(params):
     config_path = params.config_path

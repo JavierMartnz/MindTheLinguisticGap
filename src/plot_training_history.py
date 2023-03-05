@@ -34,6 +34,8 @@ def plot_train_history(specific_glosses: list, config: dict, trained_models_root
 
     colors = sns.color_palette('pastel')
 
+    plt.clf()
+
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(epochs, training_history['train_accuracy'], label='train_acc', linestyle='--')
@@ -59,8 +61,6 @@ def plot_train_history(specific_glosses: list, config: dict, trained_models_root
 
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, weights_root + '_loss.png'))
-
-    plt.clf()
 
 def main(params):
     trained_models_root = params.trained_models_root
