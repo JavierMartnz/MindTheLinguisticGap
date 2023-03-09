@@ -1,0 +1,29 @@
+training:
+  # parameters for autoencoder
+  specific_glosses: ["GEBAREN-A", "JA-A"]
+  ks: [2, 4, 8, 16, 32, 64, 128, 256, 512]
+  n_layers: 4
+  epochs: 50
+  batch_size: 128
+  lr: 0.001
+  weight_decay: 0.00001
+  # parameters to load weights
+  run_name: "rq1"
+  run_epochs: 50
+  run_batch_size: 128
+  run_lr: 0.1
+  run_optimizer: "SGD"
+  saved_model_root: "/vol/tensusers5/jmartinez/models/i3d"
+  use_cuda: True
+  random_seed: 42
+
+data:
+  clips_per_class: -1
+  root: "/vol/tensusers5/jmartinez/datasets"
+  cngt_clips_folder: "cngt_single_signs_256"
+  signbank_folder: "NGT_Signbank_256"
+  sb_vocab_file: "signbank_vocab.gzip"
+  window_size: 16
+  loading_mode: "balanced"
+  input_size: 256
+

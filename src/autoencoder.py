@@ -160,15 +160,15 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
     plt.savefig(os.path.join(fig_output_root, filename + '_metrics.png'))
 
 
-def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: str):
-    autoencoder_config = config.get("autoencoder")
+def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: str, log_file: str):
+    train_config = config.get("autoencoder")
     data_config = config.get("data")
 
-    use_cuda = autoencoder_config.get("use_cuda")
-    lr = autoencoder_config.get("lr")
-    weight_decay = autoencoder_config.get("weight_decay")
-    epochs = autoencoder_config.get("epochs")
-    n_layers = autoencoder_config.get("n_layers")
+    lr = train_config.get("lr")
+    weight_decay = train_config.get("weight_decay")
+    epochs = train_config.get("epochs")
+    n_layers = train_config.get("n_layers")
+    use_cuda = train_config.get("use_cuda")
 
     # initialize autoencoder
     autoencoder = AutoEncoder(n_layers=n_layers, k=k)
@@ -257,42 +257,53 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
         total_true.append(feature_vector.detach().cpu().numpy())
         total_pred.append(preds.detach().cpu().numpy())
 
-    print(f"MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.4f}")
+    # print to console
+    print(f"Autoencoder k={k}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.4f}")
+    # print to file
+    print(f"Autoencoder k={k}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.4f}", file=log_file)
 
 
-def train(config: dict, fig_output_root: str):
-    batch_size = 8
-    lr = 1e-3
-    weight_decay = 1e-5
-    epochs = 50
-    ks = [2, 4, 8, 16, 32, 64, 128, 256, 512]
+def train(config: dict, fig_output_root: str, log_output_root: str):
 
-    cngt_root = "/vol/tensusers5/jmartinez/datasets/cngt_single_signs_256"
-    sb_root = "/vol/tensusers5/jmartinez/datasets/NGT_Signbank_256"
-    sb_vocab_path = "/vol/tensusers5/jmartinez/datasets/signbank_vocab.gzip"
-    model_root = "/vol/tensusers5/jmartinez/models/i3d"
-    fig_output_root = "/vol/tensusers5/jmartinez/graphs"
+    train_config = config.get("training")
+    data_config = config.get("data")
 
-    specific_glosses = ["GEBAREN-A", "JA-A"]
-    run_name = "rq1"
-    run_epochs = 50
-    run_batch_size = 128
-    run_lr = 0.1
-    run_optimizer = "SGD"
+    # parameters for autoencoder training
+    specific_glosses = train_config.get("specific_glosses")
+    ks = train_config.get("ks")
+    lr = train_config.get("lr")
+    weight_decay = train_config.get("weight_decay")
+    epochs = train_config.get("epochs")
+    batch_size = train_config.get("batch_size")
 
-    input_size = 256
-    fold = "train"
-    loading_mode = "balanced"
-    window_size = 16
-    clips_per_class = -1
-    random_seed = 42
-    use_cuda = True
+    # parameters to load weights
+    run_name = train_config.get("run_name")
+    run_epochs = train_config.get("run_epochs")
+    run_batch_size = train_config.get("run_batch_size")
+    run_lr = train_config.get("run_lr")
+    run_optimizer = train_config.get("run_optimizer")
+    saved_model_root = train_config.get("saved_model_root")
+    use_cuda = train_config.get("use_cuda")
+    random_seed = train_config.get("random_seed")
+
+    root = data_config.get("root")
+    cngt_clips_folder = data_config.get("cngt_clips_folder")
+    signbank_folder = data_config.get("signbank_folder")
+    sb_vocab_file = data_config.get("sb_vocab_file")
+    window_size = data_config.get("window_size")
+    loading_mode = data_config.get("loading_mode")
+    input_size = data_config.get("input_size")
+    clips_per_class = data_config.get("clips_per_class")
+
+    cngt_root = os.path.join(root, cngt_clips_folder)
+    sb_root = os.path.join(root, signbank_folder)
+    sb_vocab_path = os.path.join(root, sb_vocab_file)
 
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
     run_dir = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
 
-    ckpt_files = [file for file in os.listdir(os.path.join(model_root, run_dir)) if file.endswith(".pt")]
+    ckpt_files = [file for file in os.listdir(os.path.join(saved_model_root, run_dir)) if file.endswith(".pt")]
     # take the last save checkpoint, which contains the minimum val loss
     ckpt_filename = ckpt_files[-1]
     # ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
@@ -341,9 +352,9 @@ def train(config: dict, fig_output_root: str):
                        input_size=cropped_input_size)
 
     if use_cuda:
-        i3d.load_state_dict(torch.load(os.path.join(model_root, run_dir, ckpt_filename)))
+        i3d.load_state_dict(torch.load(os.path.join(saved_model_root, run_dir, ckpt_filename)))
     else:
-        i3d.load_state_dict(torch.load(os.path.join(model_root, run_dir, ckpt_filename), map_location=torch.device('cpu')))
+        i3d.load_state_dict(torch.load(os.path.join(saved_model_root, run_dir, ckpt_filename), map_location=torch.device('cpu')))
 
     if use_cuda:
         i3d.cuda()
@@ -389,17 +400,19 @@ def train(config: dict, fig_output_root: str):
     dataloaders["train"] = torch.utils.data.DataLoader(train_features, batch_size=batch_size, shuffle=True, num_workers=0)
     dataloaders["val"] = torch.utils.data.DataLoader(val_features, batch_size=batch_size, shuffle=True, num_workers=0)
 
-    for k in ks:
-        train_autoencoder(config, dataloaders, fig_output_root)
+    with open(os.path.join(log_output_root, "autoencoder_test_log.txt"), "w") as file:
+        for k in ks:
+            train_autoencoder(config, dataloaders, k, fig_output_root, log_file=file)
 
 
 def main(params):
     config_path = params.config_path
     fig_output_root = params.fig_output_root
+    log_output_root = params.log_output_root
 
     config = load_config(config_path)
 
-    train(config, fig_output_root)
+    train(config, fig_output_root, log_output_root)
 
 
 if __name__ == '__main__':
@@ -412,6 +425,11 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--fig_output_root",
+        type=str,
+    )
+
+    parser.add_argument(
+        "--log_output_root",
         type=str,
     )
 
