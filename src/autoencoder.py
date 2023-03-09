@@ -161,7 +161,7 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
 
 
 def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: str, log_file: str):
-    train_config = config.get("autoencoder")
+    train_config = config.get("training")
     data_config = config.get("data")
 
     lr = train_config.get("lr")
