@@ -192,7 +192,7 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
     early_stop_flag = False
 
     print(f"Training autoencoder with {n_layers} layers and k={k}...")
-    for epoch in epochs:
+    for epoch in range(epochs):
         if early_stop_flag:
             print(f"Early stopping: validation loss did not decrease more than {early_stopper.min_delta} in {early_stopper.patience} epochs.")
             break
