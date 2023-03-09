@@ -227,7 +227,7 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
                 training_history["metric"]["train_mse"].append(np.mean(epoch_mse))
 
                 # store the model state_dict to store it later if the val loss improves
-                train_ckpt = autoencoder.module.state_dict()
+                train_ckpt = autoencoder.state_dict()
 
             if phase == "val":
                 training_history["loss"]["val"].append(tot_loss / num_iter)
