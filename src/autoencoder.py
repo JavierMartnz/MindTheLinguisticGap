@@ -27,7 +27,7 @@ from src.train_i3d import EarlyStopper
 
 import matplotlib.pyplot as plt
 from pathlib import Path
-from torchvision import transforms
+import torchvision
 
 
 class AutoEncoder(nn.Module):
@@ -317,14 +317,14 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
 
     cropped_input_size = input_size * 0.875
 
-    train_transforms = transforms.Compose([
-        transforms.RandomPerspective(),
-        transforms.RandomAffine(degrees=10),
-        transforms.RandomHorizontalFlip(),
+    train_transforms = torchvision.transforms.Compose([
+        torchvision.transforms.RandomPerspective(),
+        torchvision.transforms.RandomAffine(degrees=10),
+        torchvision.transforms.RandomHorizontalFlip(),
         spatial_transforms.ColorJitter(num_in_frames=window_size),
-        transforms.RandomCrop(cropped_input_size)])
+        torchvision.transforms.RandomCrop(cropped_input_size)])
 
-    val_transforms = transforms.Compose([transforms.CenterCrop(cropped_input_size)])
+    val_transforms = torchvision.transforms.Compose([torchvision.transforms.CenterCrop(cropped_input_size)])
 
     transforms = {"train": train_transforms, "val": val_transforms}
     dataloaders = {}
