@@ -223,15 +223,15 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
                                            mse=round(np.mean(epoch_mse), 4))
 
             if phase == "train":
-                training_history["train_loss"].append(tot_loss/num_iter)
-                training_history["train_mse"].append(np.mean(epoch_mse))
+                training_history["loss"]["train"].append(tot_loss/num_iter)
+                training_history["metric"]["train_mse"].append(np.mean(epoch_mse))
 
                 # store the model state_dict to store it later if the val loss improves
                 train_ckpt = autoencoder.module.state_dict()
 
             if phase == "val":
-                training_history["val_loss"].append(tot_loss / num_iter)
-                training_history["val_mse"].append(np.mean(epoch_mse))
+                training_history["loss"]["val"].append(tot_loss / num_iter)
+                training_history["metric"]["val_mse"].append(np.mean(epoch_mse))
 
                 early_stop_flag = early_stopper(tot_loss / num_iter)
                 if (tot_loss / num_iter) < min_loss:
