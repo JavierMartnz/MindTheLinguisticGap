@@ -211,7 +211,7 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
                     feature_vector = Variable(data.cuda())
                     preds = autoencoder(feature_vector)
 
-                    epoch_mse.append(mean_squared_error(y_true=feature_vector, y_pred=preds))
+                    epoch_mse.append(mean_squared_error(y_true=feature_vector.detach().cpu().numpy(), y_pred=preds.detach().cpu().numpy()))
 
                     loss = criterion(preds, feature_vector)
                     loss.backward()
