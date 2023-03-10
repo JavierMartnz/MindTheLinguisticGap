@@ -162,7 +162,6 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
 
 def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: str, log_file: str):
     train_config = config.get("training")
-    data_config = config.get("data")
 
     lr = train_config.get("lr")
     weight_decay = train_config.get("weight_decay")
@@ -254,8 +253,8 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
     for feature_vector in dataloaders["train"]:
         feature_vector = Variable(feature_vector.cuda())
         preds = autoencoder(feature_vector)
-        total_true.append(feature_vector.detach().cpu().numpy())
-        total_pred.append(preds.detach().cpu().numpy())
+        total_true.extend(feature_vector.detach().cpu().numpy())
+        total_pred.extend(preds.detach().cpu().numpy())
 
     # print to console
     print(f"Autoencoder k={k}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.4f}")
@@ -304,7 +303,7 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
     run_dir = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
 
     ckpt_files = [file for file in os.listdir(os.path.join(saved_model_root, run_dir)) if file.endswith(".pt")]
-    # take the last save checkpoint, which contains the minimum val loss
+    # load the last saved checkpoint, which contains the minimum val loss
     ckpt_filename = ckpt_files[-1]
     # ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
 
@@ -361,11 +360,12 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
 
     i3d.train(False)  # Set model to evaluate mode
 
-    X_features = torch.zeros((1, 1024))
+
 
     print(f"Running datapoints through model...")
     with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
         for phase in ["train", "val"]:
+            X_features = torch.zeros((1, 1024))
             with tqdm(dataloaders[phase], unit="batch") as tepoch:
                 for data in tepoch:
                     # get the inputs
@@ -390,7 +390,7 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
 
             if phase == "train":
                 X_train_features = X_features
-            else:
+            elif phase == "val":
                 X_val_features = X_features
 
     # this normalizes the features in order for them to have values in [0,1]
