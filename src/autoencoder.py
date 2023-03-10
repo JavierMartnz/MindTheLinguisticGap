@@ -202,24 +202,21 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
 
             autoencoder.train(True) if phase == "train" else autoencoder.train(False)
 
-            with tqdm(dataloaders[phase], unit="batch") as tepoch:
-                for data in tepoch:
-                    num_iter += 1
-                    optimizer.zero_grad()
+            for data in dataloaders[phase]:
+                num_iter += 1
+                optimizer.zero_grad()
 
-                    feature_vector = Variable(data.cuda())
-                    preds = autoencoder(feature_vector)
+                feature_vector = Variable(data.cuda())
+                preds = autoencoder(feature_vector)
 
-                    epoch_mse.append(mean_squared_error(y_true=feature_vector.detach().cpu().numpy(), y_pred=preds.detach().cpu().numpy()))
+                epoch_mse.append(mean_squared_error(y_true=feature_vector.detach().cpu().numpy(), y_pred=preds.detach().cpu().numpy()))
 
-                    loss = criterion(preds, feature_vector)
-                    loss.backward()
-                    tot_loss += loss.item()
+                loss = criterion(preds, feature_vector)
+                loss.backward()
+                tot_loss += loss.item()
 
-                    if phase == 'train':
-                        optimizer.step()
-                        tepoch.set_postfix(loss=round(tot_loss / num_iter, 4),
-                                           mse=round(np.mean(epoch_mse), 4))
+                if phase == 'train':
+                    optimizer.step()
 
             if phase == "train":
                 training_history["loss"]["train"].append(tot_loss/num_iter)
