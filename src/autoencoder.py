@@ -265,10 +265,10 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
             total_true.extend(feature_vector.detach().cpu().numpy())
             total_pred.extend(preds.detach().cpu().numpy())
 
-            # print to console
-            print(f"Autoencoder with k={ks[i]}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.6f}")
-            # print to file
-            print(f"Autoencoder with k={ks[i]}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.6f}", file=log_file)
+        # print to console
+        print(f"Autoencoder with k={ks[i]}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.6f}")
+        # print to file
+        print(f"Autoencoder with k={ks[i]}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.6f}", file=log_file)
 
 def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: str, log_file: str):
     train_config = config.get("training")
