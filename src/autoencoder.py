@@ -191,7 +191,7 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
     min_loss = np.inf
     early_stop_flag = False
 
-    print(f"Training autoencoder with {n_layers} layers and k={k}...")
+    print(f"Training autoencoder...")
     for epoch in range(epochs):
         if early_stop_flag:
             print(f"Early stopping: validation loss did not decrease more than {early_stopper.min_delta} in {early_stopper.patience} epochs.")
