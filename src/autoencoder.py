@@ -383,9 +383,7 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
 
     # parameters for autoencoder training
     specific_glosses = train_config.get("specific_glosses")
-    ks = train_config.get("ks")
     lr = train_config.get("lr")
-    weight_decay = train_config.get("weight_decay")
     epochs = train_config.get("epochs")
     batch_size = train_config.get("batch_size")
 
@@ -515,6 +513,7 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
     with open(os.path.join(log_output_root, "autoencoder_trimmed_test_log.txt"), "w") as file:
         final_MSE = train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file=file)
 
+    # plot the MSE for all ks
     ks = 2 ** np.arange(1, 10)
 
     colors = sns.color_palette('pastel')
