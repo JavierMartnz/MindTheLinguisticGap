@@ -33,14 +33,14 @@ import seaborn as sns
 
 class AutoEncoder(nn.Module):
 
-    def __init__(self, n_layers, k):
+    def __init__(self):
         super(AutoEncoder, self).__init__()
 
-        self.k = k
-        self.n_layers = n_layers
+        # self.k = k
+        # self.n_layers = n_layers
 
-        if k >= 1024:
-            raise ValueError("The bottleneck layer has to have dimension k < 1024")
+        # if k >= 1024:
+        #     raise ValueError("The bottleneck layer has to have dimension k < 1024")
 
         self.encoder = nn.Sequential(
             nn.Linear(1024, 512),
@@ -168,10 +168,9 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
     epochs = train_config.get("epochs")
     n_layers = train_config.get("n_layers")
     use_cuda = train_config.get("use_cuda")
-    ks = train_config.get("ks")
 
     # initialize autoencoder
-    autoencoder = AutoEncoder(n_layers=n_layers, k=ks[0])
+    autoencoder = AutoEncoder()
     if use_cuda:
         autoencoder.cuda()
 
