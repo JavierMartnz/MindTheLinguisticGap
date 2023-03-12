@@ -28,6 +28,7 @@ from src.train_i3d import EarlyStopper
 import matplotlib.pyplot as plt
 from pathlib import Path
 import torchvision
+import seaborn as sns
 
 
 class AutoEncoder(nn.Module):
@@ -113,7 +114,6 @@ class AutoEncoder(nn.Module):
 
 
 def plot_training_history(config: dict, training_history: dict, fig_output_root: str):
-
     train_config = config.get("training")
 
     specific_glosses = train_config.get("specific_glosses")
@@ -246,7 +246,9 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
 
     trimmed_autoencoder = autoencoder
 
-    ks = [2, 4, 8, 16, 32, 64, 128, 256, 512]
+    ks = 2 ** np.arange(1, 10)
+
+    final_MSE = []
 
     for i in range(len(ks)):
         # only remove autoencoder layers from the second iteration
@@ -265,10 +267,16 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
             total_true.extend(feature_vector.detach().cpu().numpy())
             total_pred.extend(preds.detach().cpu().numpy())
 
+        mse = mean_squared_error(y_true=total_true, y_pred=total_pred)
+        final_MSE.append(mse)
+
         # print to console
-        print(f"Autoencoder with k={ks[i]}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.6f}")
+        print(f"Autoencoder with k={ks[i]}, test MSE={mse:.6f}")
         # print to file
-        print(f"Autoencoder with k={ks[i]}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.6f}", file=log_file)
+        print(f"Autoencoder with k={ks[i]}, test MSE={mse}", file=log_file)
+
+    return final_MSE
+
 
 def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: str, log_file: str):
     train_config = config.get("training")
@@ -329,7 +337,7 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
                     optimizer.step()
 
             if phase == "train":
-                training_history["loss"]["train"].append(tot_loss/num_iter)
+                training_history["loss"]["train"].append(tot_loss / num_iter)
                 training_history["metric"]["train_mse"].append(np.mean(epoch_mse))
 
                 # store the model state_dict to store it later if the val loss improves
@@ -353,7 +361,7 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
     autoencoder.load_state_dict(best_ckpt)
     autoencoder.train(False)
 
-    print(f"Testing autoencoder with epoch {best_epoch+1} checkpoint...")
+    print(f"Testing autoencoder with epoch {best_epoch + 1} checkpoint...")
     MSE = []
     total_true = []
     total_pred = []
@@ -370,7 +378,6 @@ def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: 
 
 
 def train(config: dict, fig_output_root: str, log_output_root: str):
-
     train_config = config.get("training")
     data_config = config.get("data")
 
@@ -506,11 +513,25 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
     dataloaders["val"] = torch.utils.data.DataLoader(val_features, batch_size=batch_size, shuffle=True, num_workers=0)
 
     with open(os.path.join(log_output_root, "autoencoder_trimmed_test_log.txt"), "w") as file:
-        train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file=file)
+        final_MSE = train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file=file)
 
-    # with open(os.path.join(log_output_root, "autoencoder_test_log.txt"), "w") as file:
-    #     for k in ks:
-    #         train_autoencoder(config, dataloaders, k, fig_output_root, log_file=file)
+    ks = 2 ** np.arange(1, 10)
+
+    colors = sns.color_palette('pastel')
+    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+
+    plt.set_xlabel('Bottleneck dimensions')
+    plt.set_ylabel("MSE")
+    plt.plot(ks, final_MSE, marker='o', color=colors[0])
+    plt.set_yticks(ks)
+    plt.tight_layout()
+
+    filename = f"autoencoder_{glosses_string}_{epochs}_{batch_size}_{lr}"
+    # this make sure graphs can be opened in windows
+    filename = filename.replace(":", ";")
+
+    os.makedirs(fig_output_root, exist_ok=True)
+    plt.savefig(os.path.join(fig_output_root, filename + '_trimmedMSE.png'))
 
 
 def main(params):
