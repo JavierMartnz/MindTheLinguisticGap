@@ -136,7 +136,7 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
 
     plt.plot(epochs, training_history["loss"]["train"], label="train", ls="--")
     plt.plot(epochs, training_history["loss"]["val"], label="val", ls="-")
-    plt.grid(axis="y")
+    plt.grid(axis="y", alpha=0.3)
     plt.legend(loc="best")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
@@ -148,6 +148,7 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
     plt.clf()
 
     for metric in training_history["metric"].keys():
+        print(metric)
         if "train" in metric:
             plt.plot(epochs, training_history["metric"][metric], label=metric, linestyle='--')
         elif "val" in metric:
@@ -156,7 +157,7 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
     plt.legend(loc="best")
     plt.ylabel("Metric")
     plt.xlabel("Epoch")
-    plt.grid(axis="y")
+    plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
 
     plt.savefig(os.path.join(fig_output_root, filename + '_metrics.png'))
@@ -239,6 +240,7 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
 
                 lr_sched.step(tot_loss / num_iter)
 
+    print(training_history)
     plot_training_history(config, training_history, fig_output_root)
 
     # make sure we use the best checkpoint
