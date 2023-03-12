@@ -136,6 +136,7 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
 
     plt.plot(epochs, training_history["loss"]["train"], label="train", ls="--")
     plt.plot(epochs, training_history["loss"]["val"], label="val", ls="-")
+    plt.grid(axis="y")
     plt.legend(loc="best")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
@@ -155,6 +156,7 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
     plt.legend(loc="best")
     plt.ylabel("Metric")
     plt.xlabel("Epoch")
+    plt.grid(axis="y")
     plt.tight_layout()
 
     plt.savefig(os.path.join(fig_output_root, filename + '_metrics.png'))
@@ -522,8 +524,8 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
 
     plt.xlabel('Bottleneck dimensions')
     plt.ylabel("MSE")
-    plt.plot(ks, final_MSE, marker='o', color=colors[0])
-    plt.xticks(ks)
+    plt.plot(ks.astype("str"), final_MSE, marker='o', color=colors[0])
+    plt.grid(axis="y")
     plt.tight_layout()
 
     filename = f"autoencoder_{glosses_string}_{epochs}_{batch_size}_{lr}"
