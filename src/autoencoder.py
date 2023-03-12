@@ -512,6 +512,8 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
     with open(os.path.join(log_output_root, "autoencoder_trimmed_test_log.txt"), "w") as file:
         final_MSE = train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file=file)
 
+    plt.clf()
+
     # plot the MSE for all ks
     ks = 2 ** np.arange(1, 10)
 
@@ -521,7 +523,7 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
     plt.xlabel('Bottleneck dimensions')
     plt.ylabel("MSE")
     plt.plot(ks, final_MSE, marker='o', color=colors[0])
-    plt.yticks(ks)
+    plt.xticks(ks)
     plt.tight_layout()
 
     filename = f"autoencoder_{glosses_string}_{epochs}_{batch_size}_{lr}"
