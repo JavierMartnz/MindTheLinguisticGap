@@ -518,10 +518,10 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
     colors = sns.color_palette('pastel')
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.set_xlabel('Bottleneck dimensions')
-    plt.set_ylabel("MSE")
+    plt.xlabel('Bottleneck dimensions')
+    plt.ylabel("MSE")
     plt.plot(ks, final_MSE, marker='o', color=colors[0])
-    plt.set_yticks(ks)
+    plt.yticks(ks)
     plt.tight_layout()
 
     filename = f"autoencoder_{glosses_string}_{epochs}_{batch_size}_{lr}"
