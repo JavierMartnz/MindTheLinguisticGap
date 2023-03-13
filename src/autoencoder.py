@@ -113,7 +113,7 @@ class AutoEncoder(nn.Module):
         return x
 
 
-def plot_training_history(config: dict, training_history: dict, fig_output_root: str):
+def plot_autoencoder_training_history(config: dict, training_history: dict, fig_output_root: str):
     train_config = config.get("training")
 
     specific_glosses = train_config.get("specific_glosses")
@@ -147,21 +147,6 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
 
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, filename + '_loss.png'))
-
-    # plt.clf()
-    #
-    # plt.plot(epochs, training_history["train_mse"], label="train", ls="--", color=colors[0])
-    # plt.plot(epochs, training_history["val_mse"], label="val", ls="-", color=colors[1])
-    #
-    # plt.legend(loc="best")
-    # plt.ylabel("MSE")
-    # plt.xlabel("Epoch")
-    # plt.grid(axis="y", alpha=0.3)
-    # plt.tight_layout()
-    #
-    # plt.savefig(os.path.join(fig_output_root, filename + '_metrics.png'))
-    #
-    # plt.clf()
 
 
 def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
@@ -240,7 +225,7 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
 
                 lr_sched.step(tot_loss / num_iter)
 
-    plot_training_history(config, training_history, fig_output_root)
+    plot_autoencoder_training_history(config, training_history, fig_output_root)
 
     # make sure we use the best checkpoint
     autoencoder.load_state_dict(best_ckpt)
