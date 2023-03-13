@@ -127,7 +127,7 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
     # this make sure graphs can be opened in windows
     filename = filename.replace(":", ";")
 
-    epochs = np.arange(1, len(training_history["train_loss"] + 1))
+    epochs = np.arange(1, len(training_history["train_loss"]) + 1)
 
     # clear contents of the plot, to avoid overlap with previous plots
     plt.clf()
