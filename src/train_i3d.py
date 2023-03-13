@@ -287,7 +287,7 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
 
     train_hist_output_root = "/vol/tensusers5/jmartinez/graphs/train_hist"
 
-    plot_train_history(specific_glosses, config, training_history, fig_output_root=train_hist_output_root)
+    plot_train_history(specific_glosses, new_save_dir, training_history, fig_output_root=train_hist_output_root)
 
     with open(os.path.join(save_model_dir, 'training_history.txt'), 'w') as file:
         file.write(json.dumps(training_history))

@@ -12,15 +12,9 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 from src.utils.helpers import load_config
 
 
-def plot_train_history(specific_glosses: list, config: dict, training_history: dict, fig_output_root: str):
-    run_name = config.get("run_name")
-    run_epochs = config.get("run_epochs")
-    run_lr = config.get("run_lr")
-    run_batch_size = config.get("run_batch_size")
-    run_optimizer = config.get("run_optimizer")
+def plot_train_history(specific_glosses: list, weights_root: str, training_history: dict, fig_output_root: str):
 
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
-    weights_root = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
 
     # training_file_path = os.path.join(trained_models_root, weights_root, 'training_history.txt')
     #
