@@ -38,24 +38,28 @@ def plot_train_history(specific_glosses: list, config: dict, trained_models_root
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(epochs, training_history['train_accuracy'], label='train_acc', linestyle='--')
-    plt.plot(epochs, training_history['train_f1'], label='train_f1', linestyle='--')
-    plt.plot(epochs, training_history['val_accuracy'], label='val_acc', linestyle='-')
-    plt.plot(epochs, training_history['val_f1'], label='val_f1', linestyle='-')
-    plt.legend()
+    plt.plot(epochs, training_history['train_accuracy'], label='train_acc', linestyle='--', color=colors[0])
+    plt.plot(epochs, training_history['train_f1'], label='train_f1', linestyle='--', colors=colors[1])
+    plt.plot(epochs, training_history['val_accuracy'], label='val_acc', linestyle='-', color=colors[2])
+    plt.plot(epochs, training_history['val_f1'], label='val_f1', linestyle='-', color=colors[3])
+    plt.legend(loc="best")
+    plt.ylabel("Metric")
+    plt.xlabel("Epoch")
+    plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
-    # plt.show()
 
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, weights_root + '_metrics.png'))
 
     plt.clf()
 
-    plt.plot(epochs, training_history['train_loss'], label='train_loss', linestyle='--')
-    plt.plot(epochs, training_history['val_loss'], label='val_loss', linestyle='-')
-    plt.legend()
+    plt.plot(epochs, training_history['train_loss'], label='train_loss', linestyle='--', color=colors[0])
+    plt.plot(epochs, training_history['val_loss'], label='val_loss', linestyle='-', color=colors[1])
+    plt.legend(loc="best")
+    plt.ylabel("Loss")
+    plt.xlabel("Epoch")
+    plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
-    # plt.show()
 
     print(f"The epoch with the min loss was {training_history['val_loss'].index(min(training_history['val_loss'])) + 1}")
 
