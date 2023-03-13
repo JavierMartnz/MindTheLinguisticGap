@@ -127,15 +127,16 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
     # this make sure graphs can be opened in windows
     filename = filename.replace(":", ";")
 
-    epochs = np.arange(1, len(training_history["loss"]["train"]) + 1)
+    epochs = np.arange(1, len(training_history["train_loss"] + 1))
 
     # clear contents of the plot, to avoid overlap with previous plots
     plt.clf()
     # set the style of the plot
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(epochs, training_history["loss"]["train"], label="train", ls="--")
-    plt.plot(epochs, training_history["loss"]["val"], label="val", ls="-")
+    plt.plot(epochs, training_history["train_loss"], label="train", ls="--")
+    plt.plot(epochs, training_history["val_loss"], label="val", ls="-")
+
     plt.grid(axis="y", alpha=0.3)
     plt.legend(loc="best")
     plt.xlabel("Epoch")
@@ -147,15 +148,11 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
 
     plt.clf()
 
-    for metric in training_history["metric"].keys():
-        print(metric)
-        if "train" in metric:
-            plt.plot(epochs, training_history["metric"][metric], label=metric, linestyle='--')
-        elif "val" in metric:
-            plt.plot(epochs, training_history["metric"][metric], label=metric, linestyle='-')
+    plt.plot(epochs, training_history["train_mse"], label="train", ls="--")
+    plt.plot(epochs, training_history["val_mse"], label="val", ls="-")
 
     plt.legend(loc="best")
-    plt.ylabel("Metric")
+    plt.ylabel("MSE")
     plt.xlabel("Epoch")
     plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
@@ -187,8 +184,7 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
 
     lr_sched = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True, threshold=min_delta)
 
-    training_history = {"loss": {"train": [], "val": []},
-                        "metric": {"train_mse": [], "val_mse": []}}
+    training_history = {"train_loss": [], "val_loss": [], "train_mse": [], "val_mse": []}
 
     min_loss = np.inf
     early_stop_flag = False
@@ -222,15 +218,15 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
                     optimizer.step()
 
             if phase == "train":
-                training_history["loss"]["train"].append(tot_loss / num_iter)
-                training_history["metric"]["train_mse"].append(np.mean(epoch_mse))
+                training_history["train_loss"].append(tot_loss / num_iter)
+                training_history["train_mse"].append(np.mean(epoch_mse))
 
                 # store the model state_dict to store it later if the val loss improves
                 train_ckpt = autoencoder.state_dict()
 
             if phase == "val":
-                training_history["loss"]["val"].append(tot_loss / num_iter)
-                training_history["metric"]["val_mse"].append(np.mean(epoch_mse))
+                training_history["val_loss"].append(tot_loss / num_iter)
+                training_history["val_mse"].append(np.mean(epoch_mse))
 
                 early_stop_flag = early_stopper(tot_loss / num_iter)
                 if (tot_loss / num_iter) < min_loss:
@@ -240,7 +236,6 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
 
                 lr_sched.step(tot_loss / num_iter)
 
-    print(training_history)
     plot_training_history(config, training_history, fig_output_root)
 
     # make sure we use the best checkpoint
