@@ -39,7 +39,7 @@ def plot_train_history(specific_glosses: list, config: dict, trained_models_root
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(epochs, training_history['train_accuracy'], label='train_acc', linestyle='--', color=colors[0])
-    plt.plot(epochs, training_history['train_f1'], label='train_f1', linestyle='--', colors=colors[1])
+    plt.plot(epochs, training_history['train_f1'], label='train_f1', linestyle='--', color=colors[1])
     plt.plot(epochs, training_history['val_accuracy'], label='val_acc', linestyle='-', color=colors[2])
     plt.plot(epochs, training_history['val_f1'], label='val_f1', linestyle='-', color=colors[3])
     plt.legend(loc="best")
