@@ -196,7 +196,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     # for i, j in zip(n_components, mds_stress):
     #     plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
     # plt.xticks([2, 64, 128, 256, 512, 1024])
-    plt.yticks([0.2, 0.1, 0.05])
+    plt.yticks([0.3, 0.2, 0.1, 0.05, 0])
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
     plt.grid(axis="y", alpha=0.3)
