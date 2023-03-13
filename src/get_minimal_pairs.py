@@ -1,10 +1,6 @@
 import argparse
 import os
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 import pandas as pd
-import seaborn as sns
-
 
 def main(params):
     cngt_root = params.cngt_root
