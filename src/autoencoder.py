@@ -129,13 +129,15 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
 
     epochs = np.arange(1, len(training_history["train_loss"]) + 1)
 
+    colors = sns.color_palette('pastel')
+
     # clear contents of the plot, to avoid overlap with previous plots
     plt.clf()
     # set the style of the plot
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(epochs, training_history["train_loss"], label="train", ls="--")
-    plt.plot(epochs, training_history["val_loss"], label="val", ls="-")
+    plt.plot(epochs, training_history["train_loss"], label="train", ls="--", color=colors[0])
+    plt.plot(epochs, training_history["val_loss"], label="val", ls="-", color=colors[1])
 
     plt.grid(axis="y", alpha=0.3)
     plt.legend(loc="best")
@@ -148,8 +150,8 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
 
     plt.clf()
 
-    plt.plot(epochs, training_history["train_mse"], label="train", ls="--")
-    plt.plot(epochs, training_history["val_mse"], label="val", ls="-")
+    plt.plot(epochs, training_history["train_mse"], label="train", ls="--", color=colors[0])
+    plt.plot(epochs, training_history["val_mse"], label="val", ls="-", color=colors[1])
 
     plt.legend(loc="best")
     plt.ylabel("MSE")
@@ -158,6 +160,8 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
     plt.tight_layout()
 
     plt.savefig(os.path.join(fig_output_root, filename + '_metrics.png'))
+
+    plt.clf()
 
 
 def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
@@ -276,103 +280,103 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
     return final_MSE
 
 
-def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: str, log_file: str):
-    train_config = config.get("training")
-
-    lr = train_config.get("lr")
-    weight_decay = train_config.get("weight_decay")
-    epochs = train_config.get("epochs")
-    n_layers = train_config.get("n_layers")
-    use_cuda = train_config.get("use_cuda")
-
-    # initialize autoencoder
-    autoencoder = AutoEncoder(n_layers=n_layers, k=k)
-    if use_cuda:
-        autoencoder.cuda()
-
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(autoencoder.parameters(), lr=lr, weight_decay=weight_decay)
-
-    # early stopping setup
-    min_delta = 0.0
-    patience = 10
-    early_stopper = EarlyStopper(patience=patience, min_delta=min_delta)
-
-    lr_sched = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True, threshold=min_delta)
-
-    training_history = {"loss": {"train": [], "val": []},
-                        "metric": {"train_mse": [], "val_mse": []}}
-
-    min_loss = np.inf
-    early_stop_flag = False
-
-    print(f"Training autoencoder with {n_layers} layers and k={k}...")
-    for epoch in range(epochs):
-        if early_stop_flag:
-            print(f"Early stopping: validation loss did not decrease more than {early_stopper.min_delta} in {early_stopper.patience} epochs.")
-            break
-        for phase in ["train", "val"]:
-            tot_loss = 0.0
-            num_iter = 0
-            epoch_mse = []
-
-            autoencoder.train(True) if phase == "train" else autoencoder.train(False)
-
-            for data in dataloaders[phase]:
-                num_iter += 1
-                optimizer.zero_grad()
-
-                feature_vector = Variable(data.cuda())
-                preds = autoencoder(feature_vector)
-
-                epoch_mse.append(mean_squared_error(y_true=feature_vector.detach().cpu().numpy(), y_pred=preds.detach().cpu().numpy()))
-
-                loss = criterion(preds, feature_vector)
-                loss.backward()
-                tot_loss += loss.item()
-
-                if phase == 'train':
-                    optimizer.step()
-
-            if phase == "train":
-                training_history["loss"]["train"].append(tot_loss / num_iter)
-                training_history["metric"]["train_mse"].append(np.mean(epoch_mse))
-
-                # store the model state_dict to store it later if the val loss improves
-                train_ckpt = autoencoder.state_dict()
-
-            if phase == "val":
-                training_history["loss"]["val"].append(tot_loss / num_iter)
-                training_history["metric"]["val_mse"].append(np.mean(epoch_mse))
-
-                early_stop_flag = early_stopper(tot_loss / num_iter)
-                if (tot_loss / num_iter) < min_loss:
-                    min_loss = tot_loss / num_iter
-                    best_ckpt = train_ckpt
-                    best_epoch = epoch
-
-                lr_sched.step(tot_loss / num_iter)
-
-    plot_training_history(config, training_history, fig_output_root)
-
-    # make sure we use the best checkpoint
-    autoencoder.load_state_dict(best_ckpt)
-    autoencoder.train(False)
-
-    print(f"Testing autoencoder with epoch {best_epoch + 1} checkpoint...")
-    MSE = []
-    total_true = []
-    total_pred = []
-    for feature_vector in dataloaders["train"]:
-        feature_vector = Variable(feature_vector.cuda())
-        preds = autoencoder(feature_vector)
-        total_true.extend(feature_vector.detach().cpu().numpy())
-        total_pred.extend(preds.detach().cpu().numpy())
-
-    # print to console
-    print(f"Autoencoder k={k}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.4f}")
-    # print to file
-    print(f"Autoencoder k={k}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.4f}", file=log_file)
+# def train_autoencoder(config: dict, dataloaders: dict, k: int, fig_output_root: str, log_file: str):
+#     train_config = config.get("training")
+#
+#     lr = train_config.get("lr")
+#     weight_decay = train_config.get("weight_decay")
+#     epochs = train_config.get("epochs")
+#     n_layers = train_config.get("n_layers")
+#     use_cuda = train_config.get("use_cuda")
+#
+#     # initialize autoencoder
+#     autoencoder = AutoEncoder(n_layers=n_layers, k=k)
+#     if use_cuda:
+#         autoencoder.cuda()
+#
+#     criterion = nn.MSELoss()
+#     optimizer = torch.optim.Adam(autoencoder.parameters(), lr=lr, weight_decay=weight_decay)
+#
+#     # early stopping setup
+#     min_delta = 0.0
+#     patience = 10
+#     early_stopper = EarlyStopper(patience=patience, min_delta=min_delta)
+#
+#     lr_sched = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True, threshold=min_delta)
+#
+#     training_history = {"loss": {"train": [], "val": []},
+#                         "metric": {"train_mse": [], "val_mse": []}}
+#
+#     min_loss = np.inf
+#     early_stop_flag = False
+#
+#     print(f"Training autoencoder with {n_layers} layers and k={k}...")
+#     for epoch in range(epochs):
+#         if early_stop_flag:
+#             print(f"Early stopping: validation loss did not decrease more than {early_stopper.min_delta} in {early_stopper.patience} epochs.")
+#             break
+#         for phase in ["train", "val"]:
+#             tot_loss = 0.0
+#             num_iter = 0
+#             epoch_mse = []
+#
+#             autoencoder.train(True) if phase == "train" else autoencoder.train(False)
+#
+#             for data in dataloaders[phase]:
+#                 num_iter += 1
+#                 optimizer.zero_grad()
+#
+#                 feature_vector = Variable(data.cuda())
+#                 preds = autoencoder(feature_vector)
+#
+#                 epoch_mse.append(mean_squared_error(y_true=feature_vector.detach().cpu().numpy(), y_pred=preds.detach().cpu().numpy()))
+#
+#                 loss = criterion(preds, feature_vector)
+#                 loss.backward()
+#                 tot_loss += loss.item()
+#
+#                 if phase == 'train':
+#                     optimizer.step()
+#
+#             if phase == "train":
+#                 training_history["loss"]["train"].append(tot_loss / num_iter)
+#                 training_history["metric"]["train_mse"].append(np.mean(epoch_mse))
+#
+#                 # store the model state_dict to store it later if the val loss improves
+#                 train_ckpt = autoencoder.state_dict()
+#
+#             if phase == "val":
+#                 training_history["loss"]["val"].append(tot_loss / num_iter)
+#                 training_history["metric"]["val_mse"].append(np.mean(epoch_mse))
+#
+#                 early_stop_flag = early_stopper(tot_loss / num_iter)
+#                 if (tot_loss / num_iter) < min_loss:
+#                     min_loss = tot_loss / num_iter
+#                     best_ckpt = train_ckpt
+#                     best_epoch = epoch
+#
+#                 lr_sched.step(tot_loss / num_iter)
+#
+#     plot_training_history(config, training_history, fig_output_root)
+#
+#     # make sure we use the best checkpoint
+#     autoencoder.load_state_dict(best_ckpt)
+#     autoencoder.train(False)
+#
+#     print(f"Testing autoencoder with epoch {best_epoch + 1} checkpoint...")
+#     MSE = []
+#     total_true = []
+#     total_pred = []
+#     for feature_vector in dataloaders["train"]:
+#         feature_vector = Variable(feature_vector.cuda())
+#         preds = autoencoder(feature_vector)
+#         total_true.extend(feature_vector.detach().cpu().numpy())
+#         total_pred.extend(preds.detach().cpu().numpy())
+#
+#     # print to console
+#     print(f"Autoencoder k={k}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.4f}")
+#     # print to file
+#     print(f"Autoencoder k={k}, test MSE={mean_squared_error(y_true=total_true, y_pred=total_pred):.4f}", file=log_file)
 
 
 def train(config: dict, fig_output_root: str, log_output_root: str):
