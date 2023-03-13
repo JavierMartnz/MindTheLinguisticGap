@@ -29,6 +29,7 @@ from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
+from src.plot_training_history import plot_train_history
 
 class EarlyStopper:
     def __init__(self, patience=5, min_delta=0):
@@ -283,6 +284,10 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
                         torch.save(train_ckpt, save_model_dir + '/' + 'i3d_' + str(epoch).zfill(len(str(epochs))) + '.pt')
 
                     lr_sched.step(tot_loss / num_iter)
+
+    train_hist_output_root = "/vol/tensusers5/jmartinez/graphs/train_hist"
+
+    plot_train_history(specific_glosses, config, training_history, fig_output_root=train_hist_output_root)
 
     with open(os.path.join(save_model_dir, 'training_history.txt'), 'w') as file:
         file.write(json.dumps(training_history))

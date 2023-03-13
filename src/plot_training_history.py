@@ -12,7 +12,7 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 from src.utils.helpers import load_config
 
 
-def plot_train_history(specific_glosses: list, config: dict, trained_models_root: str, fig_output_root: str):
+def plot_train_history(specific_glosses: list, config: dict, training_history: dict, fig_output_root: str):
     run_name = config.get("run_name")
     run_epochs = config.get("run_epochs")
     run_lr = config.get("run_lr")
@@ -22,10 +22,10 @@ def plot_train_history(specific_glosses: list, config: dict, trained_models_root
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
     weights_root = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
 
-    training_file_path = os.path.join(trained_models_root, weights_root, 'training_history.txt')
-
-    with open(training_file_path, 'r') as file:
-        training_history = json.load(file)
+    # training_file_path = os.path.join(trained_models_root, weights_root, 'training_history.txt')
+    #
+    # with open(training_file_path, 'r') as file:
+    #     training_history = json.load(file)
 
     # do this if files have to be open on Windows later
     weights_root = weights_root.replace(':', ';')
