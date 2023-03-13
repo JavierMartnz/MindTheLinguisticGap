@@ -148,20 +148,20 @@ def plot_training_history(config: dict, training_history: dict, fig_output_root:
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, filename + '_loss.png'))
 
-    plt.clf()
-
-    plt.plot(epochs, training_history["train_mse"], label="train", ls="--", color=colors[0])
-    plt.plot(epochs, training_history["val_mse"], label="val", ls="-", color=colors[1])
-
-    plt.legend(loc="best")
-    plt.ylabel("MSE")
-    plt.xlabel("Epoch")
-    plt.grid(axis="y", alpha=0.3)
-    plt.tight_layout()
-
-    plt.savefig(os.path.join(fig_output_root, filename + '_metrics.png'))
-
-    plt.clf()
+    # plt.clf()
+    #
+    # plt.plot(epochs, training_history["train_mse"], label="train", ls="--", color=colors[0])
+    # plt.plot(epochs, training_history["val_mse"], label="val", ls="-", color=colors[1])
+    #
+    # plt.legend(loc="best")
+    # plt.ylabel("MSE")
+    # plt.xlabel("Epoch")
+    # plt.grid(axis="y", alpha=0.3)
+    # plt.tight_layout()
+    #
+    # plt.savefig(os.path.join(fig_output_root, filename + '_metrics.png'))
+    #
+    # plt.clf()
 
 
 def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
@@ -526,7 +526,7 @@ def train(config: dict, fig_output_root: str, log_output_root: str):
     plt.xlabel('Bottleneck dimensions')
     plt.ylabel("MSE")
     plt.plot(ks.astype("str"), final_MSE, marker='o', color=colors[0])
-    plt.grid(axis="y")
+    plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
 
     filename = f"autoencoder_{glosses_string}_{epochs}_{batch_size}_{lr}"
