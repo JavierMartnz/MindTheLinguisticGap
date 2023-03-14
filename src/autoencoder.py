@@ -257,8 +257,8 @@ def train_trimmed_autoencoder(config, dataloaders, fig_output_root, log_file):
         mse = mean_squared_error(y_true=total_true, y_pred=total_pred)
         final_MSE.append(mse)
 
-        # print to console
-        print(f"Autoencoder with k={ks[i]}, test MSE={mse:.6f}")
+        # # print to console
+        # print(f"Autoencoder with k={ks[i]}, test MSE={mse:.6f}")
         # print to file
         print(f"Autoencoder with k={ks[i]}, test MSE={mse}", file=log_file)
 

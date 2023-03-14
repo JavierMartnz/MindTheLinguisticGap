@@ -17,25 +17,15 @@ def main():
     ling_dist = np.arange(1, 11)
     n_dims = 2 ** np.arange(6, 11)
 
-    # THIS IS FOR PT-1hand:1
-    min_num_dims = [128, 128, 128, 128, 128, 128, 128, 128, 128, 128]
-    acc = [0.7160, 0.7957, 0.7024, 0.7561, 0.8250, 0.8242, 0.8090, 0.9032, 0.9121, 0.9368]
-    f1 = [0.7294, 0.7957, 0.6269, 0.7436, 0.8409, 0.8182, 0.7848, 0.9072, 0.9149, 0.9412]
-
-    # THIS IS FOR DOOF-A
+    # # THIS IS FOR PT-1hand:1
     # min_num_dims = [128, 128, 128, 128, 128, 128, 128, 128, 128, 128]
-    # acc = [0.7909, 0.8333, 0.7411, 0.7658, 0.8349, 0.8443, 0.8525, 0.8943, 0.8833, 0.9127]
-    # f1 = [0.8000, 0.8163, 0.6813,  0.7636, 0.8333, 0.8430, 0.8393, 0.9008, 0.8889, 0.9220]
+    # acc = [0.7368, 0.7985, 0.6045, 0.8077, 0.7206, 0.7042, 0.7303, 0.7770, 0.7737, 0.8511]
+    # f1 = [0.7154, 0.8000, 0.5546, 0.8175, 0.7206, 0.7692, 0.7760, 0.7862, 0.8166, 0.8727]
 
     # THIS IS FOR WETEN-A
-    # min_num_dims = [128, 128, 128, 128, 128, 128, 128, 128, 128, 128]
-    # acc = [0.7477, 0.7257, 0.7876, 0.7168, 0.7568, 0.7949, 0.8800, 0.8889, 0.8596, 0.8583]
-    # f1 = [0.7667, 0.7520,  0.7895, 0.7333, 0.7568, 0.7857, 0.8624, 0.8992, 0.8667,  0.8702]
-
-    # THIS IS FOR PT-1hand:1 (fail)
-    # min_num_dims = [128, 128, 128, 128, 128, 128, 128, 128, 128, 128]
-    # acc = [0.6824, 0.7326, 0.5357, 0.7683, 0.6049, 0.7849, 0.6837, 0.8222, 0.7500, 0.9130]
-    # f1 = [0.7033, 0.7677, 0.5063, 0.7467, 0.6596, 0.8113, 0.6931, 0.8298, 0.7800, 0.9259]
+    min_num_dims = [128, 128, 128, 128, 128, 128, 128, 128, 128, 128]
+    acc = [0.8045, 0.7970, 0.7333, 0.7259, 0.8148, 0.8248, 0.8311, 0.8841, 0.8248, 0.9366]
+    f1 = [0.7903, 0.8235, 0.7188, 0.7176, 0.8252, 0.8154, 0.8227, 0.8961, 0.8500, 0.9434]
 
     colors = sns.color_palette('pastel')
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
@@ -44,16 +34,20 @@ def main():
 
     ax1.set_xlabel('Linguistic distance')
     ax1.set_ylabel("Min number of dimensions")
-    ax1.plot(ling_dist, min_num_dims, linestyle='-', marker='o', color=colors[0])
-    ax1.tick_params(axis='y', labelcolor=colors[0])
+    ax1.tick_params(axis='y', color=colors[0], labelcolor=colors[0])
     ax1.set_yticks(n_dims)
+    ax1.plot(ling_dist, min_num_dims, linestyle='-', marker='^', color=colors[0])
 
     ax2 = ax1.twinx()
     ax2.set_ylabel("Performance")
     ax2.spines['right'].set_visible(True)
-    ax2.plot(ling_dist, acc, linestyle='--', label='accuracy', marker='o')
-    ax2.plot(ling_dist, f1, linestyle='--', label='f1', marker='o')
+    ax2.set_xticks(np.arange(1, 11))
+    ax2.plot(ling_dist, acc, linestyle='--', label='accuracy', marker='o', color=colors[1])
+    ax2.plot(ling_dist, f1, linestyle='--', label='f1', marker='o', color=colors[2])
     ax2.legend(loc='best')
+
+    ax2.set_axisbelow(True)  # grid lines are behind the rest
+    ax2.yaxis.grid(alpha=0.3)
 
     plt.tight_layout()
     plt.show()
