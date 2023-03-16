@@ -147,7 +147,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu()
 
-    n_components = 2 ** np.arange(2, 11)
+    n_components = 2 ** np.arange(1, 11)
 
     colors = sns.color_palette('pastel')
 
@@ -160,25 +160,24 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     pca_trust = []
     kpca_trust = []
 
-
-
     kernels = ["linear", "poly", "rbf", "sigmoid", "cosine"]
 
     all_trusts = []
 
-    for kernel in kernels:
-        kpca_trust = []
-        for nc in tqdm(n_components):
-            X_kpca = KernelPCA(n_components=nc, kernel=kernel).fit_transform(X_features)
-            # X_umap = UMAP(n_components=nc, n_neighbors=20, metric='euclidean').fit_transform(X_features)
-            # umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=5, metric='euclidean'))
-            # pca_trust.append(trustworthiness(X_features, X_pca, n_neighbors=5, metric='euclidean'))
-            kpca_trust.append(trustworthiness(X_features, X_kpca, n_neighbors=5, metric='euclidean'))
+    kpca_trust = []
+    nmds_trust = []
 
-        all_trusts.append(kpca_trust)
+    for nc in tqdm(n_components):
+        X_kpca = KernelPCA(n_components=nc, kernel="rbf").fit_transform(X_features)
+        X_nmds = MDS(n_components=nc, metric=False, n_jobs=-1)
+        # X_umap = UMAP(n_components=nc, n_neighbors=20, metric='euclidean').fit_transform(X_features)
+        # umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=5, metric='euclidean'))
+        # pca_trust.append(trustworthiness(X_features, X_pca, n_neighbors=5, metric='euclidean'))
+        kpca_trust.append(trustworthiness(X_features, X_kpca, n_neighbors=5, metric='euclidean'))
+        nmds_trust.append(trustworthiness(X_features, X_nmds, n_neighbors=5, metric='euclidean'))
 
-    for i, kernel in enumerate(kernels):
-        plt.plot(n_components.astype("str"), all_trusts[i], marker='o', label=kernel, color=colors[i])
+    plt.plot(n_components.astype("str"), kpca_trust, marker='o', label="pca", color=colors[0])
+    plt.plot(n_components.astype("str"), nmds_trust, marker='^', label="nmds", color=colors[1])
 
     plt.grid(axis="y", alpha=0.3)
     plt.legend(loc='best')
