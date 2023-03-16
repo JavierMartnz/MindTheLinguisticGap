@@ -161,8 +161,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
         umap_trust = []
         for i, nn in enumerate([5, 10, 15, 20, 50]):
             X_umap = UMAP(n_components=nc, n_neighbors=nn, metric='euclidean').fit_transform(X_features)
-            print(np.shape(X), np.shape(X_umap))
-            umap_trust.append(trustworthiness(X, X_umap, metric='euclidean'))
+            umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=nn, metric='euclidean'))
         plt.plot(n_components.astype("str"), umap_trust, marker='o', label=str(nn), color=colors[i])
 
     plt.grid(axis="y", alpha=0.3)
