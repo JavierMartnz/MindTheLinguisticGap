@@ -18,10 +18,11 @@ from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip, save_gzip
 from scipy.spatial import distance
 from sklearn.decomposition import PCA, TruncatedSVD, KernelPCA
-from sklearn.manifold import MDS, Isomap
+from sklearn.manifold import MDS, Isomap, trustworthiness
 from pathlib import Path
 from torchvision import transforms
 import seaborn as sns
+from umap import UMAP
 
 
 def stress(X_pred, X):
@@ -147,6 +148,28 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     X_features = X_features.detach().cpu()
     n_components = 2 ** np.arange(1, 11)
 
+    colors = sns.color_palette('pastel')
+
+    # clear plot info in case several graphs are plotted in a row
+    plt.clf()
+
+    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+
+    umap_trust = []
+    for nc in tqdm(n_components):
+        umap_trust = []
+        for i, nn in enumerate([5, 10, 15, 20, 50]):
+            X_umap = UMAP(n_components=nc, n_neighbors=nn, metric='euclidean').fit_transform(X_features)
+            umap_trust.append(trustworthiness(X, X_umap, n_neighbors=nn, metric='euclidean'))
+        plt.plot(n_components.astype("str"), umap_trust, marker='o', label=str(nn), color=colors[i])
+
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+
+    run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
+    os.makedirs(fig_output_root, exist_ok=True)
+    plt.savefig(os.path.join(fig_output_root, run_dir + '_umaptrust.png'))
+
     # pca_stress = []
     # n_valid_components = []
 
@@ -164,16 +187,16 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     #         except Exception as e:
     #             print(e)
 
-    nmds_stress = []
-    print("Running nMDS...")
-    for nc in tqdm(n_components):
-        # nmds = PCA(n_components=nc)
-        # nmds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto')
-        # nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto')
-        nmds = Isomap(n_components=nc, n_jobs=-1)
-        X_nmds = nmds.fit_transform(X_features)
-        nmds_stress.append(stress(X_nmds, X_features))
-        # nmds_stress.append(nmds.stress_)
+    # nmds_stress = []
+    # print("Running nMDS...")
+    # for nc in tqdm(n_components):
+    #     # nmds = PCA(n_components=nc)
+    #     # nmds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto')
+    #     # nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto')
+    #     nmds = Isomap(n_components=nc, n_jobs=-1)
+    #     X_nmds = nmds.fit_transform(X_features)
+    #     nmds_stress.append(stress(X_nmds, X_features))
+    #     # nmds_stress.append(nmds.stress_)
 
     # thresh_stress = np.where(np.array(nmds_stress) < 0.05)[0][0]
     # print(f"The first n dimensions where stress < 0.05 is: {n_components[thresh_stress]} stress={nmds_stress[thresh_stress]}")
@@ -185,32 +208,32 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     #
     # print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index+1]}\n")
 
-    colors = sns.color_palette('pastel')
-
-    # clear plot info in case several graphs are plotted in a row
-    plt.clf()
-
-    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
-
-    plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0])
-    # plt.plot(n_valid_components, my_mds_stress, marker='o', label='mds*')
-    # plt.plot(n_valid_components, pca_stress, marker='o', label='pca*')
+    # colors = sns.color_palette('pastel')
     #
-    # y_lims = plt.gca().get_ylim()
-    # y_range = np.abs(y_lims[0] - y_lims[1])
-
-    # for i, j in zip(n_components, mds_stress):
-    #     plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
-    # plt.xticks([2, 64, 128, 256, 512, 1024])
-    plt.yticks([0.3, 0.2, 0.1, 0.05, 0])
-    plt.xlabel("Number of dimensions")
-    plt.ylabel("Stress")
-    plt.grid(axis="y", alpha=0.3)
-    plt.tight_layout()
-
-    run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
-    os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, run_dir + '_nmdsstress.png'))
+    # # clear plot info in case several graphs are plotted in a row
+    # plt.clf()
+    #
+    # plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+    #
+    # plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0])
+    # # plt.plot(n_valid_components, my_mds_stress, marker='o', label='mds*')
+    # # plt.plot(n_valid_components, pca_stress, marker='o', label='pca*')
+    # #
+    # # y_lims = plt.gca().get_ylim()
+    # # y_range = np.abs(y_lims[0] - y_lims[1])
+    #
+    # # for i, j in zip(n_components, mds_stress):
+    # #     plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
+    # # plt.xticks([2, 64, 128, 256, 512, 1024])
+    # plt.yticks([0.3, 0.2, 0.1, 0.05, 0])
+    # plt.xlabel("Number of dimensions")
+    # plt.ylabel("Stress")
+    # plt.grid(axis="y", alpha=0.3)
+    # plt.tight_layout()
+    #
+    # run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
+    # os.makedirs(fig_output_root, exist_ok=True)
+    # plt.savefig(os.path.join(fig_output_root, run_dir + '_nmdsstress.png'))
 
 def main(params):
     config_path = params.config_path
