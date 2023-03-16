@@ -1,16 +1,8 @@
-import argparse
-import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-import json
 import numpy as np
 import sys
-
-sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
-
-from src.utils.helpers import load_config
-
 
 def main():
 
@@ -23,9 +15,14 @@ def main():
     # f1 = [0.7154, 0.8000, 0.5546, 0.8175, 0.7206, 0.7692, 0.7760, 0.7862, 0.8166, 0.8727]
 
     # THIS IS FOR WETEN-A
+    # min_num_dims = [128, 128, 128, 128, 128, 128, 128, 128, 128, 128]
+    # acc = [0.8045, 0.7970, 0.7333, 0.7259, 0.8148, 0.8248, 0.8311, 0.8841, 0.8248, 0.9366]
+    # f1 = [0.7903, 0.8235, 0.7188, 0.7176, 0.8252, 0.8154, 0.8227, 0.8961, 0.8500, 0.9434]
+
+    # THIS IS FOR DOOF-B
     min_num_dims = [128, 128, 128, 128, 128, 128, 128, 128, 128, 128]
-    acc = [0.8045, 0.7970, 0.7333, 0.7259, 0.8148, 0.8248, 0.8311, 0.8841, 0.8248, 0.9366]
-    f1 = [0.7903, 0.8235, 0.7188, 0.7176, 0.8252, 0.8154, 0.8227, 0.8961, 0.8500, 0.9434]
+    acc = [0.7984, 0.8468, 0.8548, 0.8615, 0.8110, 0.8030, 0.8521, 0.9124, 0.8992, 0.9323]
+    f1 = [0.8030, 0.8480, 0.8594,  0.8615, 0.8154, 0.7869, 0.8372, 0.9062, 0.9065, 0.9362]
 
     colors = sns.color_palette('pastel')
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
@@ -42,9 +39,10 @@ def main():
     ax2.set_ylabel("Performance")
     ax2.spines['right'].set_visible(True)
     ax2.set_xticks(np.arange(1, 11))
+    ax2.set_ylim([0.5, 1.0])
     ax2.plot(ling_dist, acc, linestyle='--', label='accuracy', marker='o', color=colors[1])
     ax2.plot(ling_dist, f1, linestyle='--', label='f1', marker='o', color=colors[2])
-    ax2.legend(loc='best')
+    ax2.legend(loc='upper left')
 
     ax2.set_axisbelow(True)  # grid lines are behind the rest
     ax2.yaxis.grid(alpha=0.3)
