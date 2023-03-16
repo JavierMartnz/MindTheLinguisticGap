@@ -171,8 +171,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
         nmds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto')
         # nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto')
         X_nmds = nmds.fit_transform(X_features)
-        # nmds_stress.append(stress(X_nmds, X_features))
-        nmds_stress.append(nmds.stress_)
+        nmds_stress.append(stress(X_nmds, X_features))
+        # nmds_stress.append(nmds.stress_)
 
     thresh_stress = np.where(np.array(nmds_stress) < 0.05)[0][0]
     print(f"The first n dimensions where stress < 0.05 is: {n_components[thresh_stress]} stress={nmds_stress[thresh_stress]}")
