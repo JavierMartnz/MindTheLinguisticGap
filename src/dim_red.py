@@ -157,11 +157,11 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     umap_trust = []
-    for i, nn in enumerate([5, 10, 15, 20, 50]):
+    for i, nn in enumerate([5, 10, 15, 20, 30, 50]):
         umap_trust = []
         for nc in tqdm(n_components):
-            X_umap = UMAP(n_components=nc, n_neighbors=5, metric='euclidean').fit_transform(X_features)
-            umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=nn, metric='euclidean'))
+            X_umap = UMAP(n_components=nc, n_neighbors=nn, metric='euclidean').fit_transform(X_features)
+            umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=5, metric='euclidean'))
         plt.plot(n_components.astype("str"), umap_trust, marker='o', label=str(nn), color=colors[i])
 
     plt.grid(axis="y", alpha=0.3)
