@@ -168,7 +168,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     print("Running nMDS...")
     for nc in tqdm(n_components):
         # nmds = PCA(n_components=nc)
-        nmds = MDS(n_components=nc, n_jobs=-1)
+        nmds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto')
         # nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto')
         X_nmds = nmds.fit_transform(X_features)
         nmds_stress.append(stress(X_nmds, X_features))
