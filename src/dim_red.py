@@ -147,7 +147,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu()
 
-    n_components = 2 ** np.arange(1, 11)
+    n_components = 2 ** np.arange(2, 11)
 
     colors = sns.color_palette('pastel')
 
@@ -161,7 +161,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
         umap_trust = []
         for i, nn in enumerate([5, 10, 15, 20, 50]):
             X_umap = UMAP(n_components=nc, n_neighbors=nn, metric='euclidean').fit_transform(X_features)
-            umap_trust.append(trustworthiness(X, X_umap, n_neighbors=nc//2, metric='euclidean'))
+            umap_trust.append(trustworthiness(X, X_umap, n_neighbors=(nc//2)-1, metric='euclidean'))
         plt.plot(n_components.astype("str"), umap_trust, marker='o', label=str(nn), color=colors[i])
 
     plt.grid(axis="y", alpha=0.3)
