@@ -169,7 +169,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     for nc in tqdm(n_components):
         X_kpca = KernelPCA(n_components=nc, kernel="rbf").fit_transform(X_features)
-        X_nmds = MDS(n_components=nc, metric=False, n_jobs=-1)
+        X_nmds = MDS(n_components=nc, metric=False, n_jobs=-1).fit_transform(X_features)
         # X_umap = UMAP(n_components=nc, n_neighbors=20, metric='euclidean').fit_transform(X_features)
         # umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=5, metric='euclidean'))
         # pca_trust.append(trustworthiness(X_features, X_pca, n_neighbors=5, metric='euclidean'))
