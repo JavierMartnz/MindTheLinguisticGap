@@ -146,6 +146,9 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
                         X_features = torch.cat((X_features, features.squeeze()), dim=0)
 
     X_features = X_features.detach().cpu()
+
+    print(X_features.size())
+
     n_components = 2 ** np.arange(1, 11)
 
     colors = sns.color_palette('pastel')
