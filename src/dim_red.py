@@ -172,7 +172,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
         # my_mds_stress.append(stress(X_mds, X_features))
         nmds_stress.append(nmds.stress_)
 
-    print(f"The first n dimensions where stress < 0.05 is:\n{nmds_stress.index(np.where(np.array(nmds_stress) < 0.05)[0][0])}")
+    print(f"The first n dimensions where stress < 0.05 is:\n{nmds_stress[np.where(np.array(nmds_stress) < 0.05)[0][0]]}")
 
     # print(f"The stress values from 2 to 1024 are:\n{pca_stress}")
     #
