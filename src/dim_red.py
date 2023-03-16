@@ -160,11 +160,12 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     for i, nn in enumerate([5, 10, 15, 20, 50]):
         umap_trust = []
         for nc in tqdm(n_components):
-            X_umap = UMAP(n_components=nc, n_neighbors=nn, metric='euclidean').fit_transform(X_features)
+            X_umap = UMAP(n_components=nc, n_neighbors=5, metric='euclidean').fit_transform(X_features)
             umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=nn, metric='euclidean'))
         plt.plot(n_components.astype("str"), umap_trust, marker='o', label=str(nn), color=colors[i])
 
     plt.grid(axis="y", alpha=0.3)
+    plt.legend(loc='best')
     plt.tight_layout()
 
     run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
