@@ -171,8 +171,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
         nmds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto')
         # nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto')
         X_nmds = nmds.fit_transform(X_features)
-        nmds_stress.append(stress(X_nmds, X_features))
-        # nmds_stress.append(nmds.stress_)
+        # nmds_stress.append(stress(X_nmds, X_features))
+        nmds_stress.append(nmds.stress_)
 
     thresh_stress = np.where(np.array(nmds_stress) < 0.05)[0][0]
     print(f"The first n dimensions where stress < 0.05 is: {n_components[thresh_stress]} stress={nmds_stress[thresh_stress]}")
@@ -201,7 +201,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     # for i, j in zip(n_components, mds_stress):
     #     plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
     # plt.xticks([2, 64, 128, 256, 512, 1024])
-    plt.yticks([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0])
+    plt.yticks([0.3, 0.2, 0.1, 0.05, 0])
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
     plt.grid(axis="y", alpha=0.3)
