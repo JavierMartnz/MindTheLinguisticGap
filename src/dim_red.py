@@ -169,8 +169,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
         kpca_trust.append(trustworthiness(X_features, X_kpca, n_neighbors=5, metric='euclidean'))
 
     plt.plot(n_components.astype("str"), umap_trust, marker='o', label="umap", color=colors[0])
-    plt.plot(n_components.astype("str"), pca_trust, marker='^', label="pca", color=colors[1])
-    plt.plot(n_components.astype("str"), kpca_trust, marker='sq', label="kpca", color=colors[2])
+    plt.plot(n_components.astype("str"), pca_trust, marker='o', label="pca", color=colors[1])
+    plt.plot(n_components.astype("str"), kpca_trust, marker='o', label="kpca", color=colors[2])
 
     plt.grid(axis="y", alpha=0.3)
     plt.legend(loc='best')
