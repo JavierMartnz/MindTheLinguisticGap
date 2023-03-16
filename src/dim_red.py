@@ -157,12 +157,20 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     umap_trust = []
-    for i, nn in enumerate([5, 10, 15, 20, 30, 50]):
-        umap_trust = []
-        for nc in tqdm(n_components):
-            X_umap = UMAP(n_components=nc, n_neighbors=nn, metric='euclidean').fit_transform(X_features)
-            umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=5, metric='euclidean'))
-        plt.plot(n_components.astype("str"), umap_trust, marker='o', label=str(nn), color=colors[i])
+    pca_trust = []
+    kpca_trust = []
+    for nc in tqdm(n_components):
+        X_kpca = KernelPCA(n_components=nc, kernel='rbf').fit_transform(X_features)
+        X_pca = PCA(n_components=nc).fit_transform(X_features)
+        X_umap = UMAP(n_components=nc, n_neighbors=20, metric='euclidean').fit_transform(X_features)
+
+        umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=5, metric='euclidean'))
+        pca_trust.append(trustworthiness(X_features, X_pca, n_neighbors=5, metric='euclidean'))
+        kpca_trust.append(trustworthiness(X_features, X_kpca, n_neighbors=5, metric='euclidean'))
+
+    plt.plot(n_components.astype("str"), umap_trust, marker='o', label="umap", color=colors[0])
+    plt.plot(n_components.astype("str"), pca_trust, marker='^', label="pca", color=colors[1])
+    plt.plot(n_components.astype("str"), kpca_trust, marker='sq', label="kpca", color=colors[2])
 
     plt.grid(axis="y", alpha=0.3)
     plt.legend(loc='best')
