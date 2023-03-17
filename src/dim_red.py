@@ -156,32 +156,25 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    umap_trust = []
-    pca_trust = []
-    kpca_trust = []
-
-    kernels = ["linear", "poly", "rbf", "sigmoid", "cosine"]
-
-    all_trusts = []
-
-    kpca_trust = []
-    nmds_trust = []
-    pacmap_trust = []
+    nmds_stress = []
+    mds_stress = []
+    pca_stress = []
 
     for nc in tqdm(n_components):
-        X_kpca = KernelPCA(n_components=nc, kernel="rbf").fit_transform(X_features)
-        X_nmds = MDS(n_components=nc, metric=False, n_jobs=-1).fit_transform(X_features)
-        X_pacmap = PaCMAP(n_components=nc).fit_transform(X_features)
-        # X_umap = UMAP(n_components=nc, n_neighbors=20, metric='euclidean').fit_transform(X_features)
-        # umap_trust.append(trustworthiness(X_features, X_umap, n_neighbors=5, metric='euclidean'))
-        # pca_trust.append(trustworthiness(X_features, X_pca, n_neighbors=5, metric='euclidean'))
-        kpca_trust.append(trustworthiness(X_features, X_kpca, n_neighbors=5, metric='euclidean'))
-        nmds_trust.append(trustworthiness(X_features, X_nmds, n_neighbors=5, metric='euclidean'))
-        pacmap_trust.append(trustworthiness(X_features, X_pacmap, n_neighbors=5, metric='euclidean'))
+        X_pca = KernelPCA(n_components=nc, kernel="rbf").fit_transform(X_features)
+        nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress=True)
+        mds = MDS(n_components=nc, n_jobs=-1, normalized_stress=True)
+        X_nmds = nmds.fit_transform(X_features)
+        X_mds = mds.fit_transform(X_features)
 
-    plt.plot(n_components.astype("str"), kpca_trust, marker='o', label="pca", color=colors[0])
-    plt.plot(n_components.astype("str"), nmds_trust, marker='^', label="nmds", color=colors[1])
-    plt.plot(n_components.astype("str"), pacmap_trust, marker='+', label="pacmap", color=colors[2])
+        pca_stress.append(stress(X_pca, X_features))
+        mds_stress.append(mds.stress_)
+        nmds_stress.append(nmds.stress_)
+
+
+    plt.plot(n_components.astype("str"), pca_stress, marker='o', label="pca", color=colors[0])
+    plt.plot(n_components.astype("str"), mds_stress, marker='^', label="mds", color=colors[1])
+    plt.plot(n_components.astype("str"), nmds_stress, marker='+', label="nmds", color=colors[2])
 
     plt.grid(axis="y", alpha=0.3)
     plt.legend(loc='best')
@@ -189,7 +182,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
     os.makedirs(fig_output_root, exist_ok=True)
-    plt.savefig(os.path.join(fig_output_root, run_dir + '_umaptrust.png'))
+    plt.savefig(os.path.join(fig_output_root, run_dir + '_stress.png'))
 
     # pca_stress = []
     # n_valid_components = []
