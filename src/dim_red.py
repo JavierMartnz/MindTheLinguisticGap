@@ -153,9 +153,9 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     mds_stress = []
     print("Running nMDS...")
     for nc in tqdm(n_components):
-        nmds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto')
+        nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress=True)
         X_nmds = nmds.fit_transform(X_features)
-        X_mds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto').fit_transform(X_features)
+        X_mds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto').fit_transform(X_features)
 
         nmds_stress.append(nmds.stress_)
         mds_stress.append(stress(X_mds, X_features))
