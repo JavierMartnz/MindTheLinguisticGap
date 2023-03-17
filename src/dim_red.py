@@ -153,7 +153,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     mds_stress = []
     print("Running nMDS...")
     for nc in tqdm(n_components):
-        nmds = Isomap(n_components=nc, n_jobs=-1)
+        nmds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto')
         X_nmds = nmds.fit_transform(X_features)
         X_mds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto').fit_transform(X_features)
 
