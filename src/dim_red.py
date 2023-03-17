@@ -163,12 +163,12 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     for nc in tqdm(n_components):
         X_pca = KernelPCA(n_components=nc, kernel="rbf").fit_transform(X_features)
         nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress=True)
-        mds = MDS(n_components=nc, n_jobs=-1, normalized_stress=True)
+        mds = MDS(n_components=nc, n_jobs=-1)
         X_nmds = nmds.fit_transform(X_features)
         X_mds = mds.fit_transform(X_features)
 
         pca_stress.append(stress(X_pca, X_features))
-        mds_stress.append(mds.stress_)
+        mds_stress.append(stress(X_mds, X_features))
         nmds_stress.append(nmds.stress_)
 
 
