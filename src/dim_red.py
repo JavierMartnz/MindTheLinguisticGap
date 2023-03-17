@@ -149,6 +149,23 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     n_components = 2 ** np.arange(1, 11)
 
+    nmds_stress = []
+    mds_stress = []
+    print("Running nMDS...")
+    for nc in tqdm(n_components):
+        nmds = Isomap(n_components=nc, n_jobs=-1)
+        X_nmds = nmds.fit_transform(X_features)
+        X_mds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto').fit_transform(X_features)
+
+        nmds_stress.append(nmds.stress_)
+        mds_stress.append(stress(X_mds, X_features))
+
+    nmds_thresh = np.where(np.array(nmds_stress) < 0.05)[0][0]
+    print(f"nMDS stress < 0.05 is: {n_components[nmds_thresh]} stress={nmds_stress[nmds_thresh]}")
+
+    mds_thresh = np.where(np.array(mds_stress) < 0.05)[0][0]
+    print(f"MDS stress < 0.05 is: {n_components[mds_thresh]} stress={mds_stress[mds_thresh]}")
+
     colors = sns.color_palette('pastel')
 
     # clear plot info in case several graphs are plotted in a row
@@ -156,98 +173,24 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    nmds_stress = []
-    mds_stress = []
-    pca_stress = []
+    plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0])
+    plt.plot(n_components.astype("str"), mds_stress, marker='^', color=colors[1])
+    #
+    # y_lims = plt.gca().get_ylim()
+    # y_range = np.abs(y_lims[0] - y_lims[1])
 
-    for nc in tqdm(n_components):
-        X_pca = KernelPCA(n_components=nc, kernel="rbf").fit_transform(X_features)
-        nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress=True)
-        mds = MDS(n_components=nc, n_jobs=-1)
-        X_nmds = nmds.fit_transform(X_features)
-        X_mds = mds.fit_transform(X_features)
-
-        pca_stress.append(stress(X_pca, X_features))
-        mds_stress.append(stress(X_mds, X_features))
-        nmds_stress.append(nmds.stress_)
-
-
-    plt.plot(n_components.astype("str"), pca_stress, marker='o', label="pca", color=colors[0])
-    plt.plot(n_components.astype("str"), mds_stress, marker='^', label="mds", color=colors[1])
-    plt.plot(n_components.astype("str"), nmds_stress, marker='+', label="nmds", color=colors[2])
-
+    # for i, j in zip(n_components, mds_stress):
+    #     plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
+    # plt.xticks([2, 64, 128, 256, 512, 1024])
+    plt.yticks([0.3, 0.2, 0.1, 0.05, 0.025, 0])
+    plt.xlabel("Number of dimensions")
+    plt.ylabel("Stress")
     plt.grid(axis="y", alpha=0.3)
-    plt.legend(loc='best')
     plt.tight_layout()
 
     run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, run_dir + '_stress.png'))
-
-    # pca_stress = []
-    # n_valid_components = []
-
-    # print("Running PCA...")
-    # for nc in tqdm(n_components):
-    #     # pca won't work if num_components > num_samples
-    #     if X_features.size(0) >= nc:
-    #         try:
-    #             pca = KernelPCA(n_components=nc, kernel='linear')
-    #             X_pca = pca.fit_transform(X_features)
-    #             n_valid_components.append(nc)
-    #             pca_stress.append(stress(X_pca, X_features))
-    #             # pca_evr.append(sum(pca.explained_variance_ratio_))
-    #             # print(f"The stress from 1024 to {nc} dimensions is {round(stress(X_pca, X_features), 4)}")
-    #         except Exception as e:
-    #             print(e)
-
-    # nmds_stress = []
-    # print("Running nMDS...")
-    # for nc in tqdm(n_components):
-    #     # nmds = PCA(n_components=nc)
-    #     # nmds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto')
-    #     # nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress='auto')
-    #     nmds = Isomap(n_components=nc, n_jobs=-1)
-    #     X_nmds = nmds.fit_transform(X_features)
-    #     nmds_stress.append(stress(X_nmds, X_features))
-    #     # nmds_stress.append(nmds.stress_)
-
-    # thresh_stress = np.where(np.array(nmds_stress) < 0.05)[0][0]
-    # print(f"The first n dimensions where stress < 0.05 is: {n_components[thresh_stress]} stress={nmds_stress[thresh_stress]}")
-
-    # print(f"The stress values from 2 to 1024 are:\n{pca_stress}")
-    #
-    # delta_stress = [np.abs(pca_stress[i]-pca_stress[i+1]) for i in range(len(pca_stress)-1)]
-    # min_delta_index = delta_stress.index(min(delta_stress))
-    #
-    # print(f"The min stress decrease is {min(delta_stress)} and happened between dims {n_components[min_delta_index]} and {n_components[min_delta_index+1]}\n")
-
-    # colors = sns.color_palette('pastel')
-    #
-    # # clear plot info in case several graphs are plotted in a row
-    # plt.clf()
-    #
-    # plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
-    #
-    # plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0])
-    # # plt.plot(n_valid_components, my_mds_stress, marker='o', label='mds*')
-    # # plt.plot(n_valid_components, pca_stress, marker='o', label='pca*')
-    # #
-    # # y_lims = plt.gca().get_ylim()
-    # # y_range = np.abs(y_lims[0] - y_lims[1])
-    #
-    # # for i, j in zip(n_components, mds_stress):
-    # #     plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
-    # # plt.xticks([2, 64, 128, 256, 512, 1024])
-    # plt.yticks([0.3, 0.2, 0.1, 0.05, 0])
-    # plt.xlabel("Number of dimensions")
-    # plt.ylabel("Stress")
-    # plt.grid(axis="y", alpha=0.3)
-    # plt.tight_layout()
-    #
-    # run_dir = run_dir.replace(":", ";")  # so that the files will work in Windows if a gloss has a ':' in it
-    # os.makedirs(fig_output_root, exist_ok=True)
-    # plt.savefig(os.path.join(fig_output_root, run_dir + '_nmdsstress.png'))
 
 def main(params):
     config_path = params.config_path
