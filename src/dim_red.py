@@ -150,21 +150,21 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     n_components = 2 ** np.arange(1, 11)
 
     nmds_stress = []
-    mds_stress = []
+    # mds_stress = []
     print("Running nMDS...")
     for nc in tqdm(n_components):
         nmds = MDS(n_components=nc, metric=False, n_jobs=-1, normalized_stress=True)
         X_nmds = nmds.fit_transform(X_features)
-        X_mds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto').fit_transform(X_features)
+        # X_mds = MDS(n_components=nc, n_jobs=-1, normalized_stress='auto').fit_transform(X_features)
 
         nmds_stress.append(nmds.stress_)
-        mds_stress.append(stress(X_mds, X_features))
+        # mds_stress.append(stress(X_mds, X_features))
 
-    nmds_thresh = np.where(np.array(nmds_stress) < 0.05)[0][0]
-    print(f"nMDS stress < 0.05 is: {n_components[nmds_thresh]} stress={nmds_stress[nmds_thresh]}")
+    nmds_thresh = np.where(np.array(nmds_stress) < 0.025)[0][0]
+    print(f"nMDS stress < 0.025 is: {n_components[nmds_thresh]} stress={nmds_stress[nmds_thresh]}")
 
-    mds_thresh = np.where(np.array(mds_stress) < 0.05)[0][0]
-    print(f"MDS stress < 0.05 is: {n_components[mds_thresh]} stress={mds_stress[mds_thresh]}")
+    # mds_thresh = np.where(np.array(mds_stress) < 0.025)[0][0]
+    # print(f"MDS stress < 0.05 is: {n_components[mds_thresh]} stress={mds_stress[mds_thresh]}")
 
     colors = sns.color_palette('pastel')
 
@@ -174,8 +174,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
     plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0])
-    plt.plot(n_components.astype("str"), mds_stress, marker='^', color=colors[1])
-    #
+    # plt.plot(n_components.astype("str"), mds_stress, marker='^', color=colors[1])
+    
     # y_lims = plt.gca().get_ylim()
     # y_range = np.abs(y_lims[0] - y_lims[1])
 
