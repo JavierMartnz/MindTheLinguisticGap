@@ -173,15 +173,9 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0])
-    # plt.plot(n_components.astype("str"), mds_stress, marker='^', color=colors[1])
-    
-    # y_lims = plt.gca().get_ylim()
-    # y_range = np.abs(y_lims[0] - y_lims[1])
+    plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0], markevery=np.delete(n_components, [nmds_thresh]))
+    plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0], markevery=np.delete(n_components, [nmds_thresh]), markerfacecolor='red')
 
-    # for i, j in zip(n_components, mds_stress):
-    #     plt.annotate(str(round(j, 2)), xy=(i+y_range*0.05, j+y_range*0.02))
-    # plt.xticks([2, 64, 128, 256, 512, 1024])
     plt.yticks([0.3, 0.2, 0.1, 0.05, 0.025, 0])
     plt.xlabel("Number of dimensions")
     plt.ylabel("Stress")
