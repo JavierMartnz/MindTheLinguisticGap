@@ -176,8 +176,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     # round markers for normal points with matching color to the curve
     plt.scatter(normal_markers_idxs, [nmds_stress[i] for i in normal_markers_idxs], marker='o', color=colors[0], edgecolors='black')
-    # yellow star marker for first dimensions below 0.025
-    plt.scatter(nmds_thresh, nmds_stress[nmds_thresh], marker='*', color='yellow', s=80, edgecolors='black')
+    # orange star marker for first dimensions below 0.025
+    plt.scatter(nmds_thresh, nmds_stress[nmds_thresh], marker='*', color=colors[3], s=80, edgecolors='black')
 
     plt.yticks([0.3, 0.2, 0.1, 0.05, 0.025, 0])
     plt.xlabel("Number of dimensions")
