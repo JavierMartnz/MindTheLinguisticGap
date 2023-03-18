@@ -172,7 +172,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(n_components.astype("str"), nmds_stress, color=colors[0])
+    plt.plot(n_components.astype("str"), nmds_stress, color=colors[0], zorder=0)
 
     # round markers for normal points with matching color to the curve
     plt.scatter(normal_markers_idxs, [nmds_stress[i] for i in normal_markers_idxs], marker='o', color=colors[0], edgecolors='black')
