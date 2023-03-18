@@ -163,8 +163,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     nmds_thresh = np.where(np.array(nmds_stress) < 0.025)[0][0]
     print(f"nMDS stress < 0.025 is: {n_components[nmds_thresh]} stress={nmds_stress[nmds_thresh]}")
 
-    # mds_thresh = np.where(np.array(mds_stress) < 0.025)[0][0]
-    # print(f"MDS stress < 0.05 is: {n_components[mds_thresh]} stress={mds_stress[mds_thresh]}")
+    normal_markers_idxs = np.delete(np.arange(len(n_components)), nmds_thresh)
 
     colors = sns.color_palette('pastel')
 
@@ -173,8 +172,12 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
 
-    plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0], markevery=np.delete(np.arange(n_components), [nmds_thresh]))
-    plt.plot(n_components.astype("str"), nmds_stress, marker='o', color=colors[0], markevery=[nmds_thresh], markerfacecolor='red')
+    plt.plot(n_components.astype("str"), nmds_stress, color=colors[0])
+
+    # round markers for normal points with matching color to the curve
+    plt.scatter(normal_markers_idxs, [nmds_stress[i] for i in normal_markers_idxs], marker='o', color=colors[0], edgecolors='black')
+    # yellow star marker for first dimensions below 0.025
+    plt.scatter(nmds_thresh, nmds_stress[nmds_thresh], marker='*', color='yellow', s=80, edgecolors='black')
 
     plt.yticks([0.3, 0.2, 0.1, 0.05, 0.025, 0])
     plt.xlabel("Number of dimensions")
