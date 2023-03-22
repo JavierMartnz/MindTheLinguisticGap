@@ -1,6 +1,8 @@
 import os
 import sys
 
+import pandas as pd
+
 sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 import argparse
@@ -151,8 +153,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu()
 
-    mle_id = mle(X_features)
-    geomle_id = geomle(X_features)
+    mle_id = mle(pd.DataFrame(X_features))
+    geomle_id = geomle(pd.DataFrame(X_features))
     twonn_id = twonn(X_features)
 
     print(f"ID: mle={mle_id}, geomle={geomle_id}, twonn={twonn_id}")
