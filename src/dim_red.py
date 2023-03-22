@@ -150,6 +150,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu()
 
+    print("Running ID estimators...")
+
     mle_id = mle(X_features)
     geomle_id = geomle(X_features)
     twonn_id = twonn(X_features)
