@@ -24,7 +24,8 @@ from torchvision import transforms
 import seaborn as sns
 from umap import UMAP
 from pacmap import PaCMAP
-from geomle import mle, geomle
+from src.utils.geomle import geomle
+from src.utils.mle import mle
 from src.utils.twonn import twonn_dimension as twonn
 
 
