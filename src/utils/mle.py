@@ -87,32 +87,15 @@ def mle(full_dataset, nb_iter=100, random_state=None, k1=10, k2=20, average=Fals
     Returns:
     array of shape (k2-k1+1,) of Levina-Bickel dimensionality estimation for k = k1..k2 averaged over bootstrap samples
     """
-    if random_state is None:
-        rng = np.random
-    else:
-        rng = np.random.RandomState(random_state)
-
-    if args.anchor_samples > 0:
-        indices = [i for i in range(len(full_dataset))]
-        random.shuffle(indices)
-        subset_idxes = indices[:args.anchor_samples]
-        anchor_dataset = torch.utils.data.Subset(full_dataset, subset_idxes)
-        nb_examples = len(anchor_dataset)
-    else:
-        anchor_dataset = full_dataset
-        nb_examples = len(full_dataset)
+    nb_examples = len(full_dataset)
     results = []
 
     print("Computing the KNNs")
     # compute the KNN with pytorch
-    nn_computer = KNNComputerNoCheck(len(anchor_dataset), K=k2 + 1).cuda()
+    nn_computer = KNNComputerNoCheck(len(full_dataset), K=k2 + 1).cuda()
 
-    anchor_loader = torch.utils.data.DataLoader(anchor_dataset,
-                                                batch_size=args.bsize, shuffle=False,
-                                                num_workers=args.n_workers)
-    bootstrap_loader = torch.utils.data.DataLoader(full_dataset,
-                                                   batch_size=args.bsize, shuffle=False,
-                                                   num_workers=args.n_workers)
+    anchor_loader = torch.utils.data.DataLoader(full_dataset, batch_size=128, shuffle=False, num_workers=0)
+    bootstrap_loader = torch.utils.data.DataLoader(full_dataset, batch_size=128, shuffle=False, num_workers=0)
 
     dist = nn_computer.min_dists.cpu().numpy()
 
@@ -121,7 +104,7 @@ def mle(full_dataset, nb_iter=100, random_state=None, k1=10, k2=20, average=Fals
         Rs.append(np.max(dist[:, :i]))
 
     for i in range(nb_iter):
-        idx = np.unique(rng.randint(0, nb_examples - 1, size=nb_examples))
+        idx = np.unique(np.random.randint(0, nb_examples - 1, size=nb_examples))
         #print("Bootstrap round {} with {} samples".format(i, len(idx)))
 
         results.append(intrinsic_dim_scale_interval(k1, k2, dist[idx, :]))
@@ -144,47 +127,34 @@ def mle_inverse_singlek(full_dataset, k1=10, args=None, anchor_dataset=None):
     two dimensionality estimates
     """
 
-    if args.anchor_ratio > 0:
-        args.anchor_samples = int(args.anchor_ratio * len(full_dataset))
-
-    if anchor_dataset is None:
-        if args.anchor_samples > 0:
-            print("Using {} anchor samples. ".format(args.anchor_samples))
-            indices = [i for i in range(len(full_dataset))]
-            random.shuffle(indices)
-            subset_idxes = indices[:args.anchor_samples]
-            anchor_dataset = torch.utils.data.Subset(full_dataset, subset_idxes)
-        else:
-            anchor_dataset = full_dataset
-
     print("Computing the KNNs")
     # compute the KNN with pytorch
-    nn_computer = KNNComputerNoCheck(len(anchor_dataset), K=k1 + 1).cuda()
+    nn_computer = KNNComputerNoCheck(len(full_dataset), K=k1 + 1).cuda()
 
-    anchor_loader = torch.utils.data.DataLoader(anchor_dataset,
-                                                batch_size=args.bsize, shuffle=False,
-                                                num_workers=args.n_workers)
+    anchor_loader = torch.utils.data.DataLoader(full_dataset,
+                                                batch_size=128, shuffle=False,
+                                                num_workers=0)
     bootstrap_loader = torch.utils.data.DataLoader(full_dataset,
-                                                   batch_size=args.bsize, shuffle=False,
-                                                   num_workers=args.n_workers)
+                                                   batch_size=128, shuffle=False,
+                                                   num_workers=0)
 
     # neighb = NearestNeighbors(n_neighbors=k2 + 1, n_jobs=1, algorithm='ball_tree').fit(X)
     # dist, ind = neighb.kneighbors(X)
     update_nn(anchor_loader, 0, bootstrap_loader, 0, nn_computer)
     dist = nn_computer.min_dists.cpu().numpy()
 
-    if args.eval_every_k:
-        mle_res, inv_mle_res = [], []
-        for k in range(2, k1+1):
-            mle_results, invmle_results = intrinsic_dim_sample_wise_double_mle(k, dist)
-            mle_res.append(mle_results.mean())
-            inv_mle_res.append(1. / invmle_results.mean())
+    # if args.eval_every_k:
+    #     mle_res, inv_mle_res = [], []
+    #     for k in range(2, k1+1):
+    #         mle_results, invmle_results = intrinsic_dim_sample_wise_double_mle(k, dist)
+    #         mle_res.append(mle_results.mean())
+    #         inv_mle_res.append(1. / invmle_results.mean())
+    #
+    #     return mle_res, inv_mle_res
+    # else:
+    mle_results, invmle_results = intrinsic_dim_sample_wise_double_mle(k1, dist)
 
-        return mle_res, inv_mle_res
-    else:
-        mle_results, invmle_results = intrinsic_dim_sample_wise_double_mle(k1, dist)
-
-        return mle_results.mean(), 1. / invmle_results.mean()
+    return mle_results.mean(), 1. / invmle_results.mean()
 
 
 def mle_inverse_singlek_loop(full_dataset, net, k1=5, k2=15, k_step=5, average=False, args=None):
@@ -201,28 +171,28 @@ def mle_inverse_singlek_loop(full_dataset, net, k1=5, k2=15, k_step=5, average=F
     array of dimensionality estimates, or an averaged estimate
     """
 
-    if args.anchor_ratio > 0:
-        args.anchor_samples = int(args.anchor_ratio * len(full_dataset))
-
-    if args.anchor_samples > 0:
-        print("Using {} anchor samples. ".format(args.anchor_samples))
-        indices = [i for i in range(len(full_dataset))]
-        random.shuffle(indices)
-        subset_idxes = indices[:args.anchor_samples]
-        anchor_dataset = torch.utils.data.Subset(full_dataset, subset_idxes)
-    else:
-        anchor_dataset = full_dataset
+    # if args.anchor_ratio > 0:
+    #     args.anchor_samples = int(args.anchor_ratio * len(full_dataset))
+    #
+    # if args.anchor_samples > 0:
+    #     print("Using {} anchor samples. ".format(args.anchor_samples))
+    #     indices = [i for i in range(len(full_dataset))]
+    #     random.shuffle(indices)
+    #     subset_idxes = indices[:args.anchor_samples]
+    #     anchor_dataset = torch.utils.data.Subset(full_dataset, subset_idxes)
+    # else:
+    anchor_dataset = full_dataset
 
     print("Computing the KNNs")
     # compute the KNN with pytorch
     nn_computer = KNNComputerNoCheck(len(anchor_dataset), K=k2 + 1).cuda()
 
     anchor_loader = torch.utils.data.DataLoader(anchor_dataset,
-                                                batch_size=args.bsize, shuffle=False,
-                                                num_workers=args.n_workers)
+                                                batch_size=128, shuffle=False,
+                                                num_workers=0)
     bootstrap_loader = torch.utils.data.DataLoader(full_dataset,
-                                                   batch_size=args.bsize, shuffle=False,
-                                                   num_workers=args.n_workers)
+                                                   batch_size=128, shuffle=False,
+                                                   num_workers=0)
 
     update_nn(anchor_loader, 0, bootstrap_loader, 0, nn_computer)
     dist = nn_computer.min_dists.cpu().numpy()

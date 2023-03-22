@@ -141,11 +141,11 @@ def geomle(full_dataset, k1=10, k2=40, nb_iter1=10, nb_iter2=20, degree=(1, 2),
             nn_computer = KNNComputerNoCheck(len(full_dataset), K=k2+1).cuda()
 
             anchor_loader = torch.utils.data.DataLoader(full_dataset,
-                                                        batch_size=args.bsize, shuffle=False,
-                                                        num_workers=args.n_workers)
+                                                        batch_size=128, shuffle=False,
+                                                        num_workers=0)
             bootstrap_loader = torch.utils.data.DataLoader(X_bootstrap,
-                                                        batch_size=args.bsize, shuffle=False,
-                                                        num_workers=args.n_workers)
+                                                        batch_size=128, shuffle=False,
+                                                        num_workers=0)
 
             update_nn(anchor_loader, 0, bootstrap_loader, 0, nn_computer)
 
@@ -181,10 +181,10 @@ def geomle(full_dataset, k1=10, k2=40, nb_iter1=10, nb_iter2=20, degree=(1, 2),
             #     reg = 1. / (1. / df.groupby('idx').apply(func).values).mean()
             # else:
             reg = df.groupby('idx').apply(func).values
-            if args.inv_mle:
-                reg = 1. / (1. / reg).mean()
-            else:
-                reg = reg.mean()
+            # if args.inv_mle:
+            #     reg = 1. / (1. / reg).mean()
+            # else:
+            reg = reg.mean()
             data_reg.append(df)
         elif ver.lower() == 'fastGeoMLE'.lower():
             df_gr = df.groupby(['idx', 'k']).mean()[['R', 'dim']]
