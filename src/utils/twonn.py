@@ -76,4 +76,4 @@ def twonn_dimension(data, return_xy=False):
     if return_xy:
         return d, x, y
     else:
-        return
+        return d

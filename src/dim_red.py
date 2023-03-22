@@ -153,11 +153,11 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu()
 
-    mle_id = mle(pd.DataFrame(X_features))
+    mle_id = mle(pd.DataFrame(X_features), average=True)
     geomle_id = geomle(pd.DataFrame(X_features))
     twonn_id = twonn(X_features)
 
-    print(f"ID: mle={mle_id}, geomle={geomle_id}, twonn={twonn_id}")
+    print(f"ID: mle={mle_id}, geomle={max(geomle_id)}, twonn={twonn_id}")
 
     return
 
