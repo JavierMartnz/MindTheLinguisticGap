@@ -140,7 +140,7 @@ def mle_inverse_singlek(full_dataset, k1=10, args=None, anchor_dataset=None):
 
     # neighb = NearestNeighbors(n_neighbors=k2 + 1, n_jobs=1, algorithm='ball_tree').fit(X)
     # dist, ind = neighb.kneighbors(X)
-    update_nn(anchor_loader, 0, bootstrap_loader, 0, nn_computer)
+    # update_nn(anchor_loader, 0, bootstrap_loader, 0, nn_computer)
     dist = nn_computer.min_dists.cpu().numpy()
 
     # if args.eval_every_k:

@@ -147,7 +147,7 @@ def geomle(full_dataset, k1=10, k2=40, nb_iter1=10, nb_iter2=20, degree=(1, 2),
                                                         batch_size=128, shuffle=False,
                                                         num_workers=0)
 
-            update_nn(anchor_loader, 0, bootstrap_loader, 0, nn_computer)
+            # update_nn(anchor_loader, 0, bootstrap_loader, 0, nn_computer)¬
 
             dist = nn_computer.min_dists.cpu().numpy()
             dist = drop_zero_values(dist)
