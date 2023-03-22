@@ -24,6 +24,9 @@ from torchvision import transforms
 import seaborn as sns
 from umap import UMAP
 from pacmap import PaCMAP
+from geomle import mle, geomle
+from src.utils.twonn import twonn_dimension as twonn
+
 
 def stress(X_pred, X):
     # distance of every point (row) to the rest of points in matrix
@@ -146,6 +149,14 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
                         X_features = torch.cat((X_features, features.squeeze()), dim=0)
 
     X_features = X_features.detach().cpu()
+
+    mle_id = mle(X_features)
+    geomle_id = geomle(X_features)
+    twonn_id = twonn(X_features)
+
+    print(f"ID: mle={mle_id}, geomle={geomle_id}, twonn={twonn_id}")
+
+    return
 
     n_components = 2 ** np.arange(1, 11)
 
