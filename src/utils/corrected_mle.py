@@ -229,6 +229,6 @@ def mle_inverse_singlek_loop(full_dataset, k1=5, k2=15, k_step=5, average=False,
         inv_mle_res.append(1. / invmle_results.mean())
 
     if average:
-        return inv_mle_res.mean()
+        return np.mean(inv_mle_res)
     else:
         return inv_mle_res
