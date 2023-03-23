@@ -183,7 +183,7 @@ def mle_inverse_singlek(full_dataset, k1=10, args=None, anchor_dataset=None):
     #     return mle_results.mean(), 1. / invmle_results.mean()
 
 
-def mle_inverse_singlek_loop(full_dataset, net, k1=5, k2=15, k_step=5, average=False, args=None):
+def mle_inverse_singlek_loop(full_dataset, k1=5, k2=15, k_step=5, average=False, args=None):
     """
     Returns the correction of MLE by MacKay-Ghahramani
     Input parameters:

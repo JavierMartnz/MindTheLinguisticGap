@@ -28,7 +28,7 @@ from umap import UMAP
 from pacmap import PaCMAP
 from src.utils.geomle import geomle
 from src.utils.mle import mle as mle_normal
-from src.utils.corrected_mle import mle, mle_inverse_singlek_loop
+from src.utils.corrected_mle import mle, mle_inverse_singlek
 from src.utils.twonn import twonn_dimension as twonn
 from skdim.id import MLE, TwoNN, lPCA
 
@@ -158,7 +158,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     mle_id = mle_normal(pd.DataFrame(X_features), average=True)
 
     mle_corr_id = mle(X_features, average=True)
-    mle_inv_id = mle_inverse_singlek_loop(X_features, k1=10, k2=20, k_step=5, average=True)
+    mle_inv_id = mle_inverse_singlek(X_features, k1=20, average=True)
 
     mlex_id = MLE().fit_transform(X_features)
 
