@@ -162,7 +162,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     # mle_corr_id = mle(X_features, average=True)
     # mle_inv_id = mle_inverse_singlek(X_features, k1=20)
 
-    print(f"Intrinsic dimensions:\nMLE: {mle_id}\nInverse MLE: {mle_inv_id}\nscikit MLE: {mlex_id}")
+    # print(f"Intrinsic dimensions:\nMLE: {mle_id}\nInverse MLE: {mle_inv_id}\nscikit MLE: {mlex_id}")
 
     return math.ceil(mlex_id)
 
