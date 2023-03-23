@@ -27,7 +27,8 @@ import seaborn as sns
 from umap import UMAP
 from pacmap import PaCMAP
 from src.utils.geomle import geomle
-from src.utils.mle import mle
+from src.utils.mle import mle as mle_normal
+from src.utils.corrected_mle import mle, mle_inverse_singlek_loop
 from src.utils.twonn import twonn_dimension as twonn
 from skdim.id import MLE, TwoNN, lPCA
 
@@ -152,24 +153,23 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
                     else:
                         X_features = torch.cat((X_features, features.squeeze()), dim=0)
 
-    X_features = X_features.detach().cpu().numpy()
+    X_features = X_features.detach().cpu()
 
-    mle_id = mle(pd.DataFrame(X_features), average=True)
+    mle_id = mle_normal(pd.DataFrame(X_features), average=True)
+
+    mle_corr_id = mle(X_features, average=True)
+    mle_inv_id = mle_inverse_singlek_loop(X_features, k1=10, k2=20, k_step=5, average=True)
 
     mlex_id = MLE().fit_transform(X_features)
-    mle2_id = MLE().fit_transform(X_features, n_neighbors=2)
-    mle3_id = MLE().fit_transform(X_features, n_neighbors=3)
-    mle5_id = MLE().fit_transform(X_features, n_neighbors=5)
-    mle10_id = MLE().fit_transform(X_features, n_neighbors=10)
-    mle20_id = MLE().fit_transform(X_features, n_neighbors=20)
-    geomle_id = geomle(pd.DataFrame(X_features))
-    twonn_id = TwoNN().fit_transform(X_features)
 
-    print(f"ID mle: {mle_id}")
+    print(f"ID file MLE: {mle_id}")
+    print(f"ID corrected file MLE: {mle_corr_id}")
+    print(f"ID inverse estimate MLE: {mle_inv_id}")
+    print(f"ID scikit MLE: {mlex_id}")
 
-    print(f"ID MLE:std={mlex_id}\nk=2\t{mle2_id}\nk=3\t{mle3_id}\nk=5\t{mle5_id}\nk=10\t{mle10_id}\nk=20\t{mle20_id}")
 
-    print(f"ID: geomle={max(geomle_id)}, twonn={twonn_id}")
+
+    # print(f"ID: geomle={max(geomle_id)}, twonn={twonn_id}")¬
 
     return
 
