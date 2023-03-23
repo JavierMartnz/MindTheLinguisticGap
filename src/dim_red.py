@@ -31,7 +31,7 @@ from src.utils.mle import mle as mle_normal
 from src.utils.corrected_mle import mle, mle_inverse_singlek, mle_inverse_singlek_loop
 from src.utils.twonn import twonn_dimension as twonn
 from skdim.id import MLE, TwoNN, lPCA
-
+import math
 
 def stress(X_pred, X):
     # distance of every point (row) to the rest of points in matrix
@@ -164,9 +164,8 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     print(f"Intrinsic dimensions:\nMLE: {mle_id}\nInverse MLE: {mle_inv_id}\nscikit MLE: {mlex_id}")
 
-    # print(f"ID: geomle={max(geomle_id)}, twonn={twonn_id}")¬
+    return math.ceil(mlex_id)
 
-    return
 
     n_components = 2 ** np.arange(1, 11)
 
@@ -225,10 +224,11 @@ def main(params):
     # assert type(ckpt_epoch_list) == list, "The variable 'ckpt_epoch_list' must be a list."
     # assert len(signs) == len(ckpt_epoch_list), "Every sign pair needs to have a corresponding checkpoint."
 
+    intr_dims = []
     for i, sign in enumerate(signs):
-        dim_red(specific_glosses=[reference_sign, sign],
-                config=config,
-                fig_output_root=fig_output_root)
+        intr_dims.append(dim_red(specific_glosses=[reference_sign, sign], config=config, fig_output_root=fig_output_root))
+
+    print(f"Intrinsic dimensions for reference sign {reference_sign}: {intr_dims}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
