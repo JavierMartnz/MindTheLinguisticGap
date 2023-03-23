@@ -158,7 +158,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     mle_id = mle_normal(pd.DataFrame(X_features), average=True)
 
     mle_corr_id = mle(X_features, average=True)
-    mle_inv_id = mle_inverse_singlek(X_features, k1=20, average=True)
+    mle_inv_id = mle_inverse_singlek(X_features, k1=20)
 
     mlex_id = MLE().fit_transform(X_features)
 
