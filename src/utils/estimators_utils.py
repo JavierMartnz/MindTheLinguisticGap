@@ -145,7 +145,7 @@ def update_nn(anchor_loader, anchor_start_idx, new_img_loader, new_start_idx, nn
             abatch = abatch.cuda()
 
             new_img_counter = new_start_idx
-            for newbatch, _ in new_img_loader:
+            for newbatch in new_img_loader:
                 newbatch = newbatch.cuda()
 
                 nn_computer(abatch, anchor_counter, newbatch, new_img_counter)
