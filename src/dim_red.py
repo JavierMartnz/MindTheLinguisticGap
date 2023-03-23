@@ -154,6 +154,9 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu().numpy()
 
+    mle_id = mle(X_features, average=True)
+
+    mlex_id = MLE().fit_transform(X_features)
     mle2_id = MLE().fit_transform(X_features, n_neighbors=2)
     mle3_id = MLE().fit_transform(X_features, n_neighbors=3)
     mle5_id = MLE().fit_transform(X_features, n_neighbors=5)
@@ -162,7 +165,9 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     geomle_id = geomle(pd.DataFrame(X_features))
     twonn_id = TwoNN().fit_transform(X_features)
 
-    print(f"ID MLE:\nk=2\t{mle2_id}\nk=3\t{mle3_id}\nk=5\t{mle5_id}\nk=10\t{mle10_id}\nk=20\t{mle20_id}")
+    print(f"ID mle: {mle_id}")
+
+    print(f"ID MLE:std={mlex_id}\nk=2\t{mle2_id}\nk=3\t{mle3_id}\nk=5\t{mle5_id}\nk=10\t{mle10_id}\nk=20\t{mle20_id}")
 
     print(f"ID: geomle={max(geomle_id)}, twonn={twonn_id}")
 
