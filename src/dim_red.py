@@ -154,11 +154,11 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu().numpy()
 
-    mle2_id = MLE().fit_transform(X_features, k=2)
-    mle3_id = MLE().fit_transform(X_features, k=3)
-    mle5_id = MLE().fit_transform(X_features, k=5)
-    mle10_id = MLE().fit_transform(X_features, k=10)
-    mle20_id = MLE().fit_transform(X_features, k=20)
+    mle2_id = MLE().fit_transform(X_features, n_neighbors=2)
+    mle3_id = MLE().fit_transform(X_features, n_neighbors=3)
+    mle5_id = MLE().fit_transform(X_features, n_neighbors=5)
+    mle10_id = MLE().fit_transform(X_features, n_neighbors=10)
+    mle20_id = MLE().fit_transform(X_features, n_neighbors=20)
     geomle_id = geomle(pd.DataFrame(X_features))
     twonn_id = TwoNN().fit_transform(X_features)
 
