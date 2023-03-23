@@ -141,7 +141,7 @@ def update_nn(anchor_loader, anchor_start_idx, new_img_loader, new_start_idx, nn
     anchor_counter = anchor_start_idx
     # ignoring the labels
     with torch.no_grad():
-        for n, (abatch, _) in enumerate(anchor_loader):
+        for n, abatch in enumerate(anchor_loader):
             abatch = abatch.cuda()
 
             new_img_counter = new_start_idx
