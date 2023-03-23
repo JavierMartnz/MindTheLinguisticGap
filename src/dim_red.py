@@ -28,7 +28,7 @@ from umap import UMAP
 from pacmap import PaCMAP
 from src.utils.geomle import geomle
 from src.utils.mle import mle as mle_normal
-from src.utils.corrected_mle import mle, mle_inverse_singlek
+from src.utils.corrected_mle import mle, mle_inverse_singlek, mle_inverse_singlek_loop
 from src.utils.twonn import twonn_dimension as twonn
 from skdim.id import MLE, TwoNN, lPCA
 
@@ -155,19 +155,14 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu()
 
-    mle_id = mle_normal(pd.DataFrame(X_features), average=True)
-
-    mle_corr_id = mle(X_features, average=True)
-    mle_inv_id = mle_inverse_singlek(X_features, k1=20)
-
+    mle_id, _ = mle_normal(pd.DataFrame(X_features), k1=5, k2=20, average=True)
+    mle_inv_id = mle_inverse_singlek_loop(X_features, k1=5, k2=20, k_step=5, average=True)
     mlex_id = MLE().fit_transform(X_features)
 
-    print(f"ID file MLE: {mle_id}")
-    print(f"ID corrected file MLE: {mle_corr_id}")
-    print(f"ID inverse estimate MLE: {mle_inv_id}")
-    print(f"ID scikit MLE: {mlex_id}")
+    # mle_corr_id = mle(X_features, average=True)
+    # mle_inv_id = mle_inverse_singlek(X_features, k1=20)
 
-
+    print(f"Intrinsic dimensions:\nMLE: {mle_id}\nInverse MLE: {mle_inv_id}\nscikit MLE: {mlex_id}")
 
     # print(f"ID: geomle={max(geomle_id)}, twonn={twonn_id}")¬
 
