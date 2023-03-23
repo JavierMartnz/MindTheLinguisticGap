@@ -154,7 +154,7 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu().numpy()
 
-    mle_id = mle(X_features, average=True)
+    mle_id = mle(pd.DataFrame(X_features), average=True)
 
     mlex_id = MLE().fit_transform(X_features)
     mle2_id = MLE().fit_transform(X_features, n_neighbors=2)
