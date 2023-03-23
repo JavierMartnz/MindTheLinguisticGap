@@ -30,7 +30,7 @@ from src.utils.geomle import geomle
 from src.utils.mle import mle as mle_normal
 from src.utils.corrected_mle import mle, mle_inverse_singlek, mle_inverse_singlek_loop
 from src.utils.twonn import twonn_dimension as twonn
-from skdim.id import MLE, TwoNN, lPCA
+from skdim.id import MLE, TwoNN, lPCA, DANCo
 import math
 
 def stress(X_pred, X):
@@ -155,16 +155,18 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
     X_features = X_features.detach().cpu()
 
-    mle_id, _ = mle_normal(pd.DataFrame(X_features), k1=5, k2=20, average=True)
-    mle_inv_id = mle_inverse_singlek_loop(X_features, k1=5, k2=20, k_step=5, average=True)
-    mlex_id = MLE().fit_transform(X_features)
-
+    # mle_id, _ = mle_normal(pd.DataFrame(X_features), k1=5, k2=20, average=True)
+    # mle_inv_id = mle_inverse_singlek_loop(X_features, k1=5, k2=20, k_step=5, average=True)
     # mle_corr_id = mle(X_features, average=True)
     # mle_inv_id = mle_inverse_singlek(X_features, k1=20)
 
-    # print(f"Intrinsic dimensions:\nMLE: {mle_id}\nInverse MLE: {mle_inv_id}\nscikit MLE: {mlex_id}")
+    mle_id = MLE().fit_transform(X_features)
+    danco_id = DANCo().fit_transform(X_features)
+    lpca_id = lPCA().fit_transform(X_features)
 
-    return math.ceil(mlex_id)
+    print(f"Intrinsic dimensions:\nMLE={mle_id}\nDANCo={danco_id}\nlPCA={lpca_id}")
+
+    return math.ceil(mle_id)
 
 
     n_components = 2 ** np.arange(1, 11)
@@ -228,7 +230,7 @@ def main(params):
     for i, sign in enumerate(signs):
         intr_dims.append(dim_red(specific_glosses=[reference_sign, sign], config=config, fig_output_root=fig_output_root))
 
-    print(f"Intrinsic dimensions for reference sign {reference_sign}: {intr_dims}")
+    # print(f"Intrinsic dimensions for reference sign {reference_sign}: {intr_dims}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
