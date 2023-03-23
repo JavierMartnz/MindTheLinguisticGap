@@ -161,12 +161,12 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     # mle_inv_id = mle_inverse_singlek(X_features, k1=20)
 
     mle_id = MLE().fit_transform(X_features)
-    danco_id = DANCo().fit_transform(X_features)
-    lpca_id = lPCA().fit_transform(X_features)
+    # danco_id = DANCo().fit_transform(X_features)
+    # lpca_id = lPCA().fit_transform(X_features)
 
-    print(f"Intrinsic dimensions:\nMLE={mle_id}\nDANCo={danco_id}\nlPCA={lpca_id}")
+    # print(f"Intrinsic dimensions:\nMLE={mle_id}\nDANCo={danco_id}\nlPCA={lpca_id}")
 
-    return math.ceil(mle_id)
+    return round(mle_id, 1)
 
 
     n_components = 2 ** np.arange(1, 11)
@@ -230,7 +230,7 @@ def main(params):
     for i, sign in enumerate(signs):
         intr_dims.append(dim_red(specific_glosses=[reference_sign, sign], config=config, fig_output_root=fig_output_root))
 
-    # print(f"Intrinsic dimensions for reference sign {reference_sign}: {intr_dims}")
+    print(f"Intrinsic dimensions between reference sign {reference_sign} and {signs}:\n{intr_dims}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
