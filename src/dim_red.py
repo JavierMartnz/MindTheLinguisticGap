@@ -29,6 +29,7 @@ from pacmap import PaCMAP
 from src.utils.geomle import geomle
 from src.utils.mle import mle
 from src.utils.twonn import twonn_dimension as twonn
+from skdim.id import MLE, TwoNN, lPCA
 
 
 def stress(X_pred, X):
@@ -151,11 +152,11 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
                     else:
                         X_features = torch.cat((X_features, features.squeeze()), dim=0)
 
-    X_features = X_features.detach().cpu()
+    X_features = X_features.detach().cpu().numpy()
 
-    mle_id = mle(pd.DataFrame(X_features), average=True)
+    mle_id = MLE().fit_transform(X_features)
     geomle_id = geomle(pd.DataFrame(X_features))
-    twonn_id = twonn(X_features)
+    twonn_id = TwoNN().fit_transform(X_features)
 
     print(f"ID: mle={mle_id}, geomle={max(geomle_id)}, twonn={twonn_id}")
 
