@@ -55,7 +55,7 @@ def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
 
     clip_durations = []
     for clip in tqdm(cngt_clips):
-        clip_durations.append(count_video_frames(clip))
+        clip_durations.append(count_video_frames(os.path.join(cngt_root,clip)))
 
     print_stats(clip_durations, framerate, "CNGT", fig_output_root)
 
