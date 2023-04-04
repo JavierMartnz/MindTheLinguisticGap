@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import seaborn as sns
 
+from src.utils.util import load_gzip
 
 def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
@@ -42,14 +43,21 @@ def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_r
     plt.savefig(os.path.join(fig_output_root, f"{dataset}_clips_duration_{framerate}fps.png"))
 
 def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
-    cngt_clips = [file for file in os.listdir(cngt_root) if file.endswith('mpg') or file.endswith('.mov')]
+    # cngt_clips = [file for file in os.listdir(cngt_root) if file.endswith('mpg') or file.endswith('.mov')]
+
+    # clip_durations = []
+    # for clip in tqdm(cngt_clips):
+    #     start_ms = int(clip.split("_")[4])
+    #     end_ms = int(clip.split("_")[5])
+    #     n_frames = math.ceil(framerate * (end_ms - start_ms) / 1000)
+    #     clip_durations.append(n_frames)
+
+    cngt_metadata = [file.replace("mpg", "gzip") for file in os.listdir(cngt_root) if file.endswith('mpg') or file.endswith('.mov')]
 
     clip_durations = []
-    for clip in tqdm(cngt_clips):
-        start_ms = int(clip.split("_")[4])
-        end_ms = int(clip.split("_")[5])
-        n_frames = math.ceil(framerate * (end_ms - start_ms) / 1000)
-        clip_durations.append(n_frames)
+    for file in cngt_metadata:
+        file_metadata = load_gzip(file)
+        clip_durations.append(file_metadata["num_frames"])
 
     print_stats(clip_durations, framerate, "CNGT", fig_output_root)
 
