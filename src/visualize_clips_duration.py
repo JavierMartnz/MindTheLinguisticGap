@@ -8,10 +8,12 @@ import argparse
 import statistics
 from pathlib import Path
 import subprocess
+import seaborn as sns
 
 
 def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+    colors = sns.color_palette('pastel')
 
     upper_quartile = np.percentile(clip_durations, 75)
     lower_quartile = np.percentile(clip_durations, 25)
@@ -27,7 +29,7 @@ def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_r
     ax_box.boxplot(clip_durations, showfliers=False, vert=False)
     ax_box.set_yticks([])
 
-    ax_hist.hist(clip_durations, bins='auto', align='mid')
+    ax_hist.hist(clip_durations, bins='auto', align='mid', color=colors[0])
 
     plt.xlim([lower_whisker - 1, upper_whisker + 1])
     plt.gca().set_xticks(np.linspace(lower_whisker - 1, upper_whisker + 1, num=8, dtype=int))
@@ -86,7 +88,7 @@ def main(params):
     assert os.path.exists(sb_root), f"{sb_root} doesn't exist, please make sure the given root is correct"
 
     get_stats_cngt(cngt_root, framerate, fig_output_root)
-    get_stats_signbank(sb_root, framerate, fig_output_root)
+    # get_stats_signbank(sb_root, framerate, fig_output_root)
 
 
 if __name__ == "__main__":
