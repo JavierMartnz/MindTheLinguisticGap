@@ -33,7 +33,7 @@ def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_r
 
     plt.xlim([lower_whisker - 1, upper_whisker + 1])
     plt.gca().set_xticks(np.linspace(lower_whisker - 1, upper_whisker + 1, num=8, dtype=int))
-    plt.suptitle(f"Number of frames per clip in {dataset} at {framerate} fps")
+    # plt.suptitle(f"Number of frames per clip in {dataset} at {framerate} fps")
     plt.ylabel("Number of clips")
     plt.xlabel("Number of frames")
     plt.tight_layout()
