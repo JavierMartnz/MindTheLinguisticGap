@@ -9,7 +9,8 @@ import statistics
 from pathlib import Path
 import subprocess
 import seaborn as sns
-
+import sys
+sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 from src.utils.util import load_gzip
 
 def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_root: str):
