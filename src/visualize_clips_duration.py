@@ -41,7 +41,6 @@ def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_r
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, f"{dataset}_clips_duration_{framerate}fps.png"))
 
-
 def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
     cngt_clips = [file for file in os.listdir(cngt_root) if file.endswith('mpg') or file.endswith('.mov')]
 
@@ -52,7 +51,7 @@ def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
         n_frames = math.ceil(framerate * (end_ms - start_ms) / 1000)
         clip_durations.append(n_frames)
 
-    print_stats(clip_durations, clip_durations, "CNGT", fig_output_root)
+    print_stats(clip_durations, framerate, "CNGT", fig_output_root)
 
 
 def get_stats_signbank(signbank_root: str, framerate: int, fig_output_root: str):
