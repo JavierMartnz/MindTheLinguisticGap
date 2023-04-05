@@ -44,6 +44,8 @@ def resize_video(video_path, output_root, video_size, framerate, window_size=Non
 
             # also copy the annotation file to the output folder
             ann_path = video_path[:video_path.rfind(".mpg")] + ".eaf"
+            if not os.path.exists(ann_path):
+                print(f"{ann_path} does not exist, therefore can't be copied")
             ann_dest_path = os.path.join(output_root, os.path.basename(ann_path))
             shutil.copy(ann_path, ann_dest_path)
 
