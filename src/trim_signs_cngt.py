@@ -150,19 +150,6 @@ def process_file_for_trimming(file, cngt_root, cngt_output_root, signbank_vocab_
                                      sb_vocab['gloss_to_id'][interval.data],
                                      cngt_output_root)
 
-        # if a trimmed file was created, save the corresponding metadata
-        if trimmed_filename is not None:
-            # we can extract the number of frames needed by using the filenames and the framerate
-            _, start_ms, end_ms, _, _ = trimmed_filename.split('_')
-            num_trimmed_frames = math.ceil(framerate/1000*(end_ms - start_ms))
-            # we create metadata that will be helpful for the loading
-            metadata = {"num_frames": num_trimmed_frames, "start_frames": []}
-            num_clips = math.ceil(num_trimmed_frames / window_size)
-            for j in range(num_clips):
-                metadata["start_frames"].append(j * window_size)
-
-            save_gzip(metadata, trimmed_filename[:trimmed_filename.rfind(".m")] + ".gzip")
-
     # right_intervalTree = IntervalTree()
 
     # if glosses_righth:

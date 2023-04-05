@@ -31,13 +31,13 @@ def resize_video(video_path, output_root, video_size, framerate, window_size=Non
             os.system(cmd)
 
             # save the metadata for data loading
-            num_frames = count_video_frames(output_filename)
-            metadata = {"num_frames": num_frames, "start_frames": []}
-            num_clips = math.ceil(num_frames / window_size)
-            for j in range(num_clips):
-                metadata["start_frames"].append(j * window_size)
-
-            save_gzip(metadata, output_filename[:-3] + 'gzip')
+            # num_frames = count_video_frames(output_filename)
+            # metadata = {"num_frames": num_frames, "start_frames": []}
+            # num_clips = math.ceil(num_frames / window_size)
+            # for j in range(num_clips):
+            #     metadata["start_frames"].append(j * window_size)
+            #
+            # save_gzip(metadata, output_filename[:-3] + 'gzip')
         else:
             cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -preset ultrafast {output_filename}'
             os.system(cmd)
