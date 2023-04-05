@@ -28,14 +28,17 @@ def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_r
 
     f, (ax_box, ax_hist) = plt.subplots(2, sharex=True, gridspec_kw={"height_ratios": (.20, .80)})
 
-    ax_box.boxplot(clip_durations, showfliers=False, vert=False)
+    x_ticks = np.arange(lower_whisker - 1, upper_whisker + 1)
+    x_labels = [tick if tick % 2 != 0 else "" for tick in x_ticks]
+
+    ax_box.boxplot(clip_durations, showfliers=False, vert=False, showmeans=True)
     ax_box.set_yticks([])
 
-    ax_hist.hist(clip_durations, bins='auto', align='mid', color=colors[0])
+    ax_hist.hist(clip_durations, bins=np.arange(lower_whisker - 1, upper_whisker + 1) - 0.5, align='mid', color=colors[0])
 
     plt.xlim([lower_whisker - 1, upper_whisker + 1])
-    plt.gca().set_xticks(np.linspace(lower_whisker - 1, upper_whisker + 1, num=8, dtype=int))
-    # plt.suptitle(f"Number of frames per clip in {dataset} at {framerate} fps")
+    plt.gca().set_xticks(x_ticks)
+    plt.gca().set_xticklabels(x_labels)
     plt.ylabel("Number of clips")
     plt.xlabel("Number of frames")
     plt.tight_layout()
@@ -46,16 +49,12 @@ def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_r
 def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
     cngt_clips = [file for file in os.listdir(cngt_root) if file.endswith('mpg') or file.endswith('.mov')]
 
-    # clip_durations = []
-    # for clip in tqdm(cngt_clips):
-    #     start_ms = int(clip.split("_")[4])
-    #     end_ms = int(clip.split("_")[5])
-    #     n_frames = math.ceil(framerate * (end_ms - start_ms) / 1000)
-    #     clip_durations.append(n_frames)
-
     clip_durations = []
     for clip in tqdm(cngt_clips):
-        clip_durations.append(count_video_frames(os.path.join(cngt_root,clip)))
+        start_ms = int(clip.split("_")[4])
+        end_ms = int(clip.split("_")[5])
+        n_frames = math.ceil(framerate * (end_ms - start_ms) / 1000)
+        clip_durations.append(n_frames)
 
     print_stats(clip_durations, framerate, "CNGT", fig_output_root)
 
@@ -93,7 +92,7 @@ def main(params):
     assert os.path.exists(sb_root), f"{sb_root} doesn't exist, please make sure the given root is correct"
 
     get_stats_cngt(cngt_root, framerate, fig_output_root)
-    # get_stats_signbank(sb_root, framerate, fig_output_root)
+    get_stats_signbank(sb_root, framerate, fig_output_root)
 
 
 if __name__ == "__main__":
