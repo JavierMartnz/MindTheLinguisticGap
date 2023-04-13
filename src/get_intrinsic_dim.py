@@ -151,31 +151,38 @@ def get_id(specific_glosses: list, config: dict):
 
     X_features = X_features.detach().cpu()
 
+    print(f"Intrinsic dimensions for binary classification of {specific_glosses}:")
+
     mle_id, _ = mle_normal(pd.DataFrame(X_features), k1=5, k2=20, average=True)
+    # mle_id = MLE().fit_transform(X_features)
     # mle_inv_id = mle_inverse_singlek_loop(X_features, k1=5, k2=20, k_step=5, average=True)
     # mle_corr_id = mle(X_features, average=True)
     # mle_inv_id = mle_inverse_singlek(X_features, k1=20)
+    print(f"MLE={round(np.mean(mle_id),2)}")
 
-    # mle_id = MLE().fit_transform(X_features)
-    danco_id = id.DANCo().fit_transform(X_features)
-    mindmli_id = id.MiND_ML(ver='MLi').fit_transform(X_features)
-    mindmlk_id = id.MiND_ML(ver='MLk').fit_transform(X_features)
-    lpca_id = id.lPCA().fit_transform(X_features)
-    mom_id = id.MOM().fit_transform(X_features)
-    tle_id = id.TLE().fit_transform(X_features)
-    ess_id = id.ESS().fit_transform(X_features)
     twonn_id = id.twoNN().fit_transform(X_features)
+    print(f"TwoNN={round(twonn_id, 2)}")
 
-    print(f"Intrinsic dimensions for binary classification of {specific_glosses}:"
-          f"\nMLE={round(np.mean(mle_id),2)}"
-          f"\nDANCo={round(danco_id, 2)}"
-          f"\nlPCA={round(lpca_id, 2)}"
-          f"\nMiND_MLk={round(mindmlk_id, 2)}"
-          f"\nMiND_MLi={round(mindmli_id, 2)}"
-          f"\nMOM={round(mom_id, 2)}"
-          f"\nTLE={round(tle_id, 2)}"
-          f"\nESS={round(ess_id, 2)}"
-          f"\nTwoNN={round(twonn_id, 2)}")
+    danco_id = id.DANCo().fit_transform(X_features)
+    print(f"DANCo={round(danco_id, 2)}")
+
+    mindmli_id = id.MiND_ML(ver='MLi').fit_transform(X_features)
+    print(f"MiND_MLi={round(mindmli_id, 2)}")
+
+    mindmlk_id = id.MiND_ML(ver='MLk').fit_transform(X_features)
+    print(f"MiND_MLk={round(mindmlk_id, 2)}")
+
+    lpca_id = id.lPCA().fit_transform(X_features)
+    print(f"lPCA={round(lpca_id, 2)}")
+
+    mom_id = id.MOM().fit_transform(X_features)
+    print(f"MoM={round(mom_id, 2)}")
+
+    tle_id = id.TLE().fit_transform(X_features)
+    print(f"TLE={round(tle_id, 2)}")
+
+    ess_id = id.ESS().fit_transform(X_features)
+    print(f"ESS={round(ess_id, 2)}")
 
     return
 
