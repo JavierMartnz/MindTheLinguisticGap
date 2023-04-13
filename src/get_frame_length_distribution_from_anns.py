@@ -60,7 +60,7 @@ def main(params):
                 start_ms, stop_ms, gloss = ann[0], ann[1], ann[2]
                 parsed_gloss = parse_cngt_gloss(gloss, sb_vocab)
 
-                if parsed_gloss in sb_vocab['gloss_to_id'] and end_ms - start_ms != 0:
+                if parsed_gloss in sb_vocab['gloss_to_id'] and stop_ms - start_ms != 0:
                     # for every annotation on the left hand, check for overlap with another annotation
                     overlaps = merged_intervalTree.overlap(start_ms, stop_ms)
                     if overlaps:

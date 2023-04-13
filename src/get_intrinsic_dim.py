@@ -19,17 +19,14 @@ from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.util import load_gzip, save_gzip
 from scipy.spatial import distance
-from sklearn.decomposition import PCA, TruncatedSVD, KernelPCA
-from sklearn.manifold import MDS, Isomap, trustworthiness
 from pathlib import Path
 from torchvision import transforms
 import seaborn as sns
-from umap import UMAP
 from src.utils.geomle import geomle
 from src.utils.mle import mle as mle_normal
 from src.utils.corrected_mle import mle, mle_inverse_singlek, mle_inverse_singlek_loop
 from src.utils.twonn import twonn_dimension as twonn
-from skdim.id import MLE, TwoNN, lPCA, DANCo
+from skdim import idd
 import math
 
 def stress(X_pred, X):
@@ -160,13 +157,23 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
     # mle_inv_id = mle_inverse_singlek(X_features, k1=20)
 
     # mle_id = MLE().fit_transform(X_features)
-    danco_id = DANCo().fit_transform(X_features)
-    lpca_id = lPCA().fit_transform(X_features)
+    danco_id = id.DANCo().fit_transform(X_features)
+    mindmli_id = id.MiND_ML(ver='MLi').fit_transform(X_features)
+    mindmlk_id = id.MiND_ML(ver='MLk').fit_transform(X_features)
+    lpca_id = id.lPCA().fit_transform(X_features)
+    mom_id = id.MOM().fit_transform(X_features)
+    tle_id = id.TLE().fit_transform(X_features)
 
+    print(f"Intrinsic dimensions for binary classification of {specific_glosses}:"
+          f"\nMLE={mle_id}"
+          f"\nDANCo={danco_id}"
+          f"\nlPCA={lpca_id}"
+          f"\nMiND_MLk={mindmlk_id}"
+          f"\nMiND_MLi={mindmli_id}"
+          f"\nMOM={mom_id}"
+          f"\nTLE={tle_id}")
 
-    print(f"Intrinsic dimensions for binary classification of {specific_glosses}:\nMLE={mle_id}\nDANCo={danco_id}\nlPCA={lpca_id}")
-
-    return round(mle_id, 1)
+    return
 
 def main(params):
     config_path = params.config_path
@@ -183,11 +190,11 @@ def main(params):
     # assert type(ckpt_epoch_list) == list, "The variable 'ckpt_epoch_list' must be a list."
     # assert len(signs) == len(ckpt_epoch_list), "Every sign pair needs to have a corresponding checkpoint."
 
-    intr_dims = []
+    # intr_dims = []
     for i, sign in enumerate(signs):
-        intr_dims.append(dim_red(specific_glosses=[reference_sign, sign], config=config, fig_output_root=fig_output_root))
+        dim_red(specific_glosses=[reference_sign, sign], config=config, fig_output_root=fig_output_root)
 
-    print(f"Intrinsic dimensions between reference sign {reference_sign} and {signs}:\n{intr_dims}")
+    # print(f"Intrinsic dimensions between reference sign {reference_sign} and {signs}:\n{intr_dims}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
