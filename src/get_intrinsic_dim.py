@@ -36,7 +36,7 @@ def stress(X_pred, X):
     # stress formula from http://analytictech.com/networks/mds.htm
     return np.sqrt(sum((pred_dist - orig_dist) ** 2) / sum(orig_dist ** 2))
 
-def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
+def get_id(specific_glosses: list, config: dict):
 
     pca_config = config.get("pca")
     data_config = config.get("data")
@@ -177,22 +177,18 @@ def dim_red(specific_glosses: list, config: dict, fig_output_root: str):
 
 def main(params):
     config_path = params.config_path
-    fig_output_root = params.fig_output_root
 
     config = load_config(config_path)
     pca_config = config.get("pca")
 
     reference_sign = pca_config.get("reference_sign")
     signs = pca_config.get("signs")
-    # ckpt_epoch_list = pca_config.get("ckpt_epoch_list")
 
     assert type(signs) == list, "The variable 'train_signs' must be a list."
-    # assert type(ckpt_epoch_list) == list, "The variable 'ckpt_epoch_list' must be a list."
-    # assert len(signs) == len(ckpt_epoch_list), "Every sign pair needs to have a corresponding checkpoint."
 
     # intr_dims = []
     for i, sign in enumerate(signs):
-        dim_red(specific_glosses=[reference_sign, sign], config=config, fig_output_root=fig_output_root)
+        get_id(specific_glosses=[reference_sign, sign], config=config)
 
     # print(f"Intrinsic dimensions between reference sign {reference_sign} and {signs}:\n{intr_dims}")
 
