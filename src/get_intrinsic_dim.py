@@ -160,7 +160,7 @@ def get_id(specific_glosses: list, config: dict):
     # mle_inv_id = mle_inverse_singlek(X_features, k1=20)
     print(f"MLE={round(np.mean(mle_id),2)}")
 
-    twonn_id = id.twoNN().fit_transform(X_features)
+    twonn_id = id.TwoNN().fit_transform(X_features)
     print(f"TwoNN={round(twonn_id, 2)}")
 
     danco_id = id.DANCo().fit_transform(X_features)
