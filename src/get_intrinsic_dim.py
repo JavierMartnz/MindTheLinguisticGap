@@ -26,7 +26,7 @@ from src.utils.geomle import geomle
 from src.utils.mle import mle as mle_normal
 from src.utils.corrected_mle import mle, mle_inverse_singlek, mle_inverse_singlek_loop
 from src.utils.twonn import twonn_dimension as twonn
-from skdim import idd
+from skdim import id
 import math
 
 def stress(X_pred, X):
