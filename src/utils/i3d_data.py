@@ -26,7 +26,6 @@ def filter_top_glosses(gloss_ids: list, k: int, top_gloss_ids=None) -> tuple:
     """
     Given a list of gloss IDs, return the top k most frequent IDs. If 'top_gloss_ids' is given, filter the input 'gloss_ids' based on its
     content rather than counting the most frequent.
-
     Args:
         gloss_ids: list of gloss ids to be filtered
         k: the number of most frequent ids to be returned
@@ -55,7 +54,6 @@ def video_to_tensor(pic):
     Convert a ``numpy.ndarray`` to tensor.
     Converts a numpy.ndarray (T x H x W x C)
     to a torch.FloatTensor of shape (C x T x H x W)
-
     Args:
          pic (numpy.ndarray): Video to be converted to tensor.
     Returns:
@@ -67,7 +65,6 @@ def video_to_tensor(pic):
 def load_rgb_frames(video_path: str, start_frame: int, window_size=64):
     """
     Given a path to a video file, load T rgb frames given by 'window_size', starting from frame 'start_frame'
-
     Args:
         video_path: full path to video file
         start_frame: number of starting frame
@@ -243,8 +240,7 @@ def build_stratified_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vo
 
 
 def build_balanced_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab: dict, mode: str,
-                           class_encodings: dict, framerate: int, window_size: int, split: str, random_seed: int) -> list:
-
+                           class_encodings: dict, window_size: int, split: str, random_seed: int) -> list:
     gloss_to_id = sb_vocab['gloss_to_id']
 
     class_cnt_dict = {}
@@ -252,13 +248,9 @@ def build_balanced_dataset(cngt_video_paths: list, sb_video_paths: list, sb_voca
 
     # count the total number of frames that each class will have, separate the video paths into classes
     for cngt_video_path in cngt_video_paths:
-        # get the start and end time from the filename
-        _, start_ms, end_ms, _, _ = os.path.basename(cngt_video_path).split('_')
-        # calculate the number of frames based on that times and the framerate
-        num_frames = math.ceil(framerate/1000*(end_ms - start_ms))
 
-        # metadata = load_gzip(cngt_video_path[:cngt_video_path.rfind(".m")] + ".gzip")
-        # num_frames = metadata.get("num_frames")
+        metadata = load_gzip(cngt_video_path[:cngt_video_path.rfind(".m")] + ".gzip")
+        num_frames = metadata.get("num_frames")
 
         gloss_id = int(cngt_video_path.split("_")[-1][:-4])
         gloss = list(gloss_to_id.keys())[list(gloss_to_id.values()).index(gloss_id)]
@@ -477,7 +469,7 @@ def build_random_dataset(cngt_video_paths: list, sb_video_paths: list, sb_vocab:
 
 
 def build_dataset(loading_mode: str, cngt_root: str, sb_root: str, sb_vocab_path: str, mode: str,
-                  class_encodings: dict, framerate: int, window_size: int, split: str, clips_per_class: int, random_seed: int) -> list:
+                  class_encodings: dict, window_size: int, split: str, clips_per_class: int, random_seed: int) -> list:
     assert split in {"train", "val", "test"}, "The splits can only have value 'train', 'val', and 'test'."
 
     classes = list(class_encodings.keys())
@@ -518,11 +510,11 @@ def build_dataset(loading_mode: str, cngt_root: str, sb_root: str, sb_vocab_path
         sb_video_paths = [os.path.join(sb_root, video) for video in sb_videos if int(video.split("-")[-1][:-4]) in classes]
 
     if loading_mode == "random":
-        dataset = build_random_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, framerate, window_size, split, random_seed)
+        dataset = build_random_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split, random_seed)
     elif loading_mode == "balanced":
-        dataset = build_balanced_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, framerate, window_size, split, random_seed)
+        dataset = build_balanced_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split, random_seed)
     elif loading_mode == "stratified":
-        dataset = build_stratified_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, framerate, window_size, split, random_seed)
+        dataset = build_stratified_dataset(cngt_video_paths, sb_video_paths, sb_vocab, mode, class_encodings, window_size, split, random_seed)
 
     return dataset
 
@@ -567,12 +559,11 @@ class I3Dataset(data_utl.Dataset):
         assert loading_mode in {'random', 'balanced', 'stratified'}, "The 'loading_mode' argument must have values 'random', 'balanced', 'stratified'"
         assert mode in {'rgb', 'flow'}, "The 'mode' argument must have values 'rgb' or 'flow'"
 
-        self.framerate = 25
         self.mode = mode
         self.class_encodings = get_class_encodings(cngt_root, sb_root, filter_num, specific_gloss_ids)
         self.window_size = window_size
         self.transforms = transforms
-        self.data = build_dataset(loading_mode, cngt_root, sb_root, sb_vocab_path, mode, self.class_encodings, self.framerate, window_size, split, clips_per_class, random_seed)
+        self.data = build_dataset(loading_mode, cngt_root, sb_root, sb_vocab_path, mode, self.class_encodings, window_size, split, clips_per_class, random_seed)
 
     def __getitem__(self, index):
         video_path, label, num_frames, start_frame = self.data[index]
