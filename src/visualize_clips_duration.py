@@ -8,10 +8,14 @@ import argparse
 import statistics
 from pathlib import Path
 import subprocess
-
+import seaborn as sns
+import sys
+sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
+from src.utils.util import count_video_frames
 
 def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_root: str):
     plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+    colors = sns.color_palette('pastel')
 
     upper_quartile = np.percentile(clip_durations, 75)
     lower_quartile = np.percentile(clip_durations, 25)
@@ -24,21 +28,23 @@ def print_stats(clip_durations: list, framerate: int, dataset: str, fig_output_r
 
     f, (ax_box, ax_hist) = plt.subplots(2, sharex=True, gridspec_kw={"height_ratios": (.20, .80)})
 
-    ax_box.boxplot(clip_durations, showfliers=False, vert=False)
+    x_ticks = np.arange(lower_whisker - 1, upper_whisker + 1)
+    x_labels = [tick if tick % 2 != 0 else "" for tick in x_ticks]
+
+    ax_box.boxplot(clip_durations, showfliers=False, vert=False, showmeans=True)
     ax_box.set_yticks([])
 
-    ax_hist.hist(clip_durations, bins='auto', align='mid')
+    ax_hist.hist(clip_durations, bins=np.arange(lower_whisker - 1, upper_whisker + 1) - 0.5, align='mid', color=colors[0])
 
     plt.xlim([lower_whisker - 1, upper_whisker + 1])
-    plt.gca().set_xticks(np.linspace(lower_whisker - 1, upper_whisker + 1, num=8, dtype=int))
-    plt.suptitle(f"Number of frames per clip in {dataset} at {framerate} fps")
+    plt.gca().set_xticks(x_ticks)
+    plt.gca().set_xticklabels(x_labels)
     plt.ylabel("Number of clips")
     plt.xlabel("Number of frames")
     plt.tight_layout()
 
     os.makedirs(fig_output_root, exist_ok=True)
     plt.savefig(os.path.join(fig_output_root, f"{dataset}_clips_duration_{framerate}fps.png"))
-
 
 def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
     cngt_clips = [file for file in os.listdir(cngt_root) if file.endswith('mpg') or file.endswith('.mov')]
@@ -50,7 +56,7 @@ def get_stats_cngt(cngt_root: str, framerate: int, fig_output_root: str):
         n_frames = math.ceil(framerate * (end_ms - start_ms) / 1000)
         clip_durations.append(n_frames)
 
-    print_stats(clip_durations, clip_durations, "CNGT", fig_output_root)
+    print_stats(clip_durations, framerate, "CNGT", fig_output_root)
 
 
 def get_stats_signbank(signbank_root: str, framerate: int, fig_output_root: str):
