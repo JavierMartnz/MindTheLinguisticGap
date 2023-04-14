@@ -157,24 +157,18 @@ def get_id(specific_glosses: list, config: dict):
     # mle_inv_id = mle_inverse_singlek(X_features, k1=20)
 
     # mle_id = MLE().fit_transform(X_features)
-    danco_id = id.DANCo().fit_transform(X_features)
-    mindmli_id = id.MiND_ML(ver='MLi').fit_transform(X_features)
-    mindmlk_id = id.MiND_ML(ver='MLk').fit_transform(X_features)
-    lpca_id = id.lPCA().fit_transform(X_features)
-    mom_id = id.MOM().fit_transform(X_features)
-    tle_id = id.TLE().fit_transform(X_features)
-    ess_id = id.ESS().fit_transform(X_features)
+    # danco_id = id.DANCo().fit_transform(X_features)
     twonn_id = id.twoNN().fit_transform(X_features)
+    # mindmli_id = id.MiND_ML(ver='MLi').fit_transform(X_features)
+    # mindmlk_id = id.MiND_ML(ver='MLk').fit_transform(X_features)
+    # lpca_id = id.lPCA().fit_transform(X_features)
+    # mom_id = id.MOM().fit_transform(X_features)
+    # tle_id = id.TLE().fit_transform(X_features)
+    # ess_id = id.ESS().fit_transform(X_features)
+    # twonn_id = id.twoNN().fit_transform(X_features)
 
     print(f"Intrinsic dimensions for binary classification of {specific_glosses}:"
           f"\nMLE={round(np.mean(mle_id),2)}"
-          f"\nDANCo={round(danco_id, 2)}"
-          f"\nlPCA={round(lpca_id, 2)}"
-          f"\nMiND_MLk={round(mindmlk_id, 2)}"
-          f"\nMiND_MLi={round(mindmli_id, 2)}"
-          f"\nMOM={round(mom_id, 2)}"
-          f"\nTLE={round(tle_id, 2)}"
-          f"\nESS={round(ess_id, 2)}"
           f"\nTwoNN={round(twonn_id, 2)}")
 
     return
