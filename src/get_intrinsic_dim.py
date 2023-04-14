@@ -158,7 +158,7 @@ def get_id(specific_glosses: list, config: dict):
 
     # mle_id = MLE().fit_transform(X_features)
     # danco_id = id.DANCo().fit_transform(X_features)
-    twonn_id = id.twoNN().fit_transform(X_features)
+    twonn_id = id.TwoNN().fit_transform(X_features)
     # mindmli_id = id.MiND_ML(ver='MLi').fit_transform(X_features)
     # mindmlk_id = id.MiND_ML(ver='MLk').fit_transform(X_features)
     # lpca_id = id.lPCA().fit_transform(X_features)
