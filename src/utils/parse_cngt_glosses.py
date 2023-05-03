@@ -51,7 +51,7 @@ def parse_cngt_gloss(gloss: str, sb_vocab):
     #     continue
 
     # remove classifiers
-    classifier_tokens = ['MOVE', 'PIVOT', 'AT', 'BE']
+    classifier_tokens = ['MOVE  ', 'PIVOT', 'AT', 'BE']
     if any([token in gloss for token in classifier_tokens]):
         return None
 
