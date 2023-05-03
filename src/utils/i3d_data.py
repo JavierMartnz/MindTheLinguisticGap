@@ -337,11 +337,15 @@ def build_balanced_dataset(cngt_video_paths: list, sb_video_paths: list, sb_voca
 
         label[label_idx] = 1
 
-        num_windows = math.ceil(num_frames / window_size)
-
-        for i in range(num_windows):
+        # if testing, we just keep 1 datapoint per test video
+        if split == 'test':
             label_dict[gloss] += 1
-            dataset.append((video_path, label, num_frames, i * window_size))
+            dataset.append((video_path, label, num_frames, 0))
+        else:
+            num_windows = math.ceil(num_frames / window_size)
+            for i in range(num_windows):
+                label_dict[gloss] += 1
+                dataset.append((video_path, label, num_frames, i * window_size))
 
     print(f"The labels and label count is {label_dict}")
 
