@@ -125,10 +125,5 @@ config_local.yaml
 *.iml
 *.xml
 *.iml
-config/predict_config.yaml
-config/predict_config.yaml
-config_local.yaml
 .idea/MindTheLinguisticGap.iml
 .idea/misc.xml
-src/utils/plot_ling_dist_dims.py
-src/utils/plot_ling_dist_dims.py
