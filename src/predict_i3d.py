@@ -7,7 +7,6 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
 import argparse
 import torch
-import torch.nn.functional as F
 from torch.autograd import Variable
 from tqdm import tqdm
 import numpy as np
@@ -15,15 +14,12 @@ from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, precisio
 from sklearn.metrics import matthews_corrcoef as MCC
 import matplotlib.pyplot as plt
 import itertools
-from torchvision.utils import save_image
 from torchvision.io import write_video
 
 from src.utils.i3d_data import I3Dataset
 from src.utils.helpers import load_config, make_dir
 from src.utils.pytorch_i3d import InceptionI3d
-from src.utils.i3d_dimensions_exp import InceptionI3d as InceptionDims
-from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
-from src.utils.util import load_gzip, save_gzip
+from src.utils.util import load_gzip
 from torchsummary import summary
 from torchvision import transforms
 
@@ -65,30 +61,26 @@ def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix'
 
 
 def test(specific_glosses: list, config, log_filename, mode="rgb"):
-    test_cfg = config.get("test")
+    model_cfg = config.get("model")
     data_cfg = config.get("data")
 
     # test parameters
-    fold = test_cfg.get("fold")
+    fold = model_cfg.get("fold")
 
     assert fold in {"train", "test", "val"}, f"Parameter 'fold' is {fold} but should be either 'train' 'val' or 'test'"
 
-    reference_sign = test_cfg.get("reference_sign")
-    test_signs = test_cfg.get("test_signs")
-    batch_size = test_cfg.get("batch_size")
-    ckpt_epoch_list = test_cfg.get("ckpt_epoch_list")
-    run_name = test_cfg.get("run_name")
-    run_batch_size = test_cfg.get("run_batch_size")
-    run_lr = test_cfg.get("run_lr")
-    run_optimizer = test_cfg.get("run_optimizer")
-    run_epochs = test_cfg.get("run_epochs")
-    model_root = test_cfg.get("model_root")
-    pred_output_root = test_cfg.get("pred_output_root")
-    use_cuda = test_cfg.get("use_cuda")
-    random_seed = test_cfg.get("random_seed")
+    batch_size = model_cfg.get("batch_size")
+    run_name = model_cfg.get("run_name")
+    run_batch_size = model_cfg.get("run_batch_size")
+    run_lr = model_cfg.get("run_lr")
+    run_epochs = model_cfg.get("run_epochs")
+    model_root = model_cfg.get("model_root")
+    pred_output_root = model_cfg.get("pred_output_root")
+    use_cuda = model_cfg.get("use_cuda")
+    random_seed = model_cfg.get("random_seed")
+    save_predictions = model_cfg.get("save_predictions")
 
     # data configs
-    save_predictions = data_cfg.get("save_predictions")
     clips_per_class = data_cfg.get("clips_per_class")
     root = data_cfg.get("root")
     cngt_clips_folder = data_cfg.get("cngt_clips_folder")
@@ -104,19 +96,14 @@ def test(specific_glosses: list, config, log_filename, mode="rgb"):
 
     # get directory and filename for the checkpoints
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
-    run_dir = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_{run_optimizer}"
-    # run_dir = f"b{run_batch_size}_{optimizer}_lr{learning_rate}_ep{num_epochs}_{run_name}"
+    run_dir = f"{run_name}_{glosses_string}_{run_epochs}_{run_batch_size}_{run_lr}_SGD"
 
     ckpt_files = [file for file in os.listdir(os.path.join(model_root, run_dir)) if file.endswith(".pt")]
     # take the last save checkpoint, which contains the minimum val loss
     ckpt_filename = ckpt_files[-1]
-
     # ckpt_filename = f"i3d_{str(ckpt_epoch).zfill(len(str(run_epochs)))}.pt"
 
     ckpt_folder = ckpt_filename.split('.')[0]
-
-    # if use_diag_videos:
-    #     fold += "_diag"
 
     pred_path = os.path.join(pred_output_root, run_dir, ckpt_folder, fold)
     make_dir(pred_path)
@@ -203,13 +190,6 @@ def test(specific_glosses: list, config, log_filename, mode="rgb"):
                 y_pred = np.argmax(sign_logits.detach().cpu().numpy(), axis=1)
                 y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
 
-                # upsample output to input size
-                # per_frame_logits = F.interpolate(per_frame_logits, size=inputs.size(2), mode='linear')
-
-                # use these for "frame" prediction
-                # y_pred = np.argmax(per_frame_logits.detach().cpu().numpy(), axis=1)
-                # y_true = np.argmax(labels.detach().cpu().numpy(), axis=1)
-
                 # save predicitions for later
                 if len(total_pred) == 0:
                     total_pred = y_pred.flatten()
@@ -249,9 +229,6 @@ def test(specific_glosses: list, config, log_filename, mode="rgb"):
                         write_video(video_path, video, fps=25)
                     img_cnt += 1
 
-    # save_gzip(discard_videos, os.path.join(pred_path, "discard_list.gzip"))
-    # save_gzip(diagonal_videos, os.path.join(pred_path, f"{run_name}_{fold}_diagonal_videos.gzip"))
-
     acc = accuracy_score(total_true, total_pred)
     p = precision_score(total_true, total_pred)
     r = recall_score(total_true, total_pred)
@@ -280,13 +257,10 @@ def main(params):
     log_filename = params.log_filename
 
     config = load_config(config_path)
-    test_config = config.get("test")
+    model_config = config.get("model")
 
-    reference_sign = test_config.get("reference_sign")
-    test_signs = test_config.get("test_signs")
-    ckpt_epoch_list = test_config.get("ckpt_epoch_list")
-
-    # assert len(ckpt_epoch_list) == len(test_signs), "The length of the checkpoint list and test signs doesn't match."
+    reference_sign = model_config.get("reference_sign")
+    test_signs = model_config.get("test_signs")
 
     for i, test_sign in enumerate(test_signs):
         test(specific_glosses=[reference_sign, test_sign],

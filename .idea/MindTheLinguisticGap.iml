@@ -14,11 +14,4 @@
     <option name="format" value="GOOGLE" />
     <option name="myDocStringFormat" value="Google" />
   </component>
-  <component name="PyNamespacePackagesService">
-    <option name="namespacePackageFolders">
-      <list>
-        <option value="$MODULE_DIR$/reproduce_lfts" />
-      </list>
-    </option>
-  </component>
 </module>

@@ -1,36 +1,20 @@
 import os
 import sys
-import json
 
 sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
-from src.utils import videotransforms
-from src.utils.helpers import load_config
 from src.utils.util import load_gzip
 
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 import argparse
-#
-# parser = argparse.ArgumentParser()
-# parser.add_argument('-mode', type=str, help='rgb or flow')
-# parser.add_argument('-save_model', type=str)
-# parser.add_argument('-root', type=str)
-#
-# args = parser.parse_args()
-
 from tqdm import tqdm
 import math
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-
-from src.utils.pytorch_i3d import InceptionI3d
-from src.utils.i3d_dimensions_exp import InceptionI3d as InceptionDims
-from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
 from src.utils.i3d_data import I3Dataset
-from src.utils import spatial_transforms
 
 
 def main(params):

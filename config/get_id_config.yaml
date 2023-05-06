@@ -1,14 +1,14 @@
-training:
+model:
   reference_sign: "PT-1hand:1"
-  train_signs: ["WETEN-A"]
+  signs: ["WETEN-A"]
+  fold: "train"
+  batch_size: 16
   run_name: ""
-  epochs: 50
-  batch_size: 128
-  init_lr: 0.1
-  momentum: 0.9
-  weight_decay: 0.0000001
-  save_model_root: "/vol/tensusers5/jmartinez/models/i3d"
-  weights_dir_path: "/vol/tensusers5/jmartinez/models"
+  run_batch_size: 128
+  run_lr: 0.1
+  run_optimizer: "SGD"
+  run_epochs: 50
+  model_root: "/vol/tensusers5/jmartinez/models/i3d"
   use_cuda: True
   random_seed: 42
 
@@ -21,4 +21,3 @@ data:
   window_size: 16
   loading_mode: "balanced"
   input_size: 256
-

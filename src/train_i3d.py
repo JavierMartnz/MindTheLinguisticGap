@@ -7,29 +7,26 @@ sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 from src.utils.helpers import load_config
 from src.utils.util import load_gzip
 
+# this allows the code to run on only one GPU if several are available
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 import argparse
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
-from torchvision import datasets, transforms
-from torchsummary import summary
-
+from torchvision import transforms
 import numpy as np
-
 from tqdm import tqdm
-
-from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
+from sklearn.metrics import f1_score, accuracy_score
 
 from src.utils.pytorch_i3d import InceptionI3d
 from src.utils.i3d_data import I3Dataset
 from src.utils import spatial_transforms
-from src.plot_training_history import plot_train_history
+from src.utils.plot_training_history import plot_train_history
+
 
 class EarlyStopper:
     def __init__(self, patience=5, min_delta=0):
@@ -49,11 +46,12 @@ class EarlyStopper:
             self.min_val_loss = val_loss
             return False
 
+
 def train(specific_glosses: list, config: dict, mode='rgb'):
     print(f"\nTraining for {specific_glosses[0]} and {specific_glosses[1]}")
     print("Configuring model and parameters...")
 
-    training_cfg = config.get("training")
+    model_cfg = config.get("model")
     data_cfg = config.get("data")
 
     # data configs
@@ -67,16 +65,23 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
     clips_per_class = data_cfg.get("clips_per_class")
 
     # training configs
-    run_name = training_cfg.get("run_name")
-    epochs = training_cfg.get("epochs")
-    batch_size = training_cfg.get("batch_size")
-    init_lr = training_cfg.get("init_lr")
-    momentum = training_cfg.get("momentum")
-    weight_decay = training_cfg.get("weight_decay")
-    save_model_root = training_cfg.get("save_model_root")
-    weights_dir_path = training_cfg.get("weights_dir_path")
-    use_cuda = training_cfg.get("use_cuda")
-    random_seed = training_cfg.get("random_seed")
+    run_name = model_cfg.get("run_name")
+    epochs = model_cfg.get("epochs")
+    batch_size = model_cfg.get("batch_size")
+    init_lr = model_cfg.get("init_lr")
+    momentum = model_cfg.get("momentum")
+    weight_decay = model_cfg.get("weight_decay")
+    save_model_root = model_cfg.get("save_model_root")
+    weights_dir_path = model_cfg.get("weights_dir_path")
+    train_hist_output_root = model_cfg.get("train_hist_output_root")
+    use_cuda = model_cfg.get("use_cuda")
+    random_seed = model_cfg.get("random_seed")
+    early_stopping_patience = model_cfg.get("early_stopping_patience")
+    early_stopping_min_delta = model_cfg.get("early_stopping_min_delta")
+    lr_sched_patience = model_cfg.get("lr_sched_patience")
+    lr_sched_factor = model_cfg.get("lr_sched_factor")
+    lr_sched_min_delta = model_cfg.get("lr_sched_min_delta")
+
 
     # stitch together the paths
     cngt_clips_root = os.path.join(root, cngt_clips_folder)
@@ -172,15 +177,22 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
     i3d = nn.DataParallel(i3d)
 
     lr = init_lr
-    optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    optimizer = optim.SGD(i3d.parameters(),
+                          lr=lr,
+                          momentum=momentum,
+                          weight_decay=weight_decay)
 
     # early stopping setup
-    min_delta = 0.0
-    patience = 10
-    early_stopper = EarlyStopper(patience=patience, min_delta=min_delta)
+    early_stopper = EarlyStopper(patience=early_stopping_patience,
+                                 min_delta=early_stopping_min_delta)
 
-    # lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
-    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True, threshold=min_delta)
+    # learning scheduler setup
+    lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                    mode='min',
+                                                    factor=lr_sched_factor,
+                                                    patience=lr_sched_patience,
+                                                    verbose=True,
+                                                    threshold=lr_sched_min_delta)
 
     # before starting the training loop, make sure the directory where the model will be stored is created/exists
     glosses_string = f"{specific_glosses[0]}_{specific_glosses[1]}"
@@ -285,8 +297,6 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
 
                     lr_sched.step(tot_loss / num_iter)
 
-    train_hist_output_root = "/vol/tensusers5/jmartinez/graphs/train_hist"
-
     plot_train_history(specific_glosses, new_save_dir, training_history, fig_output_root=train_hist_output_root)
 
     with open(os.path.join(save_model_dir, 'training_history.txt'), 'w') as file:
@@ -295,13 +305,11 @@ def train(specific_glosses: list, config: dict, mode='rgb'):
 
 def main(params):
     config_path = params.config_path
-
     config = load_config(config_path)
+    model_config = config.get("model")
 
-    train_config = config.get("training")
-
-    reference_sign = train_config.get("reference_sign")
-    train_signs = train_config.get("train_signs")
+    reference_sign = model_config.get("reference_sign")
+    train_signs = model_config.get("train_signs")
 
     assert type(train_signs) == list, "The variable 'train_signs' must be a list."
 

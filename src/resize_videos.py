@@ -1,20 +1,15 @@
 import os
 from tqdm import tqdm
 import argparse
-import pympi
 from multiprocessing import Pool
-from pathlib import Path
-from zipfile import ZipFile
-import math
 import shutil
 import sys
 
 sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
 
-from src.utils.util import save_gzip, count_video_frames, extract_zip
+from src.utils.util import extract_zip
 
-
-def resize_video(video_path, output_root, video_size, framerate, window_size=None, is_sb=False):
+def resize_video(video_path, output_root, video_size, framerate, is_sb=False):
     # .mpeg doesn't support a framerate lower than 24, so change to .mov if that happens
     if framerate < 24:
         filename = os.path.basename(video_path).replace("mpg", "mov")
@@ -25,19 +20,9 @@ def resize_video(video_path, output_root, video_size, framerate, window_size=Non
     # if the file doesn't exist already
     if not os.path.exists(output_filename):
         if is_sb:
-            assert type(window_size) is int, "Please enter a valid window size"
-
             cmd = f'ffmpeg -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -preset ultrafast {output_filename}'
             os.system(cmd)
 
-            # save the metadata for data loading
-            # num_frames = count_video_frames(output_filename)
-            # metadata = {"num_frames": num_frames, "start_frames": []}
-            # num_clips = math.ceil(num_frames / window_size)
-            # for j in range(num_clips):
-            #     metadata["start_frames"].append(j * window_size)
-            #
-            # save_gzip(metadata, output_filename[:-3] + 'gzip')
         else:
             cmd = f'ffmpeg -hwaccel cuda -hide_banner -loglevel error -i {video_path} -y -vf "scale={video_size}:{video_size}" -r {framerate} -preset ultrafast {output_filename}'
             os.system(cmd)

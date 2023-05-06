@@ -1,0 +1,30 @@
+model:
+  reference_sign: "PT-1hand:1"
+  train_signs: ["WETEN-A"]
+  run_name: ""
+  epochs: 50
+  batch_size: 128
+  init_lr: 0.1
+  momentum: 0.9
+  weight_decay: 0.0000001
+  save_model_root: "/vol/tensusers5/jmartinez/models/i3d"
+  weights_dir_path: "/vol/tensusers5/jmartinez/models"
+  train_hist_output_root: "/vol/tensusers5/jmartinez/graphs/train_hist"
+  use_cuda: True
+  random_seed: 42
+  early_stopping_patience: 10
+  early_stopping_min_delta: 0.0
+  lr_sched_patience: 5
+  lr_sched_factor: 0.1
+  lr_sched_min_delta: 0.0
+
+data:
+  clips_per_class: -1
+  root: "/vol/tensusers5/jmartinez/datasets"
+  cngt_clips_folder: "cngt_single_signs_256"
+  signbank_folder: "NGT_Signbank_256"
+  sb_vocab_file: "signbank_vocab.gzip"
+  window_size: 16
+  loading_mode: "balanced"
+  input_size: 256
+

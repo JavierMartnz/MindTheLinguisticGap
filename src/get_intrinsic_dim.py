@@ -1,59 +1,44 @@
 import os
 import sys
 
-import pandas as pd
-
 sys.path.append("/vol/tensusers5/jmartinez/MindTheLinguisticGap")
+
+from src.utils.i3d_data import I3Dataset
+from src.utils.helpers import load_config, make_dir
+from src.utils.pytorch_i3d import InceptionI3d
+from src.utils.util import load_gzip
 
 import argparse
 import torch
 from torch.autograd import Variable
 from tqdm import tqdm
 import numpy as np
-import matplotlib.pyplot as plt
-import itertools
-
-from src.utils.i3d_data import I3Dataset
-from src.utils.helpers import load_config, make_dir
-from src.utils.pytorch_i3d import InceptionI3d
-from src.utils.i3d_dimensions_conv import InceptionI3d as InceptionDimsConv
-from src.utils.util import load_gzip, save_gzip
+import pandas as pd
 from scipy.spatial import distance
-from pathlib import Path
 from torchvision import transforms
-import seaborn as sns
 from src.utils.geomle import geomle
 from src.utils.mle import mle as mle_normal
 from src.utils.corrected_mle import mle, mle_inverse_singlek, mle_inverse_singlek_loop
-from src.utils.twonn import twonn_dimension as twonn
 from skdim import id
-import math
 
-def stress(X_pred, X):
-    # distance of every point (row) to the rest of points in matrix
-    orig_dist = distance.pdist(X, 'euclidean')
-    pred_dist = distance.pdist(X_pred, 'euclidean')
-    # stress formula from http://analytictech.com/networks/mds.htm
-    return np.sqrt(sum((pred_dist - orig_dist) ** 2) / sum(orig_dist ** 2))
 
 def get_id(specific_glosses: list, config: dict):
-
-    pca_config = config.get("pca")
+    model_config = config.get("model")
     data_config = config.get("data")
 
     # pca parameters
-    fold = pca_config.get("fold")
+    fold = model_config.get("fold")
     assert fold in {"train", "test", "val"}, f"Parameter 'fold' is {fold} but should be either 'train' 'val' or 'test'"
 
-    batch_size = pca_config.get("batch_size")
-    run_name = pca_config.get("run_name")
-    run_batch_size = pca_config.get("run_batch_size")
-    run_lr = pca_config.get("run_lr")
-    run_optimizer = pca_config.get("run_optimizer")
-    run_epochs = pca_config.get("run_epochs")
-    model_root = pca_config.get("model_root")
-    use_cuda = pca_config.get("use_cuda")
-    random_seed = pca_config.get("random_seed")
+    batch_size = model_config.get("batch_size")
+    run_name = model_config.get("run_name")
+    run_batch_size = model_config.get("run_batch_size")
+    run_lr = model_config.get("run_lr")
+    run_optimizer = model_config.get("run_optimizer")
+    run_epochs = model_config.get("run_epochs")
+    model_root = model_config.get("model_root")
+    use_cuda = model_config.get("use_cuda")
+    random_seed = model_config.get("random_seed")
 
     # data configs
     clips_per_class = data_config.get("clips_per_class")
@@ -122,8 +107,6 @@ def get_id(specific_glosses: list, config: dict):
 
     # we initialize with shape (1, 1024) since we don't know the final size of the matrix
     X_features = torch.zeros((1, 1024))
-    X = torch.zeros((1, 1024))
-    Y = np.zeros(1)
 
     print(f"Running datapoints through model...")
     with torch.no_grad():  # this deactivates gradient calculations, reducing memory consumption by A LOT
@@ -133,7 +116,6 @@ def get_id(specific_glosses: list, config: dict):
                 inputs, labels, _ = data
                 if use_cuda:
                     inputs = Variable(inputs.cuda())
-                    labels = Variable(labels.cuda())
 
                 # get the features of the penultimate layer
                 features = i3d.extract_features(inputs)
@@ -168,10 +150,11 @@ def get_id(specific_glosses: list, config: dict):
     # twonn_id = id.twoNN().fit_transform(X_features)
 
     print(f"Intrinsic dimensions for binary classification of {specific_glosses}:"
-          f"\nMLE={round(np.mean(mle_id),2)}"
+          f"\nMLE={round(np.mean(mle_id), 2)}"
           f"\nTwoNN={round(twonn_id, 2)}")
 
     return
+
 
 def main(params):
     config_path = params.config_path
@@ -184,11 +167,9 @@ def main(params):
 
     assert type(signs) == list, "The variable 'train_signs' must be a list."
 
-    # intr_dims = []
     for i, sign in enumerate(signs):
         get_id(specific_glosses=[reference_sign, sign], config=config)
 
-    # print(f"Intrinsic dimensions between reference sign {reference_sign} and {signs}:\n{intr_dims}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
