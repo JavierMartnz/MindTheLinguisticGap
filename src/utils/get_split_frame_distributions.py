@@ -80,7 +80,7 @@ def main(params):
                         clip_durations.append(n_frames)
         clip_duration_per_split.append(clip_durations)
 
-    plt.style.use(Path(__file__).parent.resolve() / "../plot_style.txt")
+    plt.style.use(Path(__file__).parent.resolve() / "../../plot_style.txt")
 
     upper_quartile = np.percentile(clip_duration_per_split[0], 75)
     lower_quartile = np.percentile(clip_duration_per_split[0], 25)
