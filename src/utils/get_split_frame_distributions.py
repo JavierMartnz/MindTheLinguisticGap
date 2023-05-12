@@ -97,7 +97,7 @@ def main(params):
     plt.hist(clip_duration_per_split[2], bins='auto', align='mid', alpha=0.75, label="test")
     plt.xlim([lower_whisker - 1, upper_whisker + 1])
     plt.xlabel("Number of frames")
-    plt.ylabel("Total clips")
+    plt.ylabel("Frequency")
     plt.legend(loc='best')
     plt.tight_layout()
 
