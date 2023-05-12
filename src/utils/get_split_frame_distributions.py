@@ -28,8 +28,8 @@ def main(params):
     batch_size = params.batch_size
     loading_mode = params.loading_mode
 
-    cngt_zip = os.path.join(root, cngt_folder + ".zip")
-    sb_zip = os.path.join(root, sb_folder + ".zip")
+    cngt_root = os.path.join(root, cngt_folder)
+    sb_root = os.path.join(root, sb_folder)
     sb_vocab_path = os.path.join(root, sb_vocab_file)
 
     # get glosses from the class encodings
@@ -44,9 +44,9 @@ def main(params):
 
     for split in splits:
         print(f"Loading {split} split...")
-        dataset = I3Dataset(loading_mode=loading_mode,
-                            cngt_zip=cngt_zip,
-                            sb_zip=sb_zip,
+        dataset = I3Dataset(loading_mode,
+                            cngt_root,
+                            sb_root,
                             sb_vocab_path=sb_vocab_path,
                             mode="rgb",
                             split=split,
@@ -54,7 +54,8 @@ def main(params):
                             transforms=None,
                             filter_num=None,
                             specific_gloss_ids=specific_gloss_ids,
-                            clips_per_class=None)
+                            clips_per_class=-1,
+                            random_seed=42)
 
         dataloaders.append(torch.utils.data.DataLoader(dataset,
                                                        batch_size=batch_size,
